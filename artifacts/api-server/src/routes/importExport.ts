@@ -122,9 +122,9 @@ router.post("/metal-orders", upload.single("file"), async (req, res) => {
           .returning();
 
         if (order) {
-          // Insert stages only if they don't exist yet (merge: keep stage progress)
-          await db.insert(metalProductionStagesTable).values(
-            METAL_STAGES.map(s => ({
+          // Upsert stages — on conflict (order+stage unique) update qtyTarget; preserve qtyDone/status
+          for (const s of METAL_STAGES) {
+            await db.insert(metalProductionStagesTable).values({
               metalOrderId: order.id,
               moNumber: order.moNumber,
               stageName: s.name,
@@ -132,8 +132,11 @@ router.post("/metal-orders", upload.single("file"), async (req, res) => {
               qtyTarget: order.qty,
               qtyDone: "0",
               status: "لم يتم البدء",
-            }))
-          ).onConflictDoNothing();
+            }).onConflictDoUpdate({
+              target: [metalProductionStagesTable.metalOrderId, metalProductionStagesTable.stageName],
+              set: { qtyTarget: order.qty, stageOrder: s.order },
+            });
+          }
           rowsImported++;
         } else {
           rowsSkipped++;
@@ -290,15 +293,19 @@ router.post("/wooden-orders", upload.single("file"), async (req, res) => {
           .returning();
 
         if (order) {
-          await db.insert(woodenProductionStagesTable).values(
-            WOODEN_STAGES.map(s => ({
+          // Upsert stages — on conflict (order+stage unique) update stageOrder; preserve qtyDone/status
+          for (const s of WOODEN_STAGES) {
+            await db.insert(woodenProductionStagesTable).values({
               woodenOrderId: order.id,
               stageName: s.name,
               stageOrder: s.order,
               qtyDone: "0",
               status: "لم يتم البدء",
-            }))
-          ).onConflictDoNothing();
+            }).onConflictDoUpdate({
+              target: [woodenProductionStagesTable.woodenOrderId, woodenProductionStagesTable.stageName],
+              set: { stageOrder: s.order },
+            });
+          }
           rowsImported++;
         } else {
           rowsSkipped++;

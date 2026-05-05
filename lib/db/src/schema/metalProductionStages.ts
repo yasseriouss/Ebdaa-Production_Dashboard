@@ -1,4 +1,4 @@
-import { pgTable, serial, text, numeric, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, numeric, integer, timestamp, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { metalWorkOrdersTable } from "./metalWorkOrders";
@@ -13,7 +13,7 @@ export const metalProductionStagesTable = pgTable("metal_production_stages", {
   qtyDone: numeric("qty_done", { precision: 10, scale: 2 }).default("0"),
   status: text("status").default("لم يتم البدء"),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => [unique("uq_metal_stage_order_name").on(t.metalOrderId, t.stageName)]);
 
 export const insertMetalProductionStageSchema = createInsertSchema(metalProductionStagesTable).omit({
   id: true,

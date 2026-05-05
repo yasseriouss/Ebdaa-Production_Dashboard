@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 
 export const metalWorkOrdersTable = pgTable("metal_work_orders", {
   id: serial("id").primaryKey(),
-  moNumber: text("mo_number").notNull(),
+  moNumber: text("mo_number").notNull().unique(),
   project: text("project"),
   client: text("client"),
   product: text("product").notNull(),

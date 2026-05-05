@@ -1,4 +1,4 @@
-import { pgTable, serial, text, numeric, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, numeric, integer, timestamp, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { woodenWorkOrdersTable } from "./woodenWorkOrders";
@@ -11,7 +11,7 @@ export const woodenProductionStagesTable = pgTable("wooden_production_stages", {
   qtyDone: numeric("qty_done", { precision: 10, scale: 2 }).default("0"),
   status: text("status").default("لم يتم البدء"),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (t) => [unique("uq_wooden_stage_order_name").on(t.woodenOrderId, t.stageName)]);
 
 export const insertWoodenProductionStageSchema = createInsertSchema(woodenProductionStagesTable).omit({
   id: true,
