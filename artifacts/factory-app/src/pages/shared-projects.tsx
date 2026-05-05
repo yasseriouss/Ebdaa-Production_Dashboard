@@ -38,8 +38,6 @@ const STATUS_COLORS: Record<string, string> = {
   "تحت التصنيع": "bg-blue-500/20 text-blue-400",
   "لم يتم البدء": "bg-muted text-muted-foreground",
   "متوقف": "bg-destructive/20 text-destructive",
-  "Delivered": "bg-green-500/20 text-green-400",
-  "Production": "bg-blue-500/20 text-blue-400",
 };
 
 function ImpactAlert({ metalPct, woodenPct }: { metalPct: number; woodenPct: number }) {

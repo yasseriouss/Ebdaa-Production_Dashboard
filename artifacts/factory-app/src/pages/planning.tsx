@@ -77,30 +77,25 @@ export default function Planning() {
   const [dateTo, setDateTo] = useState("");
 
   const { data: ganttData, isLoading } = useGetDashboardGantt(
-    { factory: factory as "metal" | "wooden" | "all" },
-    { query: { queryKey: ["gantt", factory] } }
+    {
+      factory: factory as "metal" | "wooden" | "all",
+      ...(dateFrom ? { dateFrom } : {}),
+      ...(dateTo ? { dateTo } : {}),
+    },
+    { query: { queryKey: ["gantt", factory, dateFrom, dateTo] } }
   );
 
   const allItems = ganttData || [];
 
   const items = useMemo(() => {
-    let filtered = allItems;
-    if (projectFilter.trim()) {
-      const q = projectFilter.trim().toLowerCase();
-      filtered = filtered.filter(i =>
-        (i.client || "").toLowerCase().includes(q) ||
-        (i.moNumber || "").toLowerCase().includes(q) ||
-        (i.project || "").toLowerCase().includes(q)
-      );
-    }
-    if (dateFrom) {
-      filtered = filtered.filter(i => i.endDate && i.endDate >= dateFrom);
-    }
-    if (dateTo) {
-      filtered = filtered.filter(i => i.startDate && i.startDate <= dateTo);
-    }
-    return filtered;
-  }, [allItems, projectFilter, dateFrom, dateTo]);
+    if (!projectFilter.trim()) return allItems;
+    const q = projectFilter.trim().toLowerCase();
+    return allItems.filter(i =>
+      (i.client || "").toLowerCase().includes(q) ||
+      (i.moNumber || "").toLowerCase().includes(q) ||
+      (i.project || "").toLowerCase().includes(q)
+    );
+  }, [allItems, projectFilter]);
 
   const overlappingIds = useMemo(() => detectOverlaps(items), [items]);
 
