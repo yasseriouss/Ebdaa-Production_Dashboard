@@ -3,11 +3,13 @@ import { useEffect, useState } from "react";
 const base = import.meta.env.BASE_URL;
 
 interface TitleStats {
+  factoriesCount: number;
   metalTotalOrders: number;
   woodenTotalOrders: number;
 }
 
 const FALLBACK: TitleStats = {
+  factoriesCount: 2,
   metalTotalOrders: 17,
   woodenTotalOrders: 128,
 };
@@ -25,6 +27,7 @@ export default function Slide01Title() {
       })
       .then((data: TitleStats) => {
         setStats({
+          factoriesCount: data.factoriesCount ?? FALLBACK.factoriesCount,
           metalTotalOrders: data.metalTotalOrders ?? FALLBACK.metalTotalOrders,
           woodenTotalOrders: data.woodenTotalOrders ?? FALLBACK.woodenTotalOrders,
         });
@@ -79,7 +82,7 @@ export default function Slide01Title() {
 
         <div className="mt-[5vh] flex gap-[4vw]">
           <div className="text-center">
-            <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "3vw", color: "#f59e0b" }}>2</div>
+            <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "3vw", color: "#f59e0b" }}>{stats.factoriesCount}</div>
             <div style={{ fontFamily: "Tajawal, sans-serif", fontSize: "1.6vw", color: "#94a3b8" }}>مصنع</div>
           </div>
           <div style={{ width: "0.15vw", background: "rgba(245,158,11,0.4)", alignSelf: "stretch" }} />

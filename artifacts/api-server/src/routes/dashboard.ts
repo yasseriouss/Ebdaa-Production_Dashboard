@@ -55,6 +55,7 @@ router.get("/stats", async (req, res) => {
     const woodenBacklog = woodenOrders.reduce((acc, o) => acc + parseFloat(o.rem || "0"), 0);
 
     res.json({
+      factoriesCount: 2,
       metalTotalOrders: metalOrders.length,
       metalActiveOrders: metalActive.length,
       metalCompletedOrders: metalCompleted.length,
