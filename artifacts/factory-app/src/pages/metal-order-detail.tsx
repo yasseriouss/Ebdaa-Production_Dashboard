@@ -30,9 +30,9 @@ interface Stage {
   id: number;
   stageName: string;
   stageOrder: number;
-  qtyTarget: string | null;
-  qtyDone: string | null;
-  status: string | null;
+  qtyTarget?: number | string | null;
+  qtyDone?: number | string | null;
+  status?: string | null;
 }
 
 function StageRow({ stage }: { stage: Stage }) {
@@ -52,8 +52,8 @@ function StageRow({ stage }: { stage: Stage }) {
     },
   });
 
-  const target = parseFloat(stage.qtyTarget || "0");
-  const done = parseFloat(stage.qtyDone || "0");
+  const target = parseFloat(String(stage.qtyTarget ?? 0));
+  const done = parseFloat(String(stage.qtyDone ?? 0));
   const pct = target > 0 ? Math.round((done / target) * 100) : 0;
 
   return (
@@ -96,7 +96,7 @@ function StageRow({ stage }: { stage: Stage }) {
           <Button
             size="sm"
             className="h-7 text-xs"
-            onClick={() => update.mutate({ id: stage.id, data: { qtyDone: parseFloat(qtyDone), status } })}
+            onClick={() => update.mutate({ id: stage.id, data: { qtyDone: parseFloat(String(qtyDone)), status } })}
             disabled={update.isPending}
             data-testid={`btn-save-stage-${stage.id}`}
           >
@@ -155,7 +155,7 @@ export default function MetalOrderDetail() {
   }
 
   const stages = (order as typeof order & { stages?: Stage[] }).stages || [];
-  const completionPct = parseFloat(order.completionPct || "0");
+  const completionPct = parseFloat(String(order.completionPct ?? 0));
 
   return (
     <div className="space-y-6">
@@ -198,7 +198,7 @@ export default function MetalOrderDetail() {
         <Card>
           <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">المتأخرات</CardTitle></CardHeader>
           <CardContent>
-            <div className={`text-2xl font-bold ${parseFloat(order.backlogQty || "0") > 0 ? "text-destructive" : "text-green-400"}`}>
+            <div className={`text-2xl font-bold ${parseFloat(String(order.backlogQty ?? 0)) > 0 ? "text-destructive" : "text-green-400"}`}>
               {order.backlogQty || 0}
             </div>
             {order.backlogStatus && <p className="text-xs text-muted-foreground">{order.backlogStatus}</p>}

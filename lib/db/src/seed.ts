@@ -1,3 +1,7 @@
+import path from "path";
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const XLSX = require("xlsx") as typeof import("xlsx");
+import { eq } from "drizzle-orm";
 import { db } from "./index";
 import {
   metalWorkOrdersTable,
@@ -19,32 +23,214 @@ const WOODEN_STAGES = [
   { name: "التشطيب", order: 3 }, { name: "التغليف", order: 4 },
 ];
 
-const metalOrdersData = [
-  { moNumber: "MO-2025-001", project: "مشروع الكيان العسكري", client: "الكيان العسكري", product: "خزائن معدنية", qty: "500", unit: "قطعة", deliveredQty: "320", completionPct: "64", backlogQty: "180", backlogStatus: "متأخر", notes: "تسليم مرحلي", status: "تحت التصنيع" },
-  { moNumber: "MO-2025-002", project: "مشروع جزيرة مزارين", client: "جزيرة مزارين", product: "أبواب حديدية", qty: "200", unit: "باب", deliveredQty: "200", completionPct: "100", backlogQty: "0", backlogStatus: null, notes: "", status: "تم التسليم" },
-  { moNumber: "MO-2025-003", project: "مشروع فاينست", client: "فاينست", product: "رفوف معدنية", qty: "300", unit: "قطعة", deliveredQty: "150", completionPct: "50", backlogQty: "150", backlogStatus: "تحت المراجعة", notes: "تأخر في الخامات", status: "تحت التصنيع" },
-  { moNumber: "MO-2025-004", project: "مشروع الحرس الجمهوري", client: "الحرس الجمهوري", product: "طاولات اجتماعات معدنية", qty: "50", unit: "طاولة", deliveredQty: "0", completionPct: "0", backlogQty: "50", backlogStatus: "لم يبدأ", notes: "انتظار موافقة", status: "لم يتم البدء" },
-  { moNumber: "MO-2025-005", project: "مشروع الكيان العسكري - مرحلة 2", client: "الكيان العسكري", product: "خزائن تبريد", qty: "120", unit: "قطعة", deliveredQty: "80", completionPct: "67", backlogQty: "40", backlogStatus: "في المخزن", notes: "", status: "في المخزن" },
-  { moNumber: "MO-2025-006", project: "مشروع داخلي", client: "إبداع للأثاث", product: "هياكل معدنية", qty: "80", unit: "قطعة", deliveredQty: "80", completionPct: "100", backlogQty: "0", backlogStatus: null, notes: "مكتمل", status: "تم الانتهاء" },
-  { moNumber: "MO-2025-007", project: "مشروع فاينست - إضافة", client: "فاينست", product: "أقفاص معدنية", qty: "60", unit: "قطعة", deliveredQty: "0", completionPct: "30", backlogQty: "60", backlogStatus: "تحت التصنيع", notes: "", status: "تحت التصنيع" },
-  { moNumber: "MO-2025-008", project: "مشروع جزيرة مزارين 2", client: "جزيرة مزارين", product: "بوابات أمنية", qty: "15", unit: "بوابة", deliveredQty: "0", completionPct: "0", backlogQty: "15", backlogStatus: "متوقف", notes: "مواد خام متأخرة", status: "متوقف" },
-  { moNumber: "MO-2025-009", project: "مشروع الحرس الجمهوري - مبنى ب", client: "الحرس الجمهوري", product: "أبراج مراقبة معدنية", qty: "8", unit: "برج", deliveredQty: "4", completionPct: "50", backlogQty: "4", backlogStatus: "تحت التصنيع", notes: "", status: "تحت التصنيع" },
-  { moNumber: "MO-2025-010", project: "توريد دوري", client: "عملاء متنوعون", product: "قواطع معدنية", qty: "1000", unit: "قطعة", deliveredQty: "600", completionPct: "60", backlogQty: "400", backlogStatus: "جاري", notes: "توريد دوري", status: "تحت التصنيع" },
-  { moNumber: "MO-2025-011", project: "مشروع الكيان العسكري - مرحلة 3", client: "الكيان العسكري", product: "أدراج معدنية", qty: "250", unit: "قطعة", deliveredQty: "0", completionPct: "15", backlogQty: "250", backlogStatus: "جاري", notes: "", status: "تحت التصنيع" },
-  { moNumber: "MO-2025-012", project: "مشروع فاينست - لوبي", client: "فاينست", product: "ديكور معدني", qty: "45", unit: "قطعة", deliveredQty: "45", completionPct: "100", backlogQty: "0", backlogStatus: null, notes: "", status: "تم التسليم" },
+const ASSETS_DIR = path.resolve(__dirname, "../../../../attached_assets");
+
+function safeStr(val: unknown): string {
+  if (val === null || val === undefined) return "";
+  return String(val).trim();
+}
+function safeNum(val: unknown, fallback = 0): number {
+  const n = parseFloat(String(val ?? ""));
+  return isNaN(n) ? fallback : n;
+}
+function stripVbc(val: unknown): string {
+  return safeStr(val).replace(/\bvbc\b/gi, "").replace(/\s+/g, " ").trim();
+}
+function excelDateToStr(serial: unknown): string {
+  const n = safeNum(serial, 0);
+  if (n <= 0) return "";
+  const date = new Date(Math.round((n - 25569) * 86400 * 1000));
+  return date.toISOString().split("T")[0];
+}
+
+interface MetalOrderRow {
+  moNumber: string;
+  project: string;
+  client: string;
+  product: string;
+  qty: string;
+  unit: string;
+  notes: string;
+  status: string;
+}
+
+interface WoodenOrderRow {
+  orderNo: string;
+  orderDate: string;
+  subProject: string;
+  product: string;
+  qty: number;
+  done: number;
+  rem: number;
+  status: string;
+  notes: string;
+  prodDateEnd: string;
+}
+
+function parseMoStatus(note: string): string {
+  const n = note.toLowerCase();
+  if (n.includes("تم الانتهاء") || n.includes("تم التسليم") || n.includes("تم تغليف كامل")) return "تم الانتهاء";
+  if (n.includes("لم يتم البدء")) return "لم يتم البدء";
+  if (n.includes("متوقف")) return "متوقف";
+  return "تحت التصنيع";
+}
+
+function loadMetalOrders(): MetalOrderRow[] {
+  try {
+    const wb = XLSX.readFile(path.join(ASSETS_DIR, "metal_orders_1777969762141.xlsx"));
+    const ws = wb.Sheets["MO"] || wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
+
+    // Find header row (has "MO" in column 3)
+    let headerIdx = 8; // default from inspection
+    for (let i = 0; i < Math.min(15, rows.length); i++) {
+      const r = rows[i] as unknown[];
+      if (safeStr(r[3]).toUpperCase().includes("MO") && safeStr(r[5]).toLowerCase().includes("product")) {
+        headerIdx = i;
+        break;
+      }
+    }
+
+    const results: MetalOrderRow[] = [];
+    const seen = new Set<string>();
+
+    for (let i = headerIdx + 1; i < rows.length; i++) {
+      const row = rows[i] as unknown[];
+      const moNum = stripVbc(safeStr(row[3]));
+      if (!moNum || moNum === "" || moNum.toLowerCase() === "mo") continue;
+
+      const client = stripVbc(safeStr(row[4]));
+      const product = safeStr(row[5]);
+      const qty = safeNum(row[6], 1);
+      const unit = safeStr(row[7]) || "Unit";
+      const notes = safeStr(row[8]);
+
+      if (!product) continue;
+      if (!seen.has(moNum)) {
+        seen.add(moNum);
+        results.push({
+          moNumber: moNum,
+          project: client,
+          client,
+          product,
+          qty: String(qty),
+          unit,
+          notes,
+          status: parseMoStatus(notes),
+        });
+      }
+    }
+    console.log(`  Parsed ${results.length} unique metal orders from Excel`);
+    return results;
+  } catch (e) {
+    console.warn("  Could not parse metal_orders.xlsx, using fallback data:", String(e));
+    return [];
+  }
+}
+
+function loadWoodenOrders(): WoodenOrderRow[] {
+  try {
+    const wb = XLSX.readFile(path.join(ASSETS_DIR, "wooden_orders_1777969762147.xlsx"));
+    // Sheet4 has the raw data with columns: Order, Date, Project, Sub-Project, Product, QTY, Done, Rem, Status, notes, finish_date, req_finish
+    const ws = wb.Sheets["Sheet4"] || wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
+
+    // Group by order number - pick the first product per order as representative
+    const orderMap = new Map<string, WoodenOrderRow>();
+
+    for (let i = 1; i < rows.length; i++) {
+      const row = rows[i] as unknown[];
+      const orderNo = safeStr(row[0]);
+      if (!orderNo || orderNo === "") continue;
+
+      const qty = safeNum(row[5], 0);
+      const done = safeNum(row[6], 0);
+      const rem = safeNum(row[7], 0);
+
+      if (!orderMap.has(orderNo)) {
+        orderMap.set(orderNo, {
+          orderNo,
+          orderDate: excelDateToStr(row[1]),
+          subProject: stripVbc(safeStr(row[3])),
+          product: stripVbc(safeStr(row[4])) || "منتج خشبي",
+          qty,
+          done,
+          rem,
+          status: safeStr(row[8]) || "Production",
+          notes: safeStr(row[9]),
+          prodDateEnd: excelDateToStr(row[10]),
+        });
+      } else {
+        // Accumulate qty/done/rem across rows of same order
+        const existing = orderMap.get(orderNo)!;
+        existing.qty += qty;
+        existing.done += done;
+        existing.rem += rem;
+      }
+    }
+
+    const results = Array.from(orderMap.values()).slice(0, 30);
+    console.log(`  Parsed ${results.length} wooden orders from Excel (${orderMap.size} unique order numbers)`);
+    return results;
+  } catch (e) {
+    console.warn("  Could not parse wooden_orders.xlsx, using fallback data:", String(e));
+    return [];
+  }
+}
+
+/** Build a map of { moNumber -> { stageName -> status } } from the daily production Excel */
+function loadMetalDailyStageStatuses(): Map<string, Map<string, string>> {
+  const result = new Map<string, Map<string, string>>();
+  try {
+    const wb = XLSX.readFile(path.join(ASSETS_DIR, "Metal_daily_Production_1777969955661.xlsx"));
+    for (const sheetName of wb.SheetNames) {
+      if (sheetName.startsWith("_xlnm")) continue;
+      const ws = wb.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
+      // Row 1 is the header (date columns), row 2+ are data
+      // Columns: 0=start_date, 1=Project, 2=M.O, 3=product, 4=qty, 5=sub_assembly, 6=qty2, 7=status
+      for (let i = 2; i < rows.length; i++) {
+        const row = rows[i] as unknown[];
+        const moNum = safeStr(row[2]);
+        if (!moNum) continue;
+        const status = safeStr(row[7]);
+        if (!result.has(moNum)) result.set(moNum, new Map());
+        if (status) result.get(moNum)!.set(sheetName, status);
+      }
+    }
+    console.log(`  Parsed stage statuses for ${result.size} MO numbers from daily production Excel`);
+  } catch (e) {
+    console.warn("  Could not parse Metal_daily_Production.xlsx:", String(e));
+  }
+  return result;
+}
+
+const FALLBACK_METAL_ORDERS: MetalOrderRow[] = [
+  { moNumber: "MOM 1102", project: "الكيان العسكري", client: "الكيان العسكري", product: "سرير معدني + لوكر", qty: "2306", unit: "Unit", notes: "تغليف 1640", status: "تحت التصنيع" },
+  { moNumber: "MOM 1114", project: "شركه الغزال", client: "شركه الغزال", product: "سرير زوجي", qty: "5000", unit: "Unit", notes: "تم التغليف كامل", status: "تم الانتهاء" },
+  { moNumber: "MOMS 1116", project: "مستشفى وادي النيل", client: "مستشفى وادي النيل", product: "معدات مطبخية", qty: "30", unit: "Unit", notes: "بيتم تشطيب", status: "تحت التصنيع" },
+  { moNumber: "MOMS 1104", project: "باروس", client: "باروس", product: "معدات مطبخية خاصة", qty: "4", unit: "Unit", notes: "", status: "تحت التصنيع" },
+  { moNumber: "MOM 1117", project: "VBC", client: "VBC", product: "دولاب + سرير", qty: "66", unit: "Unit", notes: "لم يتم البدء", status: "لم يتم البدء" },
+  { moNumber: "MOM 1090", project: "فاينست", client: "فاينست", product: "خلية عمل خاصة", qty: "1", unit: "Unit", notes: "", status: "تحت التصنيع" },
+  { moNumber: "MOM 1098", project: "الأبنية التعليمية", client: "الأبنية التعليمية", product: "ديسك طالب", qty: "50000", unit: "Unit", notes: "منضده+مقعد", status: "تحت التصنيع" },
+  { moNumber: "MOM 1106", project: "جامعه المنصوره", client: "جامعه المنصوره", product: "لوكر 12 عين", qty: "1", unit: "Unit", notes: "تم التجميع", status: "تم الانتهاء" },
+  { moNumber: "MOM 1101", project: "فرش مقر جدة و الرياض", client: "فرش مقر جدة", product: "شاسيه معدن مكتب مدير", qty: "4", unit: "Unit", notes: "تم الانتهاء", status: "تم الانتهاء" },
+  { moNumber: "MOMS 1141", project: "holiday inn", client: "holiday inn", product: "بار متحرك", qty: "1", unit: "Unit", notes: "تشطيب نهائي", status: "تم الانتهاء" },
+  { moNumber: "MOMS 1129", project: "Villaggio", client: "Villaggio", product: "تروللى راكات للزجاج", qty: "1", unit: "Unit", notes: "", status: "تحت التصنيع" },
+  { moNumber: "MOMS 1135", project: "casa maza", client: "casa maza", product: "جريل 80-50-13", qty: "1", unit: "Unit", notes: "تم الانتهاء", status: "تم الانتهاء" },
 ];
 
-const woodenOrdersData = [
-  { orderNo: "WO-2025-001", extension: "B1", orderDate: "2025-01-15", manufactureRequest: "MR-001", sapCode: "SAP-001", client: "الكيان العسكري", subProject: "مبنى إدارة", product: "مكاتب خشبية", category: "مكاتب", uom: "قطعة", qty: "50", done: "35", rem: "15", status: "Production", prodDateStart: "2025-01-20", prodDateEnd: "2025-03-20", prodDateFinished: "" },
-  { orderNo: "WO-2025-002", extension: "A2", orderDate: "2025-01-20", manufactureRequest: "MR-002", sapCode: "SAP-002", client: "جزيرة مزارين", subProject: "فيلات سكنية", product: "غرف نوم", category: "غرف", uom: "طقم", qty: "30", done: "30", rem: "0", status: "Delivered", prodDateStart: "2025-01-25", prodDateEnd: "2025-04-01", prodDateFinished: "2025-03-28" },
-  { orderNo: "WO-2025-003", extension: "C1", orderDate: "2025-02-01", manufactureRequest: "MR-003", sapCode: "SAP-003", client: "فاينست", subProject: "مقر الشركة", product: "أثاث مكتبي", category: "مكاتب", uom: "قطعة", qty: "100", done: "60", rem: "40", status: "Production", prodDateStart: "2025-02-10", prodDateEnd: "2025-05-10", prodDateFinished: "" },
-  { orderNo: "WO-2025-004", extension: "D3", orderDate: "2025-02-15", manufactureRequest: "MR-004", sapCode: "SAP-004", client: "الحرس الجمهوري", subProject: "قاعة اجتماعات", product: "طاولات مؤتمرات", category: "طاولات", uom: "طاولة", qty: "20", done: "20", rem: "0", status: "Delivered", prodDateStart: "2025-02-20", prodDateEnd: "2025-04-20", prodDateFinished: "2025-04-15" },
-  { orderNo: "WO-2025-005", extension: "A1", orderDate: "2025-03-01", manufactureRequest: "MR-005", sapCode: "SAP-005", client: "الكيان العسكري", subProject: "مبنى ضباط", product: "خزائن ملابس", category: "خزائن", uom: "قطعة", qty: "80", done: "40", rem: "40", status: "Production", prodDateStart: "2025-03-10", prodDateEnd: "2025-06-10", prodDateFinished: "" },
-  { orderNo: "WO-2025-006", extension: "B2", orderDate: "2025-03-15", manufactureRequest: "MR-006", sapCode: "SAP-006", client: "فاينست", subProject: "استقبال", product: "ديكورات خشبية", category: "ديكور", uom: "قطعة", qty: "40", done: "10", rem: "30", status: "Production", prodDateStart: "2025-03-20", prodDateEnd: "2025-06-20", prodDateFinished: "" },
-  { orderNo: "WO-2025-007", extension: "E1", orderDate: "2025-04-01", manufactureRequest: "MR-007", sapCode: "SAP-007", client: "جزيرة مزارين", subProject: "أفنية", product: "كراسي خارجية", category: "كراسي", uom: "قطعة", qty: "200", done: "120", rem: "80", status: "Production", prodDateStart: "2025-04-10", prodDateEnd: "2025-07-10", prodDateFinished: "" },
-  { orderNo: "WO-2025-008", extension: "F1", orderDate: "2025-04-15", manufactureRequest: "MR-008", sapCode: "SAP-008", client: "الحرس الجمهوري", subProject: "مبنى رئاسي", product: "أثاث VIP", category: "فاخر", uom: "طقم", qty: "10", done: "5", rem: "5", status: "Production", prodDateStart: "2025-04-20", prodDateEnd: "2025-07-20", prodDateFinished: "" },
-  { orderNo: "WO-2025-009", extension: "C2", orderDate: "2025-05-01", manufactureRequest: "MR-009", sapCode: "SAP-009", client: "الكيان العسكري", subProject: "غرف ضيافة", product: "أسرة مفردة", category: "أسرة", uom: "قطعة", qty: "60", done: "20", rem: "40", status: "Production", prodDateStart: "2025-05-10", prodDateEnd: "2025-08-10", prodDateFinished: "" },
-  { orderNo: "WO-2025-010", extension: "G1", orderDate: "2025-05-15", manufactureRequest: "MR-010", sapCode: "SAP-010", client: "جزيرة مزارين", subProject: "نادي", product: "طاولات بلياردو", category: "ترفيه", uom: "قطعة", qty: "8", done: "8", rem: "0", status: "Delivered", prodDateStart: "2025-05-20", prodDateEnd: "2025-07-15", prodDateFinished: "2025-07-10" },
+const FALLBACK_WOODEN_ORDERS: WoodenOrderRow[] = [
+  { orderNo: "10893", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب جانب بيتش باين", qty: 857, done: 857, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11056", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب حمام", qty: 707, done: 707, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11057", orderDate: "2024-06-15", subProject: "ابواب مزارين 1", product: "باب داخلي حمام 0.8م", qty: 11, done: 11, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11060", orderDate: "2024-06-15", subProject: "منتجع مزارين", product: "قطعة بيتش باين", qty: 6, done: 6, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "10900", orderDate: "2024-06-20", subProject: "عينات ابواب مزارين 1", product: "تجليدة استربات", qty: 3, done: 3, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11065", orderDate: "2024-07-01", subProject: "ابواب مزارين 1", product: "باب ارو 90 سم", qty: 46, done: 46, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11070", orderDate: "2024-08-01", subProject: "مزارين - غرف", product: "غرفة نوم كاملة", qty: 120, done: 80, rem: 40, status: "Production", notes: "جاري التصنيع", prodDateEnd: "2025-02-01" },
+  { orderNo: "11080", orderDate: "2024-09-01", subProject: "مزارين - صالات", product: "أثاث صالة", qty: 50, done: 20, rem: 30, status: "Production", notes: "", prodDateEnd: "2025-03-01" },
+  { orderNo: "11090", orderDate: "2024-10-01", subProject: "VBC - غرف فندقية", product: "طقم غرفة فندق", qty: 80, done: 0, rem: 80, status: "Production", notes: "لم يتم البدء", prodDateEnd: "2025-04-01" },
+  { orderNo: "11100", orderDate: "2024-11-01", subProject: "الكيان - مكاتب", product: "مكتب تنفيذي", qty: 30, done: 15, rem: 15, status: "Production", notes: "", prodDateEnd: "2025-05-01" },
 ];
 
 async function seed() {
@@ -55,26 +241,93 @@ async function seed() {
     process.exit(0);
   }
 
-  console.log("Seeding metal work orders...");
-  for (const orderData of metalOrdersData) {
-    const [order] = await db.insert(metalWorkOrdersTable).values(orderData).returning();
-    const stageCompletion = parseFloat(orderData.completionPct) / 100;
-    const stagesToInsert = METAL_STAGES.map((s, i) => {
-      const stageProgress = Math.max(0, Math.min(1, stageCompletion * METAL_STAGES.length - i));
-      const qtyTarget = parseFloat(orderData.qty);
-      const qtyDone = Math.round(qtyTarget * Math.min(1, stageProgress));
-      const status = stageProgress >= 1 ? "تم الانتهاء" : stageProgress > 0 ? "تحت التصنيع" : "لم يتم البدء";
-      return { metalOrderId: order.id, moNumber: order.moNumber, stageName: s.name, stageOrder: s.order, qtyTarget: orderData.qty, qtyDone: String(qtyDone), status };
+  // Load from real Excel files, fall back to synthetic data
+  console.log("Loading data from attached Excel files...");
+  let metalOrders = loadMetalOrders();
+  if (metalOrders.length === 0) {
+    console.log("  Using fallback metal orders data");
+    metalOrders = FALLBACK_METAL_ORDERS;
+  }
+
+  let woodenOrders = loadWoodenOrders();
+  if (woodenOrders.length === 0) {
+    console.log("  Using fallback wooden orders data");
+    woodenOrders = FALLBACK_WOODEN_ORDERS;
+  }
+
+  const dailyStageStatuses = loadMetalDailyStageStatuses();
+
+  console.log(`Seeding ${metalOrders.length} metal work orders...`);
+  for (const orderData of metalOrders) {
+    const [order] = await db.insert(metalWorkOrdersTable).values({
+      moNumber: orderData.moNumber,
+      project: orderData.project,
+      client: orderData.client,
+      product: orderData.product,
+      qty: orderData.qty,
+      unit: orderData.unit,
+      deliveredQty: "0",
+      completionPct: "0",
+      backlogQty: "0",
+      notes: orderData.notes,
+      status: orderData.status,
+    }).returning();
+
+    const moStageStatuses = dailyStageStatuses.get(orderData.moNumber) ?? new Map<string, string>();
+
+    const stagesToInsert = METAL_STAGES.map(s => {
+      const rawStatus = moStageStatuses.get(s.name) ?? "";
+      let status = "لم يتم البدء";
+      if (rawStatus) {
+        const r = rawStatus.toLowerCase();
+        if (r.includes("تم الانتهاء") || r.includes("تم")) status = "تم الانتهاء";
+        else if (r.includes("جاري") || r.includes("تحت")) status = "تحت التصنيع";
+        else status = rawStatus;
+      } else if (orderData.status === "تم الانتهاء") {
+        status = "تم الانتهاء";
+      }
+      const qty = parseFloat(orderData.qty);
+      const qtyDone = status === "تم الانتهاء" ? orderData.qty : status === "تحت التصنيع" ? String(Math.round(qty * 0.5)) : "0";
+      return { metalOrderId: order.id, moNumber: order.moNumber, stageName: s.name, stageOrder: s.order, qtyTarget: orderData.qty, qtyDone, status };
     });
     await db.insert(metalProductionStagesTable).values(stagesToInsert);
   }
 
-  console.log("Seeding wooden work orders...");
-  for (const orderData of woodenOrdersData) {
-    const [order] = await db.insert(woodenWorkOrdersTable).values(orderData).returning();
-    const done = parseFloat(orderData.done);
-    const qty = parseFloat(orderData.qty);
+  // Update completionPct based on stage data for each metal order
+  const allOrders = await db.select().from(metalWorkOrdersTable);
+  const allStages = await db.select().from(metalProductionStagesTable);
+  for (const order of allOrders) {
+    const orderStages = allStages.filter(s => s.metalOrderId === order.id);
+    if (orderStages.length === 0) continue;
+    const doneCount = orderStages.filter(s => s.status === "تم الانتهاء").length;
+    const pct = Math.round((doneCount / orderStages.length) * 100);
+    const doneQty = orderStages.reduce((sum, s) => sum + parseFloat(s.qtyDone || "0"), 0) / orderStages.length;
+    await db.update(metalWorkOrdersTable).set({
+      completionPct: String(pct),
+      deliveredQty: String(Math.round(doneQty)),
+      backlogQty: String(Math.max(0, parseFloat(order.qty) - Math.round(doneQty))),
+    }).where(eq(metalWorkOrdersTable.id, order.id));
+  }
+
+  console.log(`Seeding ${woodenOrders.length} wooden work orders...`);
+  for (const orderData of woodenOrders) {
+    const [order] = await db.insert(woodenWorkOrdersTable).values({
+      orderNo: orderData.orderNo,
+      extension: "",
+      orderDate: orderData.orderDate || "",
+      subProject: orderData.subProject,
+      product: orderData.product,
+      qty: String(orderData.qty),
+      done: String(orderData.done),
+      rem: String(orderData.rem),
+      status: orderData.status,
+      prodDateEnd: orderData.prodDateEnd || "",
+    }).returning();
+
+    const qty = orderData.qty;
+    const done = orderData.done;
     const pct = qty > 0 ? done / qty : 0;
+
     const stagesToInsert = WOODEN_STAGES.map((s, i) => {
       const stageProgress = Math.max(0, Math.min(1, pct * WOODEN_STAGES.length - i));
       const qtyDone = Math.round(qty * Math.min(1, stageProgress));
@@ -84,7 +337,7 @@ async function seed() {
     await db.insert(woodenProductionStagesTable).values(stagesToInsert);
   }
 
-  console.log(`Done! ${metalOrdersData.length} metal orders, ${woodenOrdersData.length} wooden orders seeded.`);
+  console.log(`Done! ${metalOrders.length} metal orders, ${woodenOrders.length} wooden orders seeded from real Excel data.`);
   process.exit(0);
 }
 

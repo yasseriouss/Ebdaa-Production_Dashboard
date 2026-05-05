@@ -66,7 +66,7 @@ export default function Planning() {
   );
 
   const items = ganttData || [];
-  const allDates = items.flatMap(i => [new Date(i.startDate), new Date(i.endDate)]).filter(d => !isNaN(d.getTime()));
+  const allDates = items.flatMap(i => [new Date(i.startDate ?? ""), new Date(i.endDate ?? "")]).filter(d => !isNaN(d.getTime()));
   const minDate = allDates.length > 0 ? new Date(Math.min(...allDates.map(d => d.getTime()))) : new Date("2025-01-01");
   const maxDate = allDates.length > 0 ? new Date(Math.max(...allDates.map(d => d.getTime()))) : new Date("2025-12-31");
   const totalDays = Math.max(1, (maxDate.getTime() - minDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -143,8 +143,8 @@ export default function Planning() {
                       <div
                         className={`absolute h-full rounded transition-all ${item.factory === "metal" ? "bg-primary/60" : "bg-blue-500/50"}`}
                         style={{
-                          left: `${(getX(item.startDate) / CHART_WIDTH) * 100}%`,
-                          width: `${(getWidth(item.startDate, item.endDate) / CHART_WIDTH) * 100}%`,
+                          left: `${(getX(item.startDate ?? "") / CHART_WIDTH) * 100}%`,
+                          width: `${(getWidth(item.startDate ?? "", item.endDate ?? "") / CHART_WIDTH) * 100}%`,
                         }}
                         title={`${item.moNumber} — ${item.completionPct}% مكتمل`}
                       >

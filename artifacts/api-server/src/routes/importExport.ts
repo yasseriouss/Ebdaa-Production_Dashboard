@@ -59,7 +59,7 @@ function safeNum(val: unknown): string {
 
 // ---- IMPORT: Metal work orders ----
 router.post("/metal-orders", upload.single("file"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
 
   try {
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
@@ -136,7 +136,7 @@ router.post("/metal-orders", upload.single("file"), async (req, res) => {
 
 // ---- IMPORT: Metal daily production (17 sheets = 17 stages) ----
 router.post("/metal-daily", upload.single("file"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
 
   try {
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
@@ -203,7 +203,7 @@ router.post("/metal-daily", upload.single("file"), async (req, res) => {
 
 // ---- IMPORT: Wooden work orders ----
 router.post("/wooden-orders", upload.single("file"), async (req, res) => {
-  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
 
   try {
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
@@ -414,7 +414,7 @@ router.get("/metal-orders", async (req, res) => {
       const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", `attachment; filename="metal-orders.xlsx"`);
-      return res.send(buf);
+      res.send(buf); return;
     }
 
     // PDF export
@@ -447,7 +447,7 @@ router.get("/wooden-orders", async (req, res) => {
       const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", `attachment; filename="wooden-orders.xlsx"`);
-      return res.send(buf);
+      res.send(buf); return;
     }
 
     // PDF export

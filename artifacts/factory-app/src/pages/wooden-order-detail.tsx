@@ -18,8 +18,8 @@ interface WoodenStage {
   id: number;
   stageName: string;
   stageOrder: number;
-  qtyDone: string | null;
-  status: string | null;
+  qtyDone?: number | string | null;
+  status?: string | null;
 }
 
 const STATUS_COLORS: Record<string, string> = {
@@ -43,7 +43,7 @@ function WoodenStageRow({ stage, totalQty }: { stage: WoodenStage; totalQty: num
     },
   });
 
-  const done = parseFloat(stage.qtyDone || "0");
+  const done = parseFloat(String(stage.qtyDone ?? 0));
   const pct = totalQty > 0 ? Math.round((done / totalQty) * 100) : 0;
 
   return (
@@ -65,7 +65,7 @@ function WoodenStageRow({ stage, totalQty }: { stage: WoodenStage; totalQty: num
           <select value={status} onChange={e => setStatus(e.target.value)} className="h-7 text-xs bg-muted border border-border rounded px-1" data-testid={`select-wooden-stage-status-${stage.id}`}>
             {["لم يتم البدء", "تحت التصنيع", "تم الانتهاء"].map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <Button size="sm" className="h-7 text-xs" onClick={() => update.mutate({ id: stage.id, data: { qtyDone: parseFloat(qtyDone), status } })} disabled={update.isPending} data-testid={`btn-save-wooden-stage-${stage.id}`}>حفظ</Button>
+          <Button size="sm" className="h-7 text-xs" onClick={() => update.mutate({ id: stage.id, data: { qtyDone: parseFloat(String(qtyDone)), status } })} disabled={update.isPending} data-testid={`btn-save-wooden-stage-${stage.id}`}>حفظ</Button>
           <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>إلغاء</Button>
         </div>
       ) : (
@@ -101,9 +101,9 @@ export default function WoodenOrderDetail() {
   }
 
   const stages = (order as typeof order & { stages?: WoodenStage[] }).stages || [];
-  const total = parseFloat(order.qty || "0");
-  const done = parseFloat(order.done || "0");
-  const rem = parseFloat(order.rem || "0");
+  const total = parseFloat(String(order.qty ?? 0));
+  const done = parseFloat(String(order.done ?? 0));
+  const rem = parseFloat(String(order.rem ?? 0));
   const completionPct = total > 0 ? Math.round((done / total) * 100) : 0;
   const statusColor = order.status === "Delivered" ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400";
 

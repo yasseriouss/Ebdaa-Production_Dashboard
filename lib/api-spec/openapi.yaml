@@ -166,6 +166,23 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/MetalProductionStage"
+    post:
+      operationId: createMetalStage
+      tags: [metal-stages]
+      summary: Create a new metal production stage record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMetalStageBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetalProductionStage"
 
   /metal/stages/{id}:
     get:
@@ -362,6 +379,23 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/WoodenProductionStage"
+    post:
+      operationId: createWoodenStage
+      tags: [wooden-stages]
+      summary: Create a new wooden production stage record
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWoodenStageBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WoodenProductionStage"
 
   /wooden/stages/{id}:
     get:
@@ -886,6 +920,47 @@ components:
           type: string
       required:
         - id
+        - stageName
+        - stageOrder
+
+    CreateMetalStageBody:
+      type: object
+      properties:
+        metalOrderId:
+          type: integer
+        moNumber:
+          type: string
+        stageName:
+          type: string
+        stageOrder:
+          type: integer
+        qtyTarget:
+          type: number
+        qtyDone:
+          type: number
+        status:
+          type: string
+      required:
+        - metalOrderId
+        - moNumber
+        - stageName
+        - stageOrder
+
+    CreateWoodenStageBody:
+      type: object
+      properties:
+        woodenOrderId:
+          type: integer
+        stageName:
+          type: string
+        stageOrder:
+          type: integer
+        qtyDone:
+          type: number
+        status:
+          type: string
+      required:
+        - woodenOrderId
         - stageName
         - stageOrder
 

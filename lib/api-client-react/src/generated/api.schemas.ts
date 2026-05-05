@@ -128,6 +128,24 @@ export interface CreateWoodenOrderBody {
   prodDateFinished?: string;
 }
 
+export interface CreateMetalStageBody {
+  metalOrderId: number;
+  moNumber: string;
+  stageName: string;
+  stageOrder: number;
+  qtyTarget?: number;
+  qtyDone?: number;
+  status?: string;
+}
+
+export interface CreateWoodenStageBody {
+  woodenOrderId: number;
+  stageName: string;
+  stageOrder: number;
+  qtyDone?: number;
+  status?: string;
+}
+
 export interface UpdateWoodenStageBody {
   qtyDone?: number;
   status?: string;

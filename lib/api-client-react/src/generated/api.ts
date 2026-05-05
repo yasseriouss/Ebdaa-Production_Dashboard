@@ -20,7 +20,9 @@ import type {
   ClientStat,
   CompletionTrendPoint,
   CreateMetalOrderBody,
+  CreateMetalStageBody,
   CreateWoodenOrderBody,
+  CreateWoodenStageBody,
   DashboardStats,
   ExportMetalOrdersParams,
   ExportWoodenOrdersParams,
@@ -662,6 +664,92 @@ export function useListMetalStages<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Create a new metal production stage record
+ */
+export const getCreateMetalStageUrl = () => {
+  return `/api/metal/stages`;
+};
+
+export const createMetalStage = async (
+  createMetalStageBody: CreateMetalStageBody,
+  options?: RequestInit,
+): Promise<MetalProductionStage> => {
+  return customFetch<MetalProductionStage>(getCreateMetalStageUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createMetalStageBody),
+  });
+};
+
+export const getCreateMetalStageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMetalStage>>,
+    TError,
+    { data: BodyType<CreateMetalStageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createMetalStage>>,
+  TError,
+  { data: BodyType<CreateMetalStageBody> },
+  TContext
+> => {
+  const mutationKey = ["createMetalStage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createMetalStage>>,
+    { data: BodyType<CreateMetalStageBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createMetalStage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateMetalStageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createMetalStage>>
+>;
+export type CreateMetalStageMutationBody = BodyType<CreateMetalStageBody>;
+export type CreateMetalStageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new metal production stage record
+ */
+export const useCreateMetalStage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createMetalStage>>,
+    TError,
+    { data: BodyType<CreateMetalStageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createMetalStage>>,
+  TError,
+  { data: BodyType<CreateMetalStageBody> },
+  TContext
+> => {
+  return useMutation(getCreateMetalStageMutationOptions(options));
+};
 
 /**
  * @summary Get a single metal production stage record
@@ -1533,6 +1621,92 @@ export function useListWoodenStages<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary Create a new wooden production stage record
+ */
+export const getCreateWoodenStageUrl = () => {
+  return `/api/wooden/stages`;
+};
+
+export const createWoodenStage = async (
+  createWoodenStageBody: CreateWoodenStageBody,
+  options?: RequestInit,
+): Promise<WoodenProductionStage> => {
+  return customFetch<WoodenProductionStage>(getCreateWoodenStageUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createWoodenStageBody),
+  });
+};
+
+export const getCreateWoodenStageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWoodenStage>>,
+    TError,
+    { data: BodyType<CreateWoodenStageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createWoodenStage>>,
+  TError,
+  { data: BodyType<CreateWoodenStageBody> },
+  TContext
+> => {
+  const mutationKey = ["createWoodenStage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createWoodenStage>>,
+    { data: BodyType<CreateWoodenStageBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createWoodenStage(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateWoodenStageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createWoodenStage>>
+>;
+export type CreateWoodenStageMutationBody = BodyType<CreateWoodenStageBody>;
+export type CreateWoodenStageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create a new wooden production stage record
+ */
+export const useCreateWoodenStage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createWoodenStage>>,
+    TError,
+    { data: BodyType<CreateWoodenStageBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createWoodenStage>>,
+  TError,
+  { data: BodyType<CreateWoodenStageBody> },
+  TContext
+> => {
+  return useMutation(getCreateWoodenStageMutationOptions(options));
+};
 
 /**
  * @summary Get a single wooden production stage record

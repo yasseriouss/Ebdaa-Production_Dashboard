@@ -11,6 +11,7 @@ import {
   UpdateMetalOrderBody,
   ListMetalStagesQueryParams,
   UpdateMetalStageBody,
+  CreateMetalStageBody,
 } from "@workspace/api-zod";
 
 const router = Router();
@@ -35,11 +36,11 @@ const METAL_STAGES = [
   { name: "التسليم", order: 17 },
 ];
 
+// List metal work orders
 router.get("/orders", async (req, res) => {
   try {
     const query = ListMetalOrdersQueryParams.parse(req.query);
     let orders = await db.select().from(metalWorkOrdersTable).orderBy(metalWorkOrdersTable.id);
-
     if (query.status) orders = orders.filter(o => o.status === query.status);
     if (query.client) orders = orders.filter(o => o.client?.toLowerCase().includes(query.client!.toLowerCase()));
     if (query.search) {
@@ -57,6 +58,7 @@ router.get("/orders", async (req, res) => {
   }
 });
 
+// Create metal work order
 router.post("/orders", async (req, res) => {
   try {
     const body = CreateMetalOrderBody.parse(req.body);
@@ -75,28 +77,29 @@ router.post("/orders", async (req, res) => {
       status: body.status,
     }).returning();
 
-    const stagesToInsert = METAL_STAGES.map(s => ({
-      metalOrderId: order.id,
-      moNumber: order.moNumber,
-      stageName: s.name,
-      stageOrder: s.order,
-      qtyTarget: order.qty,
-      qtyDone: "0",
-      status: "لم يتم البدء",
-    }));
-    await db.insert(metalProductionStagesTable).values(stagesToInsert);
+    await db.insert(metalProductionStagesTable).values(
+      METAL_STAGES.map(s => ({
+        metalOrderId: order.id,
+        moNumber: order.moNumber,
+        stageName: s.name,
+        stageOrder: s.order,
+        qtyTarget: order.qty,
+        qtyDone: "0",
+        status: "لم يتم البدء",
+      }))
+    );
     res.status(201).json(order);
-  } catch (err) {
-    console.error(err);
+  } catch {
     res.status(500).json({ error: "Failed to create metal order" });
   }
 });
 
+// Get single metal order with stages
 router.get("/orders/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const [order] = await db.select().from(metalWorkOrdersTable).where(eq(metalWorkOrdersTable.id, id));
-    if (!order) return res.status(404).json({ error: "Not found" });
+    if (!order) { res.status(404).json({ error: "Not found" }); return; }
     const stages = await db.select().from(metalProductionStagesTable)
       .where(eq(metalProductionStagesTable.metalOrderId, id))
       .orderBy(metalProductionStagesTable.stageOrder);
@@ -106,11 +109,17 @@ router.get("/orders/:id", async (req, res) => {
   }
 });
 
+// Update metal work order
 router.put("/orders/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const body = UpdateMetalOrderBody.parse(req.body);
-    const up: Record<string, unknown> = { updatedAt: new Date() };
+    const up: {
+      moNumber?: string; project?: string; client?: string; product?: string; qty?: string;
+      unit?: string; deliveredQty?: string; completionPct?: string; backlogQty?: string;
+      backlogStatus?: string; notes?: string; status?: string; updatedAt: Date;
+    } = { updatedAt: new Date() };
+
     if (body.moNumber !== undefined) up.moNumber = body.moNumber;
     if (body.project !== undefined) up.project = body.project;
     if (body.client !== undefined) up.client = body.client;
@@ -124,18 +133,15 @@ router.put("/orders/:id", async (req, res) => {
     if (body.notes !== undefined) up.notes = body.notes;
     if (body.status !== undefined) up.status = body.status;
 
-    const [order] = await db.update(metalWorkOrdersTable)
-      .set(up)
-      .where(eq(metalWorkOrdersTable.id, id))
-      .returning();
-    if (!order) return res.status(404).json({ error: "Not found" });
+    const [order] = await db.update(metalWorkOrdersTable).set(up).where(eq(metalWorkOrdersTable.id, id)).returning();
+    if (!order) { res.status(404).json({ error: "Not found" }); return; }
     res.json(order);
-  } catch (err) {
-    console.error(err);
+  } catch {
     res.status(500).json({ error: "Failed to update metal order" });
   }
 });
 
+// Delete metal work order
 router.delete("/orders/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -146,6 +152,7 @@ router.delete("/orders/:id", async (req, res) => {
   }
 });
 
+// Stage bottleneck summary
 router.get("/stages/summary", async (_req, res) => {
   try {
     const stages = await db.select().from(metalProductionStagesTable);
@@ -167,6 +174,7 @@ router.get("/stages/summary", async (_req, res) => {
   }
 });
 
+// List metal stages
 router.get("/stages", async (req, res) => {
   try {
     const query = ListMetalStagesQueryParams.parse(req.query);
@@ -180,32 +188,54 @@ router.get("/stages", async (req, res) => {
   }
 });
 
+// Create metal stage (manual)
+router.post("/stages", async (req, res) => {
+  try {
+    const body = CreateMetalStageBody.parse(req.body);
+    const [stage] = await db.insert(metalProductionStagesTable).values({
+      metalOrderId: body.metalOrderId,
+      moNumber: body.moNumber,
+      stageName: body.stageName,
+      stageOrder: body.stageOrder,
+      qtyTarget: body.qtyTarget !== undefined ? String(body.qtyTarget) : "0",
+      qtyDone: body.qtyDone !== undefined ? String(body.qtyDone) : "0",
+      status: body.status ?? "لم يتم البدء",
+    }).returning();
+    res.status(201).json(stage);
+  } catch {
+    res.status(500).json({ error: "Failed to create metal stage" });
+  }
+});
+
+// Get single metal stage
 router.get("/stages/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const [stage] = await db.select().from(metalProductionStagesTable).where(eq(metalProductionStagesTable.id, id));
-    if (!stage) return res.status(404).json({ error: "Not found" });
+    if (!stage) { res.status(404).json({ error: "Not found" }); return; }
     res.json(stage);
   } catch {
     res.status(500).json({ error: "Failed to fetch metal stage" });
   }
 });
 
+// Update metal stage
 router.put("/stages/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const body = UpdateMetalStageBody.parse(req.body);
-    const up: Record<string, unknown> = { updatedAt: new Date() };
+    const up: { qtyDone?: string; status?: string; updatedAt: Date } = { updatedAt: new Date() };
     if (body.qtyDone !== undefined) up.qtyDone = String(body.qtyDone);
     if (body.status !== undefined) up.status = body.status;
     const [stage] = await db.update(metalProductionStagesTable).set(up).where(eq(metalProductionStagesTable.id, id)).returning();
-    if (!stage) return res.status(404).json({ error: "Not found" });
+    if (!stage) { res.status(404).json({ error: "Not found" }); return; }
     res.json(stage);
   } catch {
     res.status(500).json({ error: "Failed to update metal stage" });
   }
 });
 
+// Delete metal stage
 router.delete("/stages/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);

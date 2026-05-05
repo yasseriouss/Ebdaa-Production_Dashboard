@@ -174,6 +174,19 @@ export const ListMetalStagesResponseItem = zod.object({
 export const ListMetalStagesResponse = zod.array(ListMetalStagesResponseItem);
 
 /**
+ * @summary Create a new metal production stage record
+ */
+export const CreateMetalStageBody = zod.object({
+  metalOrderId: zod.number(),
+  moNumber: zod.string(),
+  stageName: zod.string(),
+  stageOrder: zod.number(),
+  qtyTarget: zod.number().optional(),
+  qtyDone: zod.number().optional(),
+  status: zod.string().optional(),
+});
+
+/**
  * @summary Get a single metal production stage record
  */
 export const GetMetalStageParams = zod.object({
@@ -415,6 +428,17 @@ export const ListWoodenStagesResponseItem = zod.object({
   updatedAt: zod.string().optional(),
 });
 export const ListWoodenStagesResponse = zod.array(ListWoodenStagesResponseItem);
+
+/**
+ * @summary Create a new wooden production stage record
+ */
+export const CreateWoodenStageBody = zod.object({
+  woodenOrderId: zod.number(),
+  stageName: zod.string(),
+  stageOrder: zod.number(),
+  qtyDone: zod.number().optional(),
+  status: zod.string().optional(),
+});
 
 /**
  * @summary Get a single wooden production stage record
