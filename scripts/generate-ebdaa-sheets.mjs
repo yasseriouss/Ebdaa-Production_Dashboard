@@ -90,9 +90,11 @@ for (let r = 2; r <= 101; r++) {
   const sumRange = `G${sheetRow}:W${sheetRow}`;
   const delRef   = `W${sheetRow}`; // التسليم (last stage = delivery)
 
-  // Completion % = SUM(stages) / qty * 100, blank if qty=0
+  // Completion % = delivered qty (التسليم, col W) / total qty * 100
+  // Matches Apps Script recalculateMetalRow_() which also uses delivered/qty
+  // Col W = التسليم (last/17th stage = delivery)
   wsM[cell(r, M_COMP)] = {
-    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",ROUND(SUM(${sumRange})/${qtyRef}*100,1)))`,
+    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",ROUND(${delRef}/${qtyRef}*100,1)))`,
     t: "n",
   };
   // Backlog qty = qty - delivered, blank if qty=0
@@ -247,8 +249,9 @@ const kpiRows = [
   [
     "المشاريع المشتركة (عملاء في كلا المصنعين)\nShared Projects Count",
     "sharedProjectsCount",
-    // Count metal orders whose client also exists in wooden — mirrors dashboard.ts sharedClients.size
-    { f: `SUMPRODUCT(--(COUNTIF(${WO}!F3:F10000,${MO}!C3:C10000)>0),--(LEN(TRIM(${MO}!C3:C10000))>0))` },
+    // Count UNIQUE clients appearing in BOTH Metal (col C) and Wooden (col F) — mirrors dashboard.ts sharedClients.size
+    // ROWS(UNIQUE(FILTER(...))) counts distinct intersecting clients
+    { f: `IFERROR(ROWS(UNIQUE(FILTER(${MO}!C3:C10000,COUNTIF(${WO}!F3:F10000,${MO}!C3:C10000)>0,${MO}!C3:C10000<>""))),0)` },
     { f: `""` },
     { f: "B11" },
   ],
@@ -272,10 +275,12 @@ XLSX.utils.book_append_sheet(wb, wsDash, "لوحة التحكم");
 
 // ══════════════════════════════════════════════════════════════════════════
 //  4. SHARED PROJECTS — مشاريع مشتركة
-//  Auto-populated via FILTER+COUNTIF cross-sheet formula (Google Sheets)
+//  Auto-populated via QUERY formula from both sheets (Google Sheets).
+//  Shows clients who appear in BOTH Metal (col C) AND Wooden (col F).
+//  Formula pattern: QUERY(UNIQUE(FILTER(MetalClients, COUNTIF(WoodenClients)>0)), "SELECT *...")
 // ══════════════════════════════════════════════════════════════════════════
 const sharedHdr = [
-  "العميل (auto)\nclient",
+  "العميل (QUERY تلقائي)\nclient",
   "عدد أوامر معدني\nmetal_order_count",
   "عدد أوامر خشبي\nwooden_order_count",
   "إجمالي\ntotal_orders",
@@ -284,22 +289,26 @@ const sharedHdr = [
   "ملاحظات\nnotes",
 ];
 
-// Row 2 (r=1): FILTER spill formula auto-populates shared clients list
-// This formula works in Google Sheets (spill array) — shows clients in BOTH factories
+// A2: QUERY-based formula — uses QUERY to select unique shared clients.
+// Mirrors dashboard.ts sharedClients = metalClients ∩ woodenClients (unique set).
+// Works in Google Sheets only (QUERY + FILTER + UNIQUE are Sheets functions).
 const SHARED_CLIENTS_FORMULA =
-  `IFERROR(FILTER(UNIQUE(FILTER(${MO}!C3:C10000,${MO}!C3:C10000<>"")),` +
-  `COUNTIF(${WO}!F3:F10000,UNIQUE(FILTER(${MO}!C3:C10000,${MO}!C3:C10000<>"")))>0),` +
-  `"لا توجد مشاريع مشتركة — No shared projects")`;
+  `IFERROR(` +
+    `QUERY(` +
+      `UNIQUE(FILTER(${MO}!C3:C10000,COUNTIF(${WO}!F3:F10000,${MO}!C3:C10000)>0,${MO}!C3:C10000<>""))` +
+      `,"SELECT * WHERE Col1 <> '' ORDER BY Col1",0),` +
+    `"لا توجد مشاريع مشتركة — No shared projects")`;
 
 const sharedAOA = [sharedHdr];
 const wsShared = XLSX.utils.aoa_to_sheet(sharedAOA);
 
-// Inject the spill formula into A2 (r=1, c=0)
+// A2 (r=1): QUERY spill formula auto-populates client list
 wsShared[cell(1, 0)] = { f: SHARED_CLIENTS_FORMULA, t: "s" };
 
-// For rows 2..51 (relative, formula fills down): metal count, wooden count, total, completion
-for (let r = 2; r <= 51; r++) {
-  const sRow = r + 1;
+// Metric columns B..F: start at r=1 (sheet row 2 = A2 first client) through r=50
+// This ensures the first shared-client row (A2) gets its computed metrics.
+for (let r = 1; r <= 50; r++) {
+  const sRow = r + 1; // 1-based sheet row: r=1 → row 2, r=2 → row 3 …
   const aRef = `A${sRow}`;
   wsShared[cell(r, 1)] = { f: `IF(${aRef}="","",COUNTIF(${MO}!C:C,${aRef}))`, t: "n" };
   wsShared[cell(r, 2)] = { f: `IF(${aRef}="","",COUNTIF(${WO}!F:F,${aRef}))`, t: "n" };
@@ -309,9 +318,9 @@ for (let r = 2; r <= 51; r++) {
 }
 
 wsShared["!cols"] = [
-  { wch: 22 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 25 },
+  { wch: 24 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 25 },
 ];
-wsShared["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 51, c: 6 } });
+wsShared["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 50, c: 6 } });
 XLSX.utils.book_append_sheet(wb, wsShared, "مشاريع مشتركة");
 
 // ══════════════════════════════════════════════════════════════════════════
