@@ -168,6 +168,25 @@ paths:
                   $ref: "#/components/schemas/MetalProductionStage"
 
   /metal/stages/{id}:
+    get:
+      operationId: getMetalStage
+      tags: [metal-stages]
+      summary: Get a single metal production stage record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Metal production stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetalProductionStage"
+        "404":
+          description: Not found
     put:
       operationId: updateMetalStage
       tags: [metal-stages]
@@ -191,6 +210,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/MetalProductionStage"
+    delete:
+      operationId: deleteMetalStage
+      tags: [metal-stages]
+      summary: Delete a metal production stage record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   /metal/stages/summary:
     get:
@@ -332,6 +364,25 @@ paths:
                   $ref: "#/components/schemas/WoodenProductionStage"
 
   /wooden/stages/{id}:
+    get:
+      operationId: getWoodenStage
+      tags: [wooden-stages]
+      summary: Get a single wooden production stage record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Wooden production stage
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WoodenProductionStage"
+        "404":
+          description: Not found
     put:
       operationId: updateWoodenStage
       tags: [wooden-stages]
@@ -355,6 +406,19 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/WoodenProductionStage"
+    delete:
+      operationId: deleteWoodenStage
+      tags: [wooden-stages]
+      summary: Delete a wooden production stage record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
 
   # ---- Shared Projects ----
   /shared-projects:

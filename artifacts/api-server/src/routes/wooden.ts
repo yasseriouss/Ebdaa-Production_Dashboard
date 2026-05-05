@@ -151,6 +151,18 @@ router.get("/stages", async (req, res) => {
   }
 });
 
+// Get single wooden stage
+router.get("/stages/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [stage] = await db.select().from(woodenProductionStagesTable).where(eq(woodenProductionStagesTable.id, id));
+    if (!stage) return res.status(404).json({ error: "Not found" });
+    res.json(stage);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch wooden stage" });
+  }
+});
+
 // Update wooden stage
 router.put("/stages/:id", async (req, res) => {
   try {
@@ -168,6 +180,17 @@ router.put("/stages/:id", async (req, res) => {
     res.json(stage);
   } catch (err) {
     res.status(500).json({ error: "Failed to update wooden stage" });
+  }
+});
+
+// Delete wooden stage
+router.delete("/stages/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(woodenProductionStagesTable).where(eq(woodenProductionStagesTable.id, id));
+    res.status(204).send();
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete wooden stage" });
   }
 });
 

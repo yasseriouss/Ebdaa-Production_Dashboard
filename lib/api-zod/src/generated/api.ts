@@ -174,6 +174,25 @@ export const ListMetalStagesResponseItem = zod.object({
 export const ListMetalStagesResponse = zod.array(ListMetalStagesResponseItem);
 
 /**
+ * @summary Get a single metal production stage record
+ */
+export const GetMetalStageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetMetalStageResponse = zod.object({
+  id: zod.number(),
+  metalOrderId: zod.number().optional(),
+  moNumber: zod.string().optional(),
+  stageName: zod.string(),
+  stageOrder: zod.number(),
+  qtyTarget: zod.number().optional(),
+  qtyDone: zod.number().optional(),
+  status: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
  * @summary Update a metal production stage record
  */
 export const UpdateMetalStageParams = zod.object({
@@ -195,6 +214,13 @@ export const UpdateMetalStageResponse = zod.object({
   qtyDone: zod.number().optional(),
   status: zod.string().optional(),
   updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Delete a metal production stage record
+ */
+export const DeleteMetalStageParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**
@@ -391,6 +417,23 @@ export const ListWoodenStagesResponseItem = zod.object({
 export const ListWoodenStagesResponse = zod.array(ListWoodenStagesResponseItem);
 
 /**
+ * @summary Get a single wooden production stage record
+ */
+export const GetWoodenStageParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetWoodenStageResponse = zod.object({
+  id: zod.number(),
+  woodenOrderId: zod.number().optional(),
+  stageName: zod.string(),
+  stageOrder: zod.number(),
+  qtyDone: zod.number().optional(),
+  status: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
  * @summary Update a wooden production stage record
  */
 export const UpdateWoodenStageParams = zod.object({
@@ -410,6 +453,13 @@ export const UpdateWoodenStageResponse = zod.object({
   qtyDone: zod.number().optional(),
   status: zod.string().optional(),
   updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Delete a wooden production stage record
+ */
+export const DeleteWoodenStageParams = zod.object({
+  id: zod.coerce.number(),
 });
 
 /**

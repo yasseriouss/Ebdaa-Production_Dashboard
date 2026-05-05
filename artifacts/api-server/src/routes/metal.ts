@@ -180,6 +180,17 @@ router.get("/stages", async (req, res) => {
   }
 });
 
+router.get("/stages/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const [stage] = await db.select().from(metalProductionStagesTable).where(eq(metalProductionStagesTable.id, id));
+    if (!stage) return res.status(404).json({ error: "Not found" });
+    res.json(stage);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch metal stage" });
+  }
+});
+
 router.put("/stages/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
@@ -192,6 +203,16 @@ router.put("/stages/:id", async (req, res) => {
     res.json(stage);
   } catch {
     res.status(500).json({ error: "Failed to update metal stage" });
+  }
+});
+
+router.delete("/stages/:id", async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    await db.delete(metalProductionStagesTable).where(eq(metalProductionStagesTable.id, id));
+    res.status(204).send();
+  } catch {
+    res.status(500).json({ error: "Failed to delete metal stage" });
   }
 });
 

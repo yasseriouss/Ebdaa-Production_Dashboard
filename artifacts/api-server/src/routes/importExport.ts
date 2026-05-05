@@ -1,6 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
+import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
 import { db } from "@workspace/db";
 import {
   metalWorkOrdersTable,
@@ -8,6 +9,7 @@ import {
   woodenWorkOrdersTable,
   woodenProductionStagesTable,
 } from "@workspace/db";
+import { eq } from "drizzle-orm";
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -55,7 +57,7 @@ function safeNum(val: unknown): string {
   return isNaN(n) ? "0" : String(n);
 }
 
-// Import metal orders
+// ---- IMPORT: Metal work orders ----
 router.post("/metal-orders", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
@@ -65,11 +67,9 @@ router.post("/metal-orders", upload.single("file"), async (req, res) => {
     const ws = wb.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
 
-    let rowsImported = 0;
-    let rowsSkipped = 0;
+    let rowsImported = 0, rowsSkipped = 0;
     const errors: string[] = [];
 
-    // Find header row (look for "MO" or similar)
     let headerRow = -1;
     for (let i = 0; i < Math.min(10, data.length); i++) {
       const row = data[i] as unknown[];
@@ -107,16 +107,17 @@ router.post("/metal-orders", upload.single("file"), async (req, res) => {
         }).onConflictDoNothing().returning();
 
         if (order) {
-          const stagesToInsert = METAL_STAGES.map(s => ({
-            metalOrderId: order.id,
-            moNumber: order.moNumber,
-            stageName: s.name,
-            stageOrder: s.order,
-            qtyTarget: order.qty,
-            qtyDone: "0",
-            status: "لم يتم البدء",
-          }));
-          await db.insert(metalProductionStagesTable).values(stagesToInsert).onConflictDoNothing();
+          await db.insert(metalProductionStagesTable).values(
+            METAL_STAGES.map(s => ({
+              metalOrderId: order.id,
+              moNumber: order.moNumber,
+              stageName: s.name,
+              stageOrder: s.order,
+              qtyTarget: order.qty,
+              qtyDone: "0",
+              status: "لم يتم البدء",
+            }))
+          ).onConflictDoNothing();
           rowsImported++;
         } else {
           rowsSkipped++;
@@ -133,17 +134,15 @@ router.post("/metal-orders", upload.single("file"), async (req, res) => {
   }
 });
 
-// Import metal daily production
+// ---- IMPORT: Metal daily production (17 sheets = 17 stages) ----
 router.post("/metal-daily", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
   try {
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
-    let rowsImported = 0;
-    let rowsSkipped = 0;
+    let rowsImported = 0, rowsSkipped = 0;
     const errors: string[] = [];
 
-    // Each sheet is a production stage
     for (const sheetName of wb.SheetNames) {
       if (sheetName.startsWith("_xlnm") || sheetName === "Sheet1") continue;
 
@@ -158,26 +157,34 @@ router.post("/metal-daily", upload.single("file"), async (req, res) => {
         const qtyDone = safeNum(row[1]);
         const statusRaw = safeStr(row[row.length - 1]);
 
-        // Find the stage in the database
-        const stageOrder = METAL_STAGES.findIndex(s => s.name === sheetName) + 1 || 1;
-
         try {
-          // Find orders with this MO number
-          const orders = await db.select().from(metalWorkOrdersTable);
-          const order = orders.find(o => o.moNumber === moNum);
+          // Find the specific order
+          const [order] = await db
+            .select()
+            .from(metalWorkOrdersTable)
+            .where(eq(metalWorkOrdersTable.moNumber, moNum));
 
-          if (order) {
-            const stages = await db.select().from(metalProductionStagesTable);
-            const stage = stages.find(s => s.metalOrderId === order.id && s.stageName === sheetName);
+          if (!order) { rowsSkipped++; continue; }
 
-            if (stage) {
-              await db.update(metalProductionStagesTable)
-                .set({ qtyDone, status: statusRaw || "تحت التصنيع", updatedAt: new Date() })
-                .where(stage.id === stage.id ? (r => true) : (r => false));
-              rowsImported++;
-            } else {
-              rowsSkipped++;
-            }
+          // Find the specific stage for this order + sheet name
+          const [stage] = await db
+            .select()
+            .from(metalProductionStagesTable)
+            .where(eq(metalProductionStagesTable.metalOrderId, order.id));
+
+          const matchedStage = stage
+            ? (await db.select().from(metalProductionStagesTable)
+                .where(eq(metalProductionStagesTable.metalOrderId, order.id)))
+                .find(s => s.stageName === sheetName)
+            : null;
+
+          if (matchedStage) {
+            // Fix: use eq() predicate to target only the correct stage row
+            await db
+              .update(metalProductionStagesTable)
+              .set({ qtyDone, status: statusRaw || "تحت التصنيع", updatedAt: new Date() })
+              .where(eq(metalProductionStagesTable.id, matchedStage.id));
+            rowsImported++;
           } else {
             rowsSkipped++;
           }
@@ -194,22 +201,19 @@ router.post("/metal-daily", upload.single("file"), async (req, res) => {
   }
 });
 
-// Import wooden orders
+// ---- IMPORT: Wooden work orders ----
 router.post("/wooden-orders", upload.single("file"), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
   try {
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
-    // Try Sheet1 first, then first sheet
     const sheetName = wb.SheetNames.find(s => s === "Sheet1") || wb.SheetNames[0];
     const ws = wb.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
 
-    let rowsImported = 0;
-    let rowsSkipped = 0;
+    let rowsImported = 0, rowsSkipped = 0;
     const errors: string[] = [];
 
-    // Find header row
     let headerRow = -1;
     for (let i = 0; i < Math.min(10, data.length); i++) {
       const row = data[i] as unknown[];
@@ -261,14 +265,15 @@ router.post("/wooden-orders", upload.single("file"), async (req, res) => {
         }).onConflictDoNothing().returning();
 
         if (order) {
-          const stagesToInsert = WOODEN_STAGES.map(s => ({
-            woodenOrderId: order.id,
-            stageName: s.name,
-            stageOrder: s.order,
-            qtyDone: "0",
-            status: "لم يتم البدء",
-          }));
-          await db.insert(woodenProductionStagesTable).values(stagesToInsert).onConflictDoNothing();
+          await db.insert(woodenProductionStagesTable).values(
+            WOODEN_STAGES.map(s => ({
+              woodenOrderId: order.id,
+              stageName: s.name,
+              stageOrder: s.order,
+              qtyDone: "0",
+              status: "لم يتم البدء",
+            }))
+          ).onConflictDoNothing();
           rowsImported++;
         } else {
           rowsSkipped++;
@@ -285,7 +290,115 @@ router.post("/wooden-orders", upload.single("file"), async (req, res) => {
   }
 });
 
-// Export metal orders as XLSX
+// Map Arabic status values to English for PDF (WinAnsi doesn't support Arabic)
+const STATUS_MAP: Record<string, string> = {
+  "تم الانتهاء": "Completed",
+  "تحت التصنيع": "In Production",
+  "لم يتم البدء": "Not Started",
+  "متأخر": "Delayed",
+  "Production": "Production",
+  "Done": "Done",
+  "Pending": "Pending",
+};
+
+function pdfSafeText(val: string): string {
+  // Replace Arabic status values, then strip remaining non-ASCII chars
+  const mapped = STATUS_MAP[val.trim()] ?? val;
+  // Keep printable ASCII only
+  return mapped.replace(/[^\x20-\x7E]/g, "?").substring(0, 25);
+}
+
+// ---- Helper: Generate PDF buffer using pdf-lib ----
+async function buildPdf(title: string, headers: string[], rows: string[][]): Promise<Uint8Array> {
+  const pdfDoc = await PDFDocument.create();
+  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+  const pageWidth = 841.89; // A4 landscape width
+  const pageHeight = 595.28; // A4 landscape height
+  const margin = 40;
+  const lineHeight = 18;
+  const colWidth = Math.floor((pageWidth - margin * 2) / headers.length);
+
+  let page = pdfDoc.addPage([pageWidth, pageHeight]);
+  let y = pageHeight - margin;
+
+  // Title (title is already in English)
+  page.drawText(pdfSafeText(title), {
+    x: margin,
+    y,
+    size: 14,
+    font: boldFont,
+    color: rgb(0, 0, 0),
+  });
+  y -= 24;
+
+  // Date
+  page.drawText(`Generated: ${new Date().toLocaleDateString("en-GB")}`, {
+    x: margin,
+    y,
+    size: 9,
+    font,
+    color: rgb(0.4, 0.4, 0.4),
+  });
+  y -= 20;
+
+  // Header row background
+  page.drawRectangle({
+    x: margin,
+    y: y - 4,
+    width: pageWidth - margin * 2,
+    height: lineHeight,
+    color: rgb(0.15, 0.15, 0.15),
+  });
+
+  // Header cells
+  headers.forEach((h, i) => {
+    page.drawText(h.substring(0, 12), {
+      x: margin + i * colWidth + 4,
+      y: y,
+      size: 8,
+      font: boldFont,
+      color: rgb(1, 0.8, 0),
+    });
+  });
+  y -= lineHeight + 4;
+
+  // Data rows
+  for (const [rowIdx, row] of rows.entries()) {
+    if (y < margin + lineHeight) {
+      page = pdfDoc.addPage([pageWidth, pageHeight]);
+      y = pageHeight - margin;
+    }
+
+    // Alternating row background
+    if (rowIdx % 2 === 0) {
+      page.drawRectangle({
+        x: margin,
+        y: y - 4,
+        width: pageWidth - margin * 2,
+        height: lineHeight,
+        color: rgb(0.95, 0.95, 0.95),
+      });
+    }
+
+    row.forEach((cell, i) => {
+      const text = pdfSafeText(cell || "-");
+      page.drawText(text, {
+        x: margin + i * colWidth + 4,
+        y: y,
+        size: 7,
+        font,
+        color: rgb(0.1, 0.1, 0.1),
+      });
+    });
+    y -= lineHeight;
+  }
+
+  return pdfDoc.save();
+}
+
+// ---- EXPORT: Metal orders ----
 router.get("/metal-orders", async (req, res) => {
   try {
     const format = String(req.query.format || "xlsx");
@@ -293,33 +406,32 @@ router.get("/metal-orders", async (req, res) => {
 
     if (format === "xlsx") {
       const wsData = [
-        ["رقم MO", "المشروع", "العميل", "المنتج", "الكمية", "الوحدة", "المُسلَّم", "نسبة الإنجاز%", "المتأخرات", "حالة المتأخرات", "ملاحظات", "الحالة"],
-        ...orders.map(o => [o.moNumber, o.project, o.client, o.product, o.qty, o.unit, o.deliveredQty, o.completionPct, o.backlogQty, o.backlogStatus, o.notes, o.status]),
+        ["رقم MO", "المشروع", "العميل", "المنتج", "الكمية", "الوحدة", "المُسلَّم", "نسبة الإنجاز%", "المتأخرات", "الحالة"],
+        ...orders.map(o => [o.moNumber, o.project || "", o.client || "", o.product, o.qty, o.unit || "", o.deliveredQty || "0", o.completionPct || "0", o.backlogQty || "0", o.status || ""]),
       ];
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(wb, ws, "أوامر المصنع المعدني");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "Metal Orders");
       const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", `attachment; filename="metal-orders.xlsx"`);
-      res.send(buf);
-    } else {
-      // PDF: simple HTML-based approach using text
-      const rows = orders.map(o =>
-        `${o.moNumber} | ${o.client || ""} | ${o.product} | الكمية: ${o.qty} | ${o.status || ""}`
-      ).join("\n");
-      const content = `أوامر المصنع المعدني - إبداع للأثاث\n${"=".repeat(60)}\n\n${rows}`;
-      res.setHeader("Content-Type", "text/plain; charset=utf-8");
-      res.setHeader("Content-Disposition", `attachment; filename="metal-orders.txt"`);
-      res.send(content);
+      return res.send(buf);
     }
+
+    // PDF export
+    const pdfBytes = await buildPdf(
+      "Ebdaa Factory Management - Metal Work Orders",
+      ["MO#", "Client", "Product", "Qty", "Delivered", "Completion%", "Status"],
+      orders.map(o => [o.moNumber, o.client || "", o.product, o.qty, o.deliveredQty || "0", `${o.completionPct || 0}%`, o.status || ""])
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="metal-orders.pdf"`);
+    res.send(Buffer.from(pdfBytes));
   } catch (err) {
     res.status(500).json({ error: "Export failed" });
   }
 });
 
-// Export wooden orders as XLSX
+// ---- EXPORT: Wooden orders ----
 router.get("/wooden-orders", async (req, res) => {
   try {
     const format = String(req.query.format || "xlsx");
@@ -327,26 +439,26 @@ router.get("/wooden-orders", async (req, res) => {
 
     if (format === "xlsx") {
       const wsData = [
-        ["رقم الأمر", "المبنى", "التاريخ", "طلب التصنيع", "SAP Code", "العميل", "المشروع الفرعي", "المنتج", "الفئة", "الوحدة", "الكمية", "المنجز", "المتبقي", "الحالة"],
-        ...orders.map(o => [o.orderNo, o.extension, o.orderDate, o.manufactureRequest, o.sapCode, o.client, o.subProject, o.product, o.category, o.uom, o.qty, o.done, o.rem, o.status]),
+        ["Order No", "Extension", "Client", "Sub-Project", "Product", "Category", "Qty", "Done", "Rem", "Status"],
+        ...orders.map(o => [o.orderNo, o.extension || "", o.client || "", o.subProject || "", o.product, o.category || "", o.qty, o.done || "0", o.rem || "0", o.status || ""]),
       ];
       const wb = XLSX.utils.book_new();
-      const ws = XLSX.utils.aoa_to_sheet(wsData);
-      XLSX.utils.book_append_sheet(wb, ws, "أوامر المصنع الخشبي");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "Wooden Orders");
       const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", `attachment; filename="wooden-orders.xlsx"`);
-      res.send(buf);
-    } else {
-      const rows = orders.map(o =>
-        `${o.orderNo} | ${o.client || ""} | ${o.product} | الكمية: ${o.qty} | ${o.status || ""}`
-      ).join("\n");
-      const content = `أوامر المصنع الخشبي - إبداع للأثاث\n${"=".repeat(60)}\n\n${rows}`;
-      res.setHeader("Content-Type", "text/plain; charset=utf-8");
-      res.setHeader("Content-Disposition", `attachment; filename="wooden-orders.txt"`);
-      res.send(content);
+      return res.send(buf);
     }
+
+    // PDF export
+    const pdfBytes = await buildPdf(
+      "Ebdaa Factory Management - Wooden Work Orders",
+      ["Order No", "Client", "Product", "Qty", "Done", "Rem", "Status"],
+      orders.map(o => [o.orderNo, o.client || "", o.product, o.qty, o.done || "0", o.rem || "0", o.status || ""])
+    );
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="wooden-orders.pdf"`);
+    res.send(Buffer.from(pdfBytes));
   } catch (err) {
     res.status(500).json({ error: "Export failed" });
   }

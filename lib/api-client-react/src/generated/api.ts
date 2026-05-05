@@ -664,6 +664,93 @@ export function useListMetalStages<
 }
 
 /**
+ * @summary Get a single metal production stage record
+ */
+export const getGetMetalStageUrl = (id: number) => {
+  return `/api/metal/stages/${id}`;
+};
+
+export const getMetalStage = async (
+  id: number,
+  options?: RequestInit,
+): Promise<MetalProductionStage> => {
+  return customFetch<MetalProductionStage>(getGetMetalStageUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetMetalStageQueryKey = (id: number) => {
+  return [`/api/metal/stages/${id}`] as const;
+};
+
+export const getGetMetalStageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getMetalStage>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMetalStage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetMetalStageQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getMetalStage>>> = ({
+    signal,
+  }) => getMetalStage(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getMetalStage>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetMetalStageQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getMetalStage>>
+>;
+export type GetMetalStageQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single metal production stage record
+ */
+
+export function useGetMetalStage<
+  TData = Awaited<ReturnType<typeof getMetalStage>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getMetalStage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetMetalStageQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Update a metal production stage record
  */
 export const getUpdateMetalStageUrl = (id: number) => {
@@ -748,6 +835,90 @@ export const useUpdateMetalStage = <
   TContext
 > => {
   return useMutation(getUpdateMetalStageMutationOptions(options));
+};
+
+/**
+ * @summary Delete a metal production stage record
+ */
+export const getDeleteMetalStageUrl = (id: number) => {
+  return `/api/metal/stages/${id}`;
+};
+
+export const deleteMetalStage = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteMetalStageUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteMetalStageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMetalStage>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteMetalStage>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteMetalStage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteMetalStage>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteMetalStage(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteMetalStageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteMetalStage>>
+>;
+
+export type DeleteMetalStageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a metal production stage record
+ */
+export const useDeleteMetalStage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteMetalStage>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteMetalStage>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteMetalStageMutationOptions(options));
 };
 
 /**
@@ -1364,6 +1535,93 @@ export function useListWoodenStages<
 }
 
 /**
+ * @summary Get a single wooden production stage record
+ */
+export const getGetWoodenStageUrl = (id: number) => {
+  return `/api/wooden/stages/${id}`;
+};
+
+export const getWoodenStage = async (
+  id: number,
+  options?: RequestInit,
+): Promise<WoodenProductionStage> => {
+  return customFetch<WoodenProductionStage>(getGetWoodenStageUrl(id), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetWoodenStageQueryKey = (id: number) => {
+  return [`/api/wooden/stages/${id}`] as const;
+};
+
+export const getGetWoodenStageQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWoodenStage>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWoodenStage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetWoodenStageQueryKey(id);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getWoodenStage>>> = ({
+    signal,
+  }) => getWoodenStage(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWoodenStage>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWoodenStageQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWoodenStage>>
+>;
+export type GetWoodenStageQueryError = ErrorType<void>;
+
+/**
+ * @summary Get a single wooden production stage record
+ */
+
+export function useGetWoodenStage<
+  TData = Awaited<ReturnType<typeof getWoodenStage>>,
+  TError = ErrorType<void>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getWoodenStage>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWoodenStageQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Update a wooden production stage record
  */
 export const getUpdateWoodenStageUrl = (id: number) => {
@@ -1448,6 +1706,90 @@ export const useUpdateWoodenStage = <
   TContext
 > => {
   return useMutation(getUpdateWoodenStageMutationOptions(options));
+};
+
+/**
+ * @summary Delete a wooden production stage record
+ */
+export const getDeleteWoodenStageUrl = (id: number) => {
+  return `/api/wooden/stages/${id}`;
+};
+
+export const deleteWoodenStage = async (
+  id: number,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteWoodenStageUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteWoodenStageMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWoodenStage>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteWoodenStage>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  const mutationKey = ["deleteWoodenStage"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteWoodenStage>>,
+    { id: number }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteWoodenStage(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteWoodenStageMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteWoodenStage>>
+>;
+
+export type DeleteWoodenStageMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Delete a wooden production stage record
+ */
+export const useDeleteWoodenStage = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteWoodenStage>>,
+    TError,
+    { id: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteWoodenStage>>,
+  TError,
+  { id: number },
+  TContext
+> => {
+  return useMutation(getDeleteWoodenStageMutationOptions(options));
 };
 
 /**
