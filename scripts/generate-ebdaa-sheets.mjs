@@ -384,6 +384,58 @@ wsStage["!cols"] = [
 wsStage["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 101, c: 7 } });
 XLSX.utils.book_append_sheet(wb, wsStage, "متابعة المراحل");
 
+// ══════════════════════════════════════════════════════════════════════════
+//  6. EDIT LOG — سجل التعديلات
+//  كل تعديل يُسجَّل تلقائياً بواسطة Apps Script في هذا الشيت.
+//  This sheet is auto-populated by the Apps Script onEdit handler.
+//  DO NOT manually edit this sheet — it is protected by Apps Script.
+// ══════════════════════════════════════════════════════════════════════════
+const logHdr1 = [
+  "التاريخ والوقت",
+  "المستخدم",
+  "الشيت",
+  "الخلية",
+  "اسم الحقل",
+  "القيمة القديمة",
+  "القيمة الجديدة",
+  "نوع العملية",
+];
+const logHdr2 = [
+  "timestamp",
+  "user_email",
+  "sheet_name",
+  "cell_ref",
+  "field_name",
+  "old_value",
+  "new_value",
+  "type",
+];
+const logSamples = [
+  // Row 3: example entry to illustrate the format
+  [
+    "2025-01-15 09:23:45",
+    "user@ebdaa.com",
+    "أوامر معدني",
+    "G4",
+    "laser",
+    "0",
+    "50",
+    "تعديل",
+  ],
+];
+
+const logAOA = [logHdr1, logHdr2, ...logSamples];
+const wsLog  = XLSX.utils.aoa_to_sheet(logAOA);
+
+wsLog["!cols"] = [
+  { wch: 20 }, { wch: 26 }, { wch: 16 }, { wch: 8 },
+  { wch: 18 }, { wch: 22 }, { wch: 22 }, { wch: 12 },
+];
+wsLog["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 1002, c: 7 } });
+// Freeze header rows 1-2 so they stay visible while scrolling
+wsLog["!freeze"] = { xSplit: 0, ySplit: 2, topLeftCell: "A3", activePane: "bottomLeft" };
+XLSX.utils.book_append_sheet(wb, wsLog, "سجل التعديلات");
+
 // ─── WRITE FILE ─────────────────────────────────────────────────────────────
 const outPath = "/home/runner/workspace/.local/outputs/Ebdaa-Sheets-Template.xlsx";
 XLSX.writeFile(wb, outPath);
