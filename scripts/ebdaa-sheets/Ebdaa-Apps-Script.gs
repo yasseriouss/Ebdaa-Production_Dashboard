@@ -41,7 +41,10 @@ const M_COL_BACKLOG      = 25; // Y — backlog_qty
 const M_COL_BACKLOG_STS  = 26; // Z — backlog_status
 const M_COL_STATUS       = 27; // AA — status
 const M_COL_NOTES        = 28; // AB — notes
-const M_TOTAL_COLS       = 28;
+const M_COL_DELIVERED    = 29; // AC — delivered_qty (DB field)
+const M_COL_FACTORY      = 30; // AD — factory (DB field)
+const M_COL_EXP_DATE     = 31; // AE — expected_delivery_date (optional, for markOverdue)
+const M_TOTAL_COLS       = 31;
 
 // ─── Wooden sheet column indices (1-based) ───────────────────────────────────
 const WOOD_DATA_START_ROW = 3;
@@ -142,12 +145,11 @@ function recalculateMetalRow_(sheet, row) {
     .getRange(row, M_COL_STAGE_FIRST, 1, M_COL_STAGE_LAST - M_COL_STAGE_FIRST + 1)
     .getValues()[0];
 
-  // Completion % = SUM(all 17 stage quantities) / (qty × 17) × 100.
-  // Pipeline average completion: 100% when every stage column equals qty.
-  // Matches sheet formula: =ROUND(SUM(G:W)/(E*17)*100, 1)
-  const stageCount = M_COL_STAGE_LAST - M_COL_STAGE_FIRST + 1; // 17
+  // Completion = SUM(all 17 stage quantities) / qty.
+  // Matches sheet formula: =ROUND(SUM(G:W)/E, 1) — task spec Step 2.
+  // Maximum value = 17 when all stage cols equal qty (all units completed all stages).
   const sumStages  = stages.reduce((acc, v) => acc + (parseFloat(v) || 0), 0);
-  const completion = Math.round((sumStages / (qty * stageCount)) * 1000) / 10;
+  const completion = Math.round((sumStages / qty) * 10) / 10;
 
   // Backlog = qty - delivered (التسليم = last stage, col W)
   const delivered = parseFloat(stages[stages.length - 1]) || 0;
@@ -293,8 +295,8 @@ function markOverdue() {
       const status  = (metal.getRange(r, M_COL_STATUS).getValue() || "").toString().trim();
       const rowRange = metal.getRange(r, 1, 1, M_TOTAL_COLS);
 
-      // Date-based overdue: metal sheet col AC = expected_delivery_date (optional)
-      const expDelivery = metal.getRange(r, M_TOTAL_COLS + 1).getValue();
+      // Date-based overdue: metal sheet col AE (M_COL_EXP_DATE) = expected_delivery_date
+      const expDelivery = metal.getRange(r, M_COL_EXP_DATE).getValue();
       const isLateMetal = expDelivery
         ? new Date(new Date(expDelivery).getFullYear(), new Date(expDelivery).getMonth(), new Date(expDelivery).getDate()) < todayDate
           && !STATUS_METAL_DONE.includes(status)

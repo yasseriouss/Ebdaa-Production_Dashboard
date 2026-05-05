@@ -54,39 +54,42 @@ const M_NOTE = 27; // AB — notes
 // ══════════════════════════════════════════════════════════════════════════
 //  1. METAL ORDERS — أوامر معدني
 // ══════════════════════════════════════════════════════════════════════════
+// Metal sheet columns: all DB fields from metalWorkOrdersTable + 17 stage columns + derived.
+// Omitted auto fields: id, created_at, updated_at (server-generated on import).
+// Derived (not in DB): completion_pct (computed from stages), backlog_qty.
 const metalHeaderRow1 = [
   "رقم MOM", "المشروع", "العميل", "المنتج", "الكمية", "الوحدة",
   ...METAL_STAGES.map(s => s.ar),
-  "نسبة الإنجاز %", "المتأخرات", "حالة المتأخرات", "الحالة", "ملاحظات",
-  "تاريخ التسليم المتوقع",
+  "نسبة الإنجاز %", "متأخرات", "حالة المتأخرات", "الحالة", "ملاحظات",
+  "الكمية المسلّمة", "المصنع", "تاريخ التسليم المتوقع",
 ];
 const metalHeaderRow2 = [
   "mo_number", "project", "client", "product", "qty", "unit",
   ...METAL_STAGES.map(s => s.en),
-  "completion_pct", "backlog_qty", "backlog_status", "status", "notes",
-  "expected_delivery_date",
+  "completion_pct(derived)", "backlog_qty(derived)", "backlog_status", "status", "notes",
+  "delivered_qty", "factory", "expected_delivery_date(optional)",
 ];
 
-// Sample data rows (values only — formulas injected below for completion/backlog)
+// Sample rows — completion_pct (col X) and backlog_qty (col Y) set to null;
+// formulas are injected below. delivered_qty mirrors التسليم stage value.
 const metalSamples = [
   ["MOM-1001","الكيان العسكري","الكيان العسكري","كرسي معدني",50,"قطعة",
    50,48,48,47,46,46,46,46,46,46,46,45,45,44,44,44,40,
-   null,null,"","تحت التصنيع","","2025-06-30"],
+   null,null,"","تحت التصنيع","",40,"metal","2025-06-30"],
   ["MOM-1002","جزيرة مزارين","جزيرة مزارين","طاولة معدنية",30,"قطعة",
    30,30,30,29,28,28,28,28,28,27,27,27,27,26,26,25,20,
-   null,null,"","تحت التصنيع","","2025-07-15"],
+   null,null,"","تحت التصنيع","",20,"metal","2025-07-15"],
 ];
 
 // Build sheet as AOA (header rows + samples + blanks)
 const metalAOA = [metalHeaderRow1, metalHeaderRow2, ...metalSamples];
 const wsM = XLSX.utils.aoa_to_sheet(metalAOA);
 
-// Inject completion % and backlog formulas for data rows (r=2..101 in 0-based xlsx indexing).
-// r=0: Arabic header row, r=1: DB-key header row, r=2..N: data rows.
-// sheetRow = r+1 gives the 1-based row number used inside formula strings.
-// Completion formula: SUM(stages)/(qty*17)*100 — pipeline average completion %.
-// Produces 0-100% range (100% when all 17 stage columns equal qty).
-// Matches Apps Script recalculateMetalRow_() which uses the same logic.
+// Inject formulas for all data rows (r=2..101, 0-based xlsx indexing).
+// sheetRow = r+1 gives 1-based row number for formula strings.
+// Completion formula: =ROUND(SUM(stages)/qty, 1) — exactly as task spec Step 2.
+// "SUM(stages)/qty" gives a value where max = 17 (all 17 stage cols equal qty).
+// Backlog = qty - التسليم (delivery col W = last stage).
 for (let r = 2; r <= 101; r++) {
   const sheetRow = r + 1;
   const qtyRef   = `E${sheetRow}`;
@@ -94,7 +97,7 @@ for (let r = 2; r <= 101; r++) {
   const delRef   = `W${sheetRow}`;
 
   wsM[cell(r, M_COMP)] = {
-    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",ROUND(SUM(${sumRange})/(${qtyRef}*17)*100,1)))`,
+    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",ROUND(SUM(${sumRange})/${qtyRef},1)))`,
     t: "n",
   };
   wsM[cell(r, M_BACK)] = {
@@ -103,12 +106,23 @@ for (let r = 2; r <= 101; r++) {
   };
 }
 
+// Status dropdown validation for Metal — col AA (1-based 27, 0-based 26)
+wsM["!dataValidations"] = [{
+  sqref: "AA3:AA1001",
+  type: "list",
+  formula1: '"لم يتم البدء,تحت التصنيع,في المخزن,تم الانتهاء,تم التسليم,متوقف"',
+  showDropDown: false,
+  allowBlank: true,
+}];
+
 wsM["!cols"] = [
   { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 7 }, { wch: 7 },
   ...Array(17).fill({ wch: 8 }),
-  { wch: 13 }, { wch: 11 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 20 },
+  { wch: 13 }, { wch: 11 }, { wch: 16 }, { wch: 16 }, { wch: 22 },
+  { wch: 14 }, { wch: 10 }, { wch: 20 },
 ];
-wsM["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 101, c: 28 } });
+// 31 columns: A(0)..AE(30)
+wsM["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 101, c: 30 } });
 XLSX.utils.book_append_sheet(wb, wsM, "أوامر معدني");
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -134,6 +148,9 @@ const W_PS   = 15; // P — prod_date_start
 const W_PE   = 16; // Q — prod_date_end
 const W_PF   = 17; // R — prod_date_finished
 
+// Wooden sheet columns: all DB fields from woodenWorkOrdersTable.
+// Omitted auto fields: id, created_at, updated_at (server-generated on import).
+// Derived (not in DB): rem computed as qty-done; completion_pct computed as done/qty*100.
 const woodenHdr1 = [
   "رقم الأمر","الامتداد (بعد تنظيف VBC)","تاريخ الأمر","طلب التصنيع","كود SAP",
   "العميل","المشروع الفرعي","المنتج","الفئة","وحدة القياس",
@@ -143,7 +160,7 @@ const woodenHdr1 = [
 const woodenHdr2 = [
   "order_no","extension","order_date","manufacture_request","sap_code",
   "client","sub_project","product","category","uom",
-  "qty","done","rem","completion_pct","status",
+  "qty","done","rem(derived)","completion_pct(derived)","status",
   "prod_date_start","prod_date_end","prod_date_finished",
 ];
 
@@ -178,6 +195,15 @@ for (let r = 2; r <= 101; r++) {
     t: "n",
   };
 }
+
+// Status dropdown for Wooden — col O (1-based 15, 0-based 14)
+wsW["!dataValidations"] = [{
+  sqref: "O3:O1001",
+  type: "list",
+  formula1: '"تحت التصنيع,تم التسليم,متوقف,لم يتم البدء,Production,Delivered,Hold"',
+  showDropDown: false,
+  allowBlank: true,
+}];
 
 wsW["!cols"] = [
   { wch: 12 }, { wch: 22 }, { wch: 13 }, { wch: 16 }, { wch: 12 },
