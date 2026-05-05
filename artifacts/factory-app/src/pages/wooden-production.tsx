@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 
-const WOODEN_STAGE_NAMES = ["القطع", "التجميع", "التشطيب", "التسليم"];
+const WOODEN_STAGE_NAMES = ["القطع", "التجميع", "التشطيب", "التغليف"];
 
 function getHeatColor(wip: number, max: number): string {
   if (max === 0) return "bg-muted/30";

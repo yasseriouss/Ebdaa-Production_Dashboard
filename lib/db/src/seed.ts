@@ -56,6 +56,8 @@ interface MetalOrderRow {
 
 interface WoodenOrderRow {
   orderNo: string;
+  extension: string;
+  client: string;
   orderDate: string;
   subProject: string;
   product: string;
@@ -131,49 +133,50 @@ function loadMetalOrders(): MetalOrderRow[] {
 function loadWoodenOrders(): WoodenOrderRow[] {
   try {
     const wb = XLSX.readFile(path.join(ASSETS_DIR, "wooden_orders_1777969762147.xlsx"));
-    // Sheet4 has the raw data with columns: Order, Date, Project, Sub-Project, Product, QTY, Done, Rem, Status, notes, finish_date, req_finish
+    // Sheet4 columns: Order, Date, Project(=client), Sub-Project, Product, QTY, Done, Rem, Status, notes, expected_finish, req_finish
     const ws = wb.Sheets["Sheet4"] || wb.Sheets[wb.SheetNames[0]];
     const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
 
-    // Group by order number - pick the first product per order as representative
-    const orderMap = new Map<string, WoodenOrderRow>();
+    // Insert every data row as-is — no aggregation
+    const results: WoodenOrderRow[] = [];
 
     for (let i = 1; i < rows.length; i++) {
       const row = rows[i] as unknown[];
-      const orderNo = safeStr(row[0]);
-      if (!orderNo || orderNo === "") continue;
+      const rawOrderNo = safeStr(row[0]);
+      if (!rawOrderNo || rawOrderNo === "") continue;
+
+      // Strip VBC from order number and keep the remainder as extension
+      const orderNoClean = rawOrderNo.replace(/\bvbc[-\s]*/gi, "").replace(/\s+/g, " ").trim();
+      const hasVbc = /vbc/i.test(rawOrderNo);
+      const extension = hasVbc ? rawOrderNo.replace(/\bvbc[-\s]*/gi, "").trim() : "";
+
+      const product = safeStr(row[4]);
+      if (!product) continue; // skip completely blank rows
 
       const qty = safeNum(row[5], 0);
       const done = safeNum(row[6], 0);
       const rem = safeNum(row[7], 0);
 
-      if (!orderMap.has(orderNo)) {
-        orderMap.set(orderNo, {
-          orderNo,
-          orderDate: excelDateToStr(row[1]),
-          subProject: stripVbc(safeStr(row[3])),
-          product: stripVbc(safeStr(row[4])) || "منتج خشبي",
-          qty,
-          done,
-          rem,
-          status: safeStr(row[8]) || "Production",
-          notes: safeStr(row[9]),
-          prodDateEnd: excelDateToStr(row[10]),
-        });
-      } else {
-        // Accumulate qty/done/rem across rows of same order
-        const existing = orderMap.get(orderNo)!;
-        existing.qty += qty;
-        existing.done += done;
-        existing.rem += rem;
-      }
+      results.push({
+        orderNo: orderNoClean,
+        extension,
+        client: stripVbc(safeStr(row[2])),          // "Project" column = client name
+        orderDate: excelDateToStr(row[1]),
+        subProject: stripVbc(safeStr(row[3])),
+        product: stripVbc(product) || "منتج خشبي",
+        qty,
+        done,
+        rem,
+        status: safeStr(row[8]) || "Production",
+        notes: safeStr(row[9]),
+        prodDateEnd: excelDateToStr(row[10]),
+      });
     }
 
-    const results = Array.from(orderMap.values());
-    console.log(`  Parsed ${results.length} wooden orders from Excel (${results.length} unique order numbers)`);
+    console.log(`  Parsed ${results.length} wooden order rows from Excel`);
     return results;
   } catch (e) {
-    console.warn("  Could not parse wooden_orders.xlsx, using fallback data:", String(e));
+    console.warn("  Could not parse wooden_orders.xlsx:", String(e));
     return [];
   }
 }
@@ -221,16 +224,16 @@ const FALLBACK_METAL_ORDERS: MetalOrderRow[] = [
 ];
 
 const FALLBACK_WOODEN_ORDERS: WoodenOrderRow[] = [
-  { orderNo: "10893", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب جانب بيتش باين", qty: 857, done: 857, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11056", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب حمام", qty: 707, done: 707, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11057", orderDate: "2024-06-15", subProject: "ابواب مزارين 1", product: "باب داخلي حمام 0.8م", qty: 11, done: 11, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11060", orderDate: "2024-06-15", subProject: "منتجع مزارين", product: "قطعة بيتش باين", qty: 6, done: 6, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "10900", orderDate: "2024-06-20", subProject: "عينات ابواب مزارين 1", product: "تجليدة استربات", qty: 3, done: 3, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11065", orderDate: "2024-07-01", subProject: "ابواب مزارين 1", product: "باب ارو 90 سم", qty: 46, done: 46, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11070", orderDate: "2024-08-01", subProject: "مزارين - غرف", product: "غرفة نوم كاملة", qty: 120, done: 80, rem: 40, status: "Production", notes: "جاري التصنيع", prodDateEnd: "2025-02-01" },
-  { orderNo: "11080", orderDate: "2024-09-01", subProject: "مزارين - صالات", product: "أثاث صالة", qty: 50, done: 20, rem: 30, status: "Production", notes: "", prodDateEnd: "2025-03-01" },
-  { orderNo: "11090", orderDate: "2024-10-01", subProject: "VBC - غرف فندقية", product: "طقم غرفة فندق", qty: 80, done: 0, rem: 80, status: "Production", notes: "لم يتم البدء", prodDateEnd: "2025-04-01" },
-  { orderNo: "11100", orderDate: "2024-11-01", subProject: "الكيان - مكاتب", product: "مكتب تنفيذي", qty: 30, done: 15, rem: 15, status: "Production", notes: "", prodDateEnd: "2025-05-01" },
+  { orderNo: "10893", extension: "", client: "مزارين", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب جانب بيتش باين", qty: 857, done: 857, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11056", extension: "", client: "مزارين", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب حمام", qty: 707, done: 707, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11057", extension: "", client: "مزارين", orderDate: "2024-06-15", subProject: "ابواب مزارين 1", product: "باب داخلي حمام 0.8م", qty: 11, done: 11, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11060", extension: "", client: "مزارين", orderDate: "2024-06-15", subProject: "منتجع مزارين", product: "قطعة بيتش باين", qty: 6, done: 6, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "10900", extension: "", client: "مزارين", orderDate: "2024-06-20", subProject: "عينات ابواب مزارين 1", product: "تجليدة استربات", qty: 3, done: 3, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11065", extension: "", client: "مزارين", orderDate: "2024-07-01", subProject: "ابواب مزارين 1", product: "باب ارو 90 سم", qty: 46, done: 46, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
+  { orderNo: "11070", extension: "", client: "مزارين", orderDate: "2024-08-01", subProject: "مزارين - غرف", product: "غرفة نوم كاملة", qty: 120, done: 80, rem: 40, status: "Production", notes: "جاري التصنيع", prodDateEnd: "2025-02-01" },
+  { orderNo: "11080", extension: "", client: "مزارين", orderDate: "2024-09-01", subProject: "مزارين - صالات", product: "أثاث صالة", qty: 50, done: 20, rem: 30, status: "Production", notes: "", prodDateEnd: "2025-03-01" },
+  { orderNo: "11090", extension: "غرف فندقية", client: "الكيان العسكري", orderDate: "2024-10-01", subProject: "غرف فندقية", product: "طقم غرفة فندق", qty: 80, done: 0, rem: 80, status: "Production", notes: "لم يتم البدء", prodDateEnd: "2025-04-01" },
+  { orderNo: "11100", extension: "", client: "الكيان العسكري", orderDate: "2024-11-01", subProject: "الكيان - مكاتب", product: "مكتب تنفيذي", qty: 30, done: 15, rem: 15, status: "Production", notes: "", prodDateEnd: "2025-05-01" },
 ];
 
 async function seed() {
@@ -313,7 +316,8 @@ async function seed() {
   for (const orderData of woodenOrders) {
     const [order] = await db.insert(woodenWorkOrdersTable).values({
       orderNo: orderData.orderNo,
-      extension: "",
+      extension: orderData.extension || "",
+      client: orderData.client || "",
       orderDate: orderData.orderDate || "",
       subProject: orderData.subProject,
       product: orderData.product,
