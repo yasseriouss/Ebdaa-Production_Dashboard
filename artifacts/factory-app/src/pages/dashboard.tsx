@@ -3,7 +3,7 @@ import { useGetDashboardStats, useGetDashboardClients } from "@workspace/api-cli
 import { Skeleton } from "@/components/ui/skeleton";
 import { Factory, Boxes, AlertTriangle, CheckCircle2 } from "lucide-react";
 import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell
 } from "recharts";
 
 const METAL_STATUS_COLORS: Record<string, string> = {
@@ -126,17 +126,30 @@ export default function Dashboard() {
             {metalStatusData.length === 0 ? (
               <div className="h-40 flex items-center justify-center text-muted-foreground text-sm">لا توجد بيانات</div>
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={metalStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name} (${value})`} labelLine={false}>
-                    {metalStatusData.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.fill || PIE_COLORS[idx % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v: number) => [v, "عدد الأوامر"]} />
-                  <Legend formatter={(v) => <span className="text-xs">{v}</span>} />
-                </PieChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={metalStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={35} isAnimationActive={false}>
+                      {metalStatusData.map((entry, idx) => (
+                        <Cell key={idx} fill={entry.fill || PIE_COLORS[idx % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                      formatter={(v: number) => [v, "عدد الأوامر"]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-3 space-y-2">
+                  {metalStatusData.map((entry, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: entry.fill || PIE_COLORS[idx % PIE_COLORS.length] }} />
+                      <span className="text-muted-foreground flex-1">{entry.name}</span>
+                      <span className="font-semibold tabular-nums">({entry.value})</span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
@@ -149,17 +162,30 @@ export default function Dashboard() {
             {woodenStatusData.length === 0 ? (
               <div className="h-40 flex items-center justify-center text-muted-foreground text-sm">لا توجد بيانات</div>
             ) : (
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={woodenStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => `${name} (${value})`} labelLine={false}>
-                    {woodenStatusData.map((entry, idx) => (
-                      <Cell key={idx} fill={entry.fill || PIE_COLORS[idx % PIE_COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(v: number) => [v, "عدد الأوامر"]} />
-                  <Legend formatter={(v) => <span className="text-xs">{v}</span>} />
-                </PieChart>
-              </ResponsiveContainer>
+              <>
+                <ResponsiveContainer width="100%" height={200}>
+                  <PieChart>
+                    <Pie data={woodenStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} innerRadius={35} isAnimationActive={false}>
+                      {woodenStatusData.map((entry, idx) => (
+                        <Cell key={idx} fill={entry.fill || PIE_COLORS[idx % PIE_COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={{ background: "hsl(var(--card))", border: "1px solid hsl(var(--border))", borderRadius: "8px", fontSize: "12px" }}
+                      formatter={(v: number) => [v, "عدد الأوامر"]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="mt-3 space-y-2">
+                  {woodenStatusData.map((entry, idx) => (
+                    <div key={idx} className="flex items-center gap-2 text-sm">
+                      <span className="inline-block w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: entry.fill || PIE_COLORS[idx % PIE_COLORS.length] }} />
+                      <span className="text-muted-foreground flex-1">{entry.name}</span>
+                      <span className="font-semibold tabular-nums">({entry.value})</span>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
