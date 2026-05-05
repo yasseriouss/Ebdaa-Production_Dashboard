@@ -46,6 +46,33 @@ function stripVbc(val: unknown): string {
   return String(val).replace(/\bvbc\b/gi, "").replace(/\s+/g, " ").trim();
 }
 
+/** Normalize Arabic text for fuzzy matching: trim + unify hamza variants */
+function normalizeArabic(s: string): string {
+  return s.trim().replace(/[أإآ]/g, "ا");
+}
+
+/** Normalize wooden status: English/Arabic → Arabic */
+function parseWoodenStatus(raw: string): string {
+  const s = raw.toLowerCase().trim();
+  if (!s) return "تحت التصنيع";
+  if (s === "delivered" || s === "done") return "تم التسليم";
+  if (s === "production") return "تحت التصنيع";
+  if (s === "hold" || s === "cancel") return "متوقف";
+  if (raw.includes("تم التسليم")) return "تم التسليم";
+  if (raw.includes("تحت التصنيع")) return "تحت التصنيع";
+  if (raw.includes("متوقف")) return "متوقف";
+  if (raw.includes("لم يتم")) return "لم يتم البدء";
+  return "تحت التصنيع";
+}
+
+/** Convert Excel date serial to ISO string */
+function excelDateToStr(serial: unknown): string {
+  const n = parseFloat(String(serial ?? ""));
+  if (isNaN(n) || n <= 0) return "";
+  const date = new Date(Math.round((n - 25569) * 86400 * 1000));
+  return date.toISOString().split("T")[0];
+}
+
 function safeStr(val: unknown): string {
   if (val === null || val === undefined) return "";
   return String(val).trim();
@@ -102,8 +129,8 @@ router.post("/metal-orders", upload.single("file"), async (req, res) => {
 
       const orderValues = {
         moNumber: moNum,
-        project: safeStr(row[0]),
-        client: safeStr(row[clientIdx] || row[0]),
+        project: safeStr(clientIdx >= 0 ? row[clientIdx] : row[4]),
+        client: safeStr(clientIdx >= 0 ? row[clientIdx] : row[4]),
         product: product || safeStr(row[3]),
         qty: safeNum(qtyIdx >= 0 ? row[qtyIdx] : row[5]),
         unit: safeStr(row[6]),
@@ -167,17 +194,36 @@ router.post("/metal-daily", upload.single("file"), async (req, res) => {
 
       const ws = wb.Sheets[sheetName];
       const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
+      if (data.length < 3) continue;
 
-      // Header: [start_date, Project, M.O, Product, Qty, Sub_Assembly, Qty2, Status, ...]
-      // MO is column index 2, Qty is index 4, Status is index 7
-      for (let i = 1; i < data.length; i++) {
+      // Row 0 = Arabic title, Row 1 = actual column headers, Row 2+ = data
+      const headerRow = data[1] as unknown[];
+      // Detect "موقف" (status) column and qtyDone column dynamically
+      let statusColIdx = headerRow.findIndex((h, idx) => idx > 3 && String(h).includes("موقف"));
+      const qtyDoneColIdx = statusColIdx >= 0 ? statusColIdx - 1 : 6;
+      if (statusColIdx < 0) statusColIdx = -1;
+
+      // Normalize sheet name for fuzzy stage matching
+      const normalizedSheet = normalizeArabic(sheetName.trim());
+
+      // Accumulate qty+status per MO across sub-assembly rows
+      const moMap = new Map<string, { qty: number; status: string }>();
+      for (let i = 2; i < data.length; i++) {
         const row = data[i] as unknown[];
         const moNum = safeStr(row[2]);
         if (!moNum || moNum === "M.O" || moNum === "") { rowsSkipped++; continue; }
+        const qty = parseFloat(safeNum(row[qtyDoneColIdx]));
+        const statusRaw = statusColIdx >= 0 ? safeStr(row[statusColIdx]) : "";
+        if (moMap.has(moNum)) {
+          const prev = moMap.get(moNum)!;
+          moMap.set(moNum, { qty: prev.qty + qty, status: statusRaw || prev.status });
+        } else {
+          moMap.set(moNum, { qty, status: statusRaw });
+        }
+      }
 
-        const qtyDone = safeNum(row[4]);
-        const statusRaw = safeStr(row[7]) || "تحت التصنيع";
-
+      for (const [moNum, { qty, status }] of moMap) {
+        const statusFinal = status || "تحت التصنيع";
         try {
           const [order] = await db
             .select()
@@ -191,19 +237,20 @@ router.post("/metal-daily", upload.single("file"), async (req, res) => {
             .from(metalProductionStagesTable)
             .where(eq(metalProductionStagesTable.metalOrderId, order.id));
 
-          const matchedStage = allStages.find(s => s.stageName === sheetName);
+          // Match by normalized stage name (handles leading/trailing spaces and hamza)
+          const matchedStage = allStages.find(s => normalizeArabic(s.stageName) === normalizedSheet);
 
           if (matchedStage) {
             await db
               .update(metalProductionStagesTable)
-              .set({ qtyDone: String(qtyDone), status: statusRaw, updatedAt: new Date() })
+              .set({ qtyDone: String(qty), status: statusFinal, updatedAt: new Date() })
               .where(eq(metalProductionStagesTable.id, matchedStage.id));
             rowsImported++;
           } else {
             rowsSkipped++;
           }
         } catch (e) {
-          errors.push(`Sheet ${sheetName} Row ${i + 1}: ${String(e)}`);
+          errors.push(`Sheet ${sheetName} MO ${moNum}: ${String(e)}`);
           rowsSkipped++;
         }
       }
@@ -245,43 +292,58 @@ router.post("/wooden-orders", upload.single("file"), async (req, res) => {
     }
     if (headerRow === -1) headerRow = 0;
 
-    const headers = (data[headerRow] as unknown[]).map(h => safeStr(h).toLowerCase());
+    // Normalize headers: lowercase + trim (handles " QTY", " Rem" with leading spaces)
+    const headers = (data[headerRow] as unknown[]).map(h => safeStr(h).toLowerCase().trim());
+
+    // Detect all column indices by header name (works for both Sheet1 and Sheet4)
+    const orderNoIdx = headers.indexOf("order");
+    const dateIdx = headers.indexOf("date");
+    const extensionIdx = headers.indexOf("extension");
+    const projectIdx = Math.max(headers.indexOf("project"), headers.indexOf("client"));
+    const subProjectIdx = headers.findIndex(h => h.startsWith("sub") && h.includes("project") || h === "sub-project");
+    const productIdx = headers.findIndex(h => h === "product" || (h.includes("product") && !h.includes("sub")));
+    const qtyIdx = headers.findIndex(h => h === "qty");
+    const doneIdx = headers.findIndex(h => h === "done");
+    const remIdx = headers.findIndex(h => h === "rem");
+    const statusIdx = headers.indexOf("status");
+    const notesIdx = headers.findIndex(h => h === "notes" || h === "ملاحظات");
+    const prodDateEndIdx = headers.findIndex(h => h.includes("expected") || h.includes("finish"));
+    const prodDateStartIdx = headers.findIndex(h => h.includes("production date") && !h.includes("end") && !h.includes("finish"));
+    const categoryIdx = headers.indexOf("category");
+    const uomIdx = headers.indexOf("uom");
+    const sapIdx = headers.findIndex(h => h.includes("sap"));
 
     for (let i = headerRow + 1; i < data.length; i++) {
       const row = data[i] as unknown[];
-      const orderNo = safeStr(row[headers.indexOf("order")] || row[0]);
+      const orderNo = safeStr(orderNoIdx >= 0 ? row[orderNoIdx] : row[0]);
       if (!orderNo || orderNo === "order" || orderNo === "") { rowsSkipped++; continue; }
 
-      const extension = stripVbc(safeStr(row[headers.indexOf("extension")] || row[1]));
-      const product = safeStr(row[headers.findIndex(h => h.includes("product"))] || row[7]);
+      const extension = stripVbc(safeStr(extensionIdx >= 0 ? row[extensionIdx] : ""));
+      const product = safeStr(productIdx >= 0 ? row[productIdx] : "");
       if (!product) { rowsSkipped++; continue; }
 
-      const qtyIdx = headers.findIndex(h => h === "qty");
-      const doneIdx = headers.findIndex(h => h === "done");
-      const remIdx = headers.findIndex(h => h === "rem");
-      const statusIdx = headers.findIndex(h => h === "status");
-      const clientIdx = headers.findIndex(h => h === "client");
-      const categoryIdx = headers.findIndex(h => h === "category");
-      const uomIdx = headers.findIndex(h => h === "uom");
+      const rawStatus = safeStr(statusIdx >= 0 ? row[statusIdx] : "");
+      const rawDate = dateIdx >= 0 ? row[dateIdx] : null;
 
       const woodenValues = {
           orderNo,
           extension,
-          orderDate: safeStr(row[2]),
-          manufactureRequest: safeStr(row[3]),
-          sapCode: safeStr(row[4]),
-          client: safeStr(clientIdx >= 0 ? row[clientIdx] : row[5]),
-          subProject: safeStr(row[6]),
+          // orderDate: if the raw value is an Excel serial number convert it, otherwise use as string
+          orderDate: rawDate ? excelDateToStr(rawDate) || safeStr(rawDate) : "",
+          manufactureRequest: "",
+          sapCode: safeStr(sapIdx >= 0 ? row[sapIdx] : ""),
+          client: safeStr(projectIdx >= 0 ? row[projectIdx] : "") || safeStr(subProjectIdx >= 0 ? row[subProjectIdx] : ""),
+          subProject: safeStr(subProjectIdx >= 0 ? row[subProjectIdx] : ""),
           product,
-          category: safeStr(categoryIdx >= 0 ? row[categoryIdx] : row[8]),
-          uom: safeStr(uomIdx >= 0 ? row[uomIdx] : row[9]),
-          qty: safeNum(qtyIdx >= 0 ? row[qtyIdx] : row[10]),
-          done: safeNum(doneIdx >= 0 ? row[doneIdx] : row[11]),
-          rem: safeNum(remIdx >= 0 ? row[remIdx] : row[12]),
-          status: safeStr(statusIdx >= 0 ? row[statusIdx] : "تحت التصنيع"),
-          prodDateStart: safeStr(row[14]),
-          prodDateEnd: safeStr(row[15]),
-          prodDateFinished: safeStr(row[16]),
+          category: safeStr(categoryIdx >= 0 ? row[categoryIdx] : ""),
+          uom: safeStr(uomIdx >= 0 ? row[uomIdx] : ""),
+          qty: safeNum(qtyIdx >= 0 ? row[qtyIdx] : 0),
+          done: safeNum(doneIdx >= 0 ? row[doneIdx] : 0),
+          rem: safeNum(remIdx >= 0 ? row[remIdx] : 0),
+          status: parseWoodenStatus(rawStatus),
+          prodDateStart: prodDateStartIdx >= 0 ? excelDateToStr(row[prodDateStartIdx]) : "",
+          prodDateEnd: prodDateEndIdx >= 0 ? excelDateToStr(row[prodDateEndIdx]) : "",
+          prodDateFinished: "",
         };
 
       try {

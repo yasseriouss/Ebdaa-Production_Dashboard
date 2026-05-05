@@ -1,7 +1,10 @@
 import path from "path";
+import { fileURLToPath } from "url";
+import { createRequire } from "module";
+const require = createRequire(import.meta.url);
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const XLSX = require("xlsx") as typeof import("xlsx");
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "./index";
 import {
   metalWorkOrdersTable,
@@ -23,7 +26,9 @@ const WOODEN_STAGES = [
   { name: "التشطيب", order: 3 }, { name: "التغليف", order: 4 },
 ];
 
-const ASSETS_DIR = path.resolve(__dirname, "../../../../attached_assets");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ASSETS_DIR = path.resolve(__dirname, "../../../attached_assets");
 
 function safeStr(val: unknown): string {
   if (val === null || val === undefined) return "";
@@ -67,6 +72,26 @@ interface WoodenOrderRow {
   status: string;
   notes: string;
   prodDateEnd: string;
+}
+
+/** Normalize Arabic text for fuzzy matching (trim + unify hamza variants) */
+function normalizeArabic(s: string): string {
+  return s.trim().replace(/[أإآ]/g, "ا");
+}
+
+/** Normalize wooden order status from English/Arabic to Arabic */
+function parseWoodenStatus(raw: string): string {
+  const s = raw.toLowerCase().trim();
+  if (!s) return "تحت التصنيع";
+  if (s === "delivered" || s === "done") return "تم التسليم";
+  if (s === "production") return "تحت التصنيع";
+  if (s === "hold" || s === "cancel") return "متوقف";
+  // Arabic pass-through
+  if (raw.includes("تم التسليم")) return "تم التسليم";
+  if (raw.includes("تحت التصنيع")) return "تحت التصنيع";
+  if (raw.includes("متوقف")) return "متوقف";
+  if (raw.includes("لم يتم")) return "لم يتم البدء";
+  return "تحت التصنيع";
 }
 
 function parseMoStatus(note: string): string {
@@ -159,17 +184,20 @@ function loadWoodenOrders(): WoodenOrderRow[] {
       const done = safeNum(row[6], 0);
       const rem = safeNum(row[7], 0);
 
+      const projectCol = stripVbc(safeStr(row[2]));
+      const subProjectCol = stripVbc(safeStr(row[3]));
       results.push({
         orderNo: orderNoClean,
         extension,
-        client: stripVbc(safeStr(row[2])),          // "Project" column = client name
+        // "Project" col is often empty in Sheet4; fall back to Sub-Project as client identifier
+        client: projectCol || subProjectCol,
         orderDate: excelDateToStr(row[1]),           // col1 = Date
-        subProject: stripVbc(safeStr(row[3])),
+        subProject: subProjectCol,
         product: stripVbc(product) || "منتج خشبي",
         qty,
         done,
         rem,
-        status: safeStr(row[8]) || "تحت التصنيع",
+        status: parseWoodenStatus(safeStr(row[8])),
         notes: safeStr(row[9]),
         prodDateEnd: excelDateToStr(row[10]),
       });
@@ -185,25 +213,48 @@ function loadWoodenOrders(): WoodenOrderRow[] {
 
 interface StageEntry { status: string; qty: number }
 
-/** Build a map of { moNumber -> { stageName -> { status, qty } } } from the daily production Excel */
+/** Build a map of { moNumber -> { normalizedStageName -> { status, qty } } } from the daily production Excel.
+ *  Sheet layout: Row 0 = sheet title, Row 1 = column headers, Row 2+ = data rows.
+ *  Key insight: status column is the one containing "موقف" in row 1.
+ *  qtyDone = column just before status column (or col 6 when no status column).
+ */
 function loadMetalDailyStageStatuses(): Map<string, Map<string, StageEntry>> {
   const result = new Map<string, Map<string, StageEntry>>();
   try {
     const wb = XLSX.readFile(path.join(ASSETS_DIR, "Metal_daily_Production_1777969955661.xlsx"));
     for (const sheetName of wb.SheetNames) {
-      if (sheetName.startsWith("_xlnm")) continue;
+      if (sheetName === "Sheet1" || sheetName.startsWith("_xlnm")) continue;
       const ws = wb.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
-      // Row 0 is the header, Row 1+ are data
-      // Columns: 0=start_date, 1=Project, 2=M.O, 3=product, 4=qty, 5=sub_assembly, 6=qty2, 7=status
-      for (let i = 1; i < rows.length; i++) {
+      if (rows.length < 3) continue;
+
+      // Row 1 = actual column headers (row 0 is the Arabic title)
+      const headerRow = rows[1] as unknown[];
+      // Find "موقف" (status) column index
+      let statusColIdx = headerRow.findIndex((h, idx) => idx > 3 && String(h).includes("موقف"));
+      // QtyDone is the column immediately before the status column (col 6 fallback)
+      const qtyDoneColIdx = statusColIdx >= 0 ? statusColIdx - 1 : 6;
+      if (statusColIdx < 0) statusColIdx = -1;
+
+      // Normalize sheet name for matching: trim whitespace + unify hamza
+      const normalizedSheet = normalizeArabic(sheetName.trim());
+
+      // Data starts at row 2
+      for (let i = 2; i < rows.length; i++) {
         const row = rows[i] as unknown[];
         const moNum = safeStr(row[2]);
-        if (!moNum || moNum === "M.O") continue;
-        const status = safeStr(row[7]);
-        const qty = safeNum(row[4], 0);
+        if (!moNum || moNum === "M.O" || moNum === "") continue;
+        const statusRaw = statusColIdx >= 0 ? safeStr(row[statusColIdx]) : "";
+        const qty = safeNum(row[qtyDoneColIdx], 0);
         if (!result.has(moNum)) result.set(moNum, new Map());
-        result.get(moNum)!.set(sheetName, { status, qty });
+        const stageMap = result.get(moNum)!;
+        if (stageMap.has(normalizedSheet)) {
+          // Accumulate qty across sub-assemblies; keep most recent non-empty status
+          const prev = stageMap.get(normalizedSheet)!;
+          stageMap.set(normalizedSheet, { status: statusRaw || prev.status, qty: prev.qty + qty });
+        } else {
+          stageMap.set(normalizedSheet, { status: statusRaw, qty });
+        }
       }
     }
     console.log(`  Parsed stage data for ${result.size} MO numbers from daily production Excel`);
@@ -285,24 +336,28 @@ async function seed() {
       backlogQty: "0",
       notes: orderData.notes,
       status: orderData.status,
+    }).onConflictDoUpdate({
+      target: metalWorkOrdersTable.moNumber,
+      set: { project: sql`excluded.project`, client: sql`excluded.client`, product: sql`excluded.product`, qty: sql`excluded.qty`, unit: sql`excluded.unit`, notes: sql`excluded.notes`, status: sql`excluded.status` },
     }).returning();
 
     const moStageData = dailyStageStatuses.get(orderData.moNumber) ?? new Map<string, StageEntry>();
 
     const stagesToInsert = METAL_STAGES.map(s => {
-      const entry = moStageData.get(s.name);
+      // Normalize stage name to match the normalized sheet names in the production map
+      const entry = moStageData.get(normalizeArabic(s.name));
       let status = "لم يتم البدء";
       let qtyDone = "0";
-      if (entry && entry.status) {
-        const r = entry.status.toLowerCase();
-        if (r.includes("تم الانتهاء") || r.includes("تم") || r.includes("done") || r.includes("finish")) {
+      if (entry && (entry.status || entry.qty > 0)) {
+        const r = (entry.status || "").toLowerCase().trim();
+        if (r.includes("تم") || r.includes("done") || r.includes("finish") || r.includes("انتهاء")) {
           status = "تم الانتهاء";
-        } else if (r.includes("جاري") || r.includes("تحت") || r.includes("progress") || r.includes("wip")) {
+        } else if (r.includes("جاري") || r.includes("تحت") || r.includes("progress") || r.includes("wip") || entry.qty > 0) {
           status = "تحت التصنيع";
-        } else {
-          status = entry.status;
+        } else if (r) {
+          status = "تحت التصنيع"; // any non-empty status = in progress
         }
-        // Use real parsed qty from Excel; fall back to order qty when stage is fully done
+        // Use real accumulated qty from Excel; fall back to order qty when fully done
         qtyDone = entry.qty > 0 ? String(entry.qty) : (status === "تم الانتهاء" ? orderData.qty : "0");
       } else if (orderData.status === "تم الانتهاء") {
         status = "تم الانتهاء";
@@ -310,7 +365,11 @@ async function seed() {
       }
       return { metalOrderId: order.id, moNumber: order.moNumber, stageName: s.name, stageOrder: s.order, qtyTarget: orderData.qty, qtyDone, status };
     });
-    await db.insert(metalProductionStagesTable).values(stagesToInsert);
+    await db.insert(metalProductionStagesTable).values(stagesToInsert)
+      .onConflictDoUpdate({
+        target: [metalProductionStagesTable.metalOrderId, metalProductionStagesTable.stageName],
+        set: { qtyDone: sql`excluded.qty_done`, status: sql`excluded.status` },
+      });
   }
 
   // Update completionPct based on stage data for each metal order
@@ -343,6 +402,18 @@ async function seed() {
       rem: String(orderData.rem),
       status: orderData.status,
       prodDateEnd: orderData.prodDateEnd || "",
+    }).onConflictDoUpdate({
+      target: woodenWorkOrdersTable.orderNo,
+      set: {
+        client: sql`excluded.client`,
+        subProject: sql`excluded.sub_project`,
+        product: sql`excluded.product`,
+        qty: sql`excluded.qty`,
+        done: sql`excluded.done`,
+        rem: sql`excluded.rem`,
+        status: sql`excluded.status`,
+        prodDateEnd: sql`excluded.prod_date_end`,
+      },
     }).returning();
 
     const qty = orderData.qty;
@@ -355,7 +426,11 @@ async function seed() {
       const status = stageProgress >= 1 ? "تم الانتهاء" : stageProgress > 0 ? "تحت التصنيع" : "لم يتم البدء";
       return { woodenOrderId: order.id, stageName: s.name, stageOrder: s.order, qtyDone: String(qtyDone), status };
     });
-    await db.insert(woodenProductionStagesTable).values(stagesToInsert);
+    await db.insert(woodenProductionStagesTable).values(stagesToInsert)
+      .onConflictDoUpdate({
+        target: [woodenProductionStagesTable.woodenOrderId, woodenProductionStagesTable.stageName],
+        set: { qtyDone: sql`excluded.qty_done`, status: sql`excluded.status` },
+      });
   }
 
   console.log(`Done! ${metalOrders.length} metal orders, ${woodenOrders.length} wooden orders seeded from real Excel data.`);
