@@ -1,8 +1,19 @@
 uploads = []
-outputs = []
 
 [[generated]]
 id = "k-bAWEBKKoyhxyngB0Dcx"
 uri = "file://artifacts/ebdaa-slides/public/hero-factory.png"
 type = "image"
 title = "generated_image"
+
+[[outputs]]
+id = "1xyGH2nKCU9eePO1IVNuf"
+uri = "file://.local/outputs/Ebdaa-Factory-Management-System.pptx"
+type = "slides"
+title = "عرض إبداع للأثاث — نظام إدارة المصانع (PPTX)"
+
+[[outputs]]
+id = "dzIRfAZyngAN2dMOFKKjG"
+uri = "file://.local/outputs/Ebdaa-Factory-Management-System.pdf"
+type = "pdf"
+title = "عرض إبداع للأثاث — نظام إدارة المصانع (PDF)"
