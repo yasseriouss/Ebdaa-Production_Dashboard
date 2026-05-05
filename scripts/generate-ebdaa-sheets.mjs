@@ -1,199 +1,356 @@
+/**
+ * Ebdaa Sheets Template Generator
+ * Generates .xlsx file with 5 sheets for Ebdaa Furniture Factory Management
+ * Run: node scripts/generate-ebdaa-sheets.mjs
+ */
+
 import * as XLSX from "xlsx";
 import { mkdir } from "fs/promises";
-import path from "path";
 
 await mkdir(".local/outputs", { recursive: true });
 
 const wb = XLSX.utils.book_new();
 
-// ─── 1. METAL ORDERS ────────────────────────────────────────────────────────
-const metalHeaders = [
-  "رقم MOM\nMO Number",
-  "المشروع\nProject",
-  "العميل\nClient",
-  "المنتج\nProduct",
-  "الكمية\nQty",
-  "الوحدة\nUnit",
-  // 17 production stages
-  "ليزر\nLaser",
-  "بانش\nPunch",
-  "تخليع\nStripping",
-  "تجليخ\nPolishing",
-  "لحام أرجون\nArgon Weld",
-  "لحام بنطة\nPatch Weld",
-  "لحام نحاس\nBrass Weld",
-  "لحام CO₂\nCO₂ Weld",
-  "التنايات\nBending",
-  "مكابس وتكويع\nPress & Form",
-  "المثقاب\nDrill",
-  "المقص\nShear",
-  "الكويل\nCoil",
-  "التجميع\nAssembly",
-  "تشطيب إستانلس\nStainless Finish",
-  "الدهان\nPainting",
-  "التسليم\nDelivery",
-  // Calculated
-  "نسبة الإنجاز %\nCompletion %",
-  "متأخرات\nBacklog Qty",
-  "حالة المتأخرات\nBacklog Status",
-  "الحالة\nStatus",
-  "ملاحظات\nNotes",
+// ─── Helper: encode cell (0-based r,c) ────────────────────────────────────
+const cell = (r, c) => XLSX.utils.encode_cell({ r, c });
+
+// ─── 17 Metal Stage names (Arabic | English DB key) ───────────────────────
+const METAL_STAGES = [
+  { ar: "ليزر",              en: "laser" },
+  { ar: "بانش",              en: "punch" },
+  { ar: "تخليع",             en: "stripping" },
+  { ar: "تجليخ",             en: "polishing" },
+  { ar: "لحام أرجون",        en: "argon_weld" },
+  { ar: "لحام بنطة",         en: "patch_weld" },
+  { ar: "لحام نحاس",         en: "brass_weld" },
+  { ar: "لحام CO₂",          en: "co2_weld" },
+  { ar: "التنايات",          en: "bending" },
+  { ar: "مكابس وتكويع",      en: "press_form" },
+  { ar: "المثقاب",           en: "drill" },
+  { ar: "المقص",             en: "shear" },
+  { ar: "الكويل",            en: "coil" },
+  { ar: "التجميع",           en: "assembly" },
+  { ar: "تشطيب إستانلس",    en: "stainless_finish" },
+  { ar: "الدهان",            en: "painting" },
+  { ar: "التسليم",           en: "delivery" },
 ];
 
-// Stage columns span G:W (indices 6..22), qty is col E (index 4)
-// Completion % formula: =IF(E2=0,"",ROUND(SUM(G2:W2)/E2*100,1))
-// Backlog formula: =IF(E2=0,"",E2-W2)  (Qty - Delivered)
-const metalSampleRows = [
-  ["MOM-1001", "الكيان العسكري", "الكيان العسكري", "كرسي معدني", 50, "قطعة",
+// Column indices in Metal sheet (0-based)
+const M_MO   = 0;  // A — mo_number
+const M_PROJ = 1;  // B — project
+const M_CLI  = 2;  // C — client
+const M_PROD = 3;  // D — product
+const M_QTY  = 4;  // E — qty
+const M_UNIT = 5;  // F — unit
+// G..W (indices 6..22) — 17 stage columns
+const M_STG0 = 6;
+const M_STG_LAST = 22; // delivery (التسليم)
+const M_COMP = 23; // X — completion_pct
+const M_BACK = 24; // Y — backlog_qty
+const M_BSTS = 25; // Z — backlog_status
+const M_STAT = 26; // AA — status
+const M_NOTE = 27; // AB — notes
+
+// ══════════════════════════════════════════════════════════════════════════
+//  1. METAL ORDERS — أوامر معدني
+// ══════════════════════════════════════════════════════════════════════════
+const metalHeaderRow1 = [
+  "رقم MOM", "المشروع", "العميل", "المنتج", "الكمية", "الوحدة",
+  ...METAL_STAGES.map(s => s.ar),
+  "نسبة الإنجاز %", "المتأخرات", "حالة المتأخرات", "الحالة", "ملاحظات",
+];
+const metalHeaderRow2 = [
+  "mo_number", "project", "client", "product", "qty", "unit",
+  ...METAL_STAGES.map(s => s.en),
+  "completion_pct", "backlog_qty", "backlog_status", "status", "notes",
+];
+
+// Sample data rows (values only — formulas added below)
+const metalSamples = [
+  ["MOM-1001","الكيان العسكري","الكيان العسكري","كرسي معدني",50,"قطعة",
    50,48,48,47,46,46,46,46,46,46,46,45,45,44,44,44,40,
-   "", "", "", "تحت التصنيع", ""],
-  ["MOM-1002", "جزيرة مزارين", "جزيرة مزارين", "طاولة معدنية", 30, "قطعة",
+   null,null,"","تحت التصنيع",""],
+  ["MOM-1002","جزيرة مزارين","جزيرة مزارين","طاولة معدنية",30,"قطعة",
    30,30,30,29,28,28,28,28,28,27,27,27,27,26,26,25,20,
-   "", "", "", "تحت التصنيع", ""],
+   null,null,"","تحت التصنيع",""],
 ];
 
-const metalData = [metalHeaders, ...metalSampleRows];
-const wsMetalRaw = XLSX.utils.aoa_to_sheet(metalData);
+// Build sheet as AOA (header rows + samples + blanks)
+const metalAOA = [metalHeaderRow1, metalHeaderRow2, ...metalSamples];
+const wsM = XLSX.utils.aoa_to_sheet(metalAOA);
 
-// Inject completion % and backlog formulas for sample rows + 100 blank rows
-for (let r = 2; r <= 102; r++) {
-  const completionCell = XLSX.utils.encode_cell({ r, c: 23 }); // col X
-  const backlogCell    = XLSX.utils.encode_cell({ r, c: 24 }); // col Y
-  const qtyCell        = `E${r + 1}`;
-  const sumRange       = `G${r + 1}:W${r + 1}`;
-  const deliveredCell  = `W${r + 1}`;
+// Inject completion % and backlog formulas for rows 3..102
+// r=0 → header1, r=1 → header2, r=2 → first data row (sheet row 3)
+// But first data row is index 2, corresponding to sheet row 3.
+// Wait — we want formulas on EVERY data row. Let's check: samples start at
+// AOA index 2 (r=2 in xlsx → sheet row 3). We add formulas for r=2..101.
+for (let r = 2; r <= 101; r++) {
+  const sheetRow = r + 1; // 1-based sheet row number for formula strings
+  const qtyRef  = `E${sheetRow}`;
+  const sumRange = `G${sheetRow}:W${sheetRow}`;
+  const delRef   = `W${sheetRow}`; // التسليم (last stage = delivery)
 
-  wsMetalRaw[completionCell] = { f: `IF(${qtyCell}=0,"",ROUND(SUM(${sumRange})/${qtyCell}*100,1))`, t: "n" };
-  wsMetalRaw[backlogCell]    = { f: `IF(${qtyCell}=0,"",${qtyCell}-${deliveredCell})`, t: "n" };
+  // Completion % = SUM(stages) / qty * 100, blank if qty=0
+  wsM[cell(r, M_COMP)] = {
+    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",ROUND(SUM(${sumRange})/${qtyRef}*100,1)))`,
+    t: "n",
+  };
+  // Backlog qty = qty - delivered, blank if qty=0
+  wsM[cell(r, M_BACK)] = {
+    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",MAX(0,${qtyRef}-${delRef})))`,
+    t: "n",
+  };
 }
 
-// Column widths
-wsMetalRaw["!cols"] = [
-  { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 8 }, { wch: 8 },
-  ...Array(17).fill({ wch: 9 }),
-  { wch: 13 }, { wch: 10 }, { wch: 16 }, { wch: 16 }, { wch: 22 },
+wsM["!cols"] = [
+  { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 7 }, { wch: 7 },
+  ...Array(17).fill({ wch: 8 }),
+  { wch: 13 }, { wch: 11 }, { wch: 16 }, { wch: 16 }, { wch: 22 },
 ];
-wsMetalRaw["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 102, c: 27 } });
-XLSX.utils.book_append_sheet(wb, wsMetalRaw, "أوامر معدني");
+wsM["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 101, c: 27 } });
+XLSX.utils.book_append_sheet(wb, wsM, "أوامر معدني");
 
-// ─── 2. WOODEN ORDERS ───────────────────────────────────────────────────────
-const woodenHeaders = [
-  "رقم الأمر\nOrder No",
-  "الامتداد (بعد تنظيف VBC)\nExtension",
-  "تاريخ الأمر\nOrder Date",
-  "طلب التصنيع\nManufacture Req",
-  "كود SAP\nSAP Code",
-  "العميل\nClient",
-  "المشروع الفرعي\nSub-Project",
-  "المنتج\nProduct",
-  "الفئة\nCategory",
-  "وحدة القياس\nUOM",
-  "الكمية\nQty",
-  "المنجز\nDone",
-  "المتبقي\nRemaining",
-  "نسبة الإنجاز %\nCompletion %",
-  "الحالة\nStatus",
-  "تاريخ بدء الإنتاج\nProd Start",
-  "تاريخ انتهاء الإنتاج\nProd End",
-  "تاريخ الانتهاء الفعلي\nActual Finish",
+// ══════════════════════════════════════════════════════════════════════════
+//  2. WOODEN ORDERS — أوامر خشبي
+// ══════════════════════════════════════════════════════════════════════════
+// Column indices in Wooden sheet (0-based)
+const W_ORD  = 0;  // A — order_no
+const W_EXT  = 1;  // B — extension (VBC-cleaned)
+const W_DATE = 2;  // C — order_date
+const W_MREQ = 3;  // D — manufacture_request
+const W_SAP  = 4;  // E — sap_code
+const W_CLI  = 5;  // F — client
+const W_SUB  = 6;  // G — sub_project
+const W_PROD = 7;  // H — product
+const W_CAT  = 8;  // I — category
+const W_UOM  = 9;  // J — uom
+const W_QTY  = 10; // K — qty
+const W_DONE = 11; // L — done
+const W_REM  = 12; // M — rem  (auto-calculated)
+const W_PCT  = 13; // N — completion_pct (auto-calculated)
+const W_STAT = 14; // O — status
+const W_PS   = 15; // P — prod_date_start
+const W_PE   = 16; // Q — prod_date_end
+const W_PF   = 17; // R — prod_date_finished
+
+const woodenHdr1 = [
+  "رقم الأمر","الامتداد (بعد تنظيف VBC)","تاريخ الأمر","طلب التصنيع","كود SAP",
+  "العميل","المشروع الفرعي","المنتج","الفئة","وحدة القياس",
+  "الكمية","المنجز","المتبقي","نسبة الإنجاز %","الحالة",
+  "تاريخ بدء الإنتاج","تاريخ انتهاء الإنتاج","تاريخ الانتهاء الفعلي",
+];
+const woodenHdr2 = [
+  "order_no","extension","order_date","manufacture_request","sap_code",
+  "client","sub_project","product","category","uom",
+  "qty","done","rem","completion_pct","status",
+  "prod_date_start","prod_date_end","prod_date_finished",
 ];
 
-const woodenSampleRows = [
-  ["WO-2001", "=SUBSTITUTE(UPPER(A2),\"VBC\",\"\")", "2025-01-10", "MR-101", "SAP-001", "الكيان العسكري", "كراسي ضيوف", "كرسي خشبي", "أثاث", "قطعة", 100, 80, "", "", "تحت التصنيع", "2025-01-15", "2025-03-15", ""],
-  ["WO-2002", "=SUBSTITUTE(UPPER(A3),\"VBC\",\"\")", "2025-02-01", "MR-102", "SAP-002", "فاينست",        "طاولات اجتماعات", "طاولة خشبية", "أثاث", "قطعة", 20, 20, "", "", "تم التسليم",  "2025-02-10", "2025-04-10", "2025-04-08"],
+const woodenSamples = [
+  ["WO-2001","","2025-01-10","MR-101","SAP-001","الكيان العسكري","كراسي ضيوف","كرسي خشبي","أثاث","قطعة",100,80,null,null,"تحت التصنيع","2025-01-15","2025-03-15",""],
+  ["WO-2002","","2025-02-01","MR-102","SAP-002","فاينست","طاولات اجتماعات","طاولة خشبية","أثاث","قطعة",20,20,null,null,"تم التسليم","2025-02-10","2025-04-10","2025-04-08"],
 ];
 
-const woodenData = [woodenHeaders, ...woodenSampleRows];
-const wsWooden = XLSX.utils.aoa_to_sheet(woodenData);
+const woodenAOA = [woodenHdr1, woodenHdr2, ...woodenSamples];
+const wsW = XLSX.utils.aoa_to_sheet(woodenAOA);
 
-// Formulas for Remaining and Completion %
-for (let r = 2; r <= 102; r++) {
-  const remCell  = XLSX.utils.encode_cell({ r, c: 12 }); // col M
-  const pctCell  = XLSX.utils.encode_cell({ r, c: 13 }); // col N
-  const extCell  = XLSX.utils.encode_cell({ r, c: 1  }); // col B (Extension clean)
-  const qtyRef   = `K${r + 1}`;
-  const doneRef  = `L${r + 1}`;
-  const aRef     = `A${r + 1}`;
+// Inject formulas for rows r=2..101 (r=0 hdr1, r=1 hdr2, r=2..N data)
+for (let r = 2; r <= 101; r++) {
+  const sRow  = r + 1; // 1-based sheet row
+  const ordRef = `A${sRow}`;
+  const qtyRef = `K${sRow}`;
+  const donRef = `L${sRow}`;
 
-  if (r >= 3) { // skip sample rows that already have it
-    wsWooden[extCell] = { f: `IF(${aRef}="","",SUBSTITUTE(UPPER(${aRef}),"VBC",""))`, t: "s" };
-  }
-  wsWooden[remCell] = { f: `IF(${qtyRef}=0,"",${qtyRef}-${doneRef})`, t: "n" };
-  wsWooden[pctCell] = { f: `IF(${qtyRef}=0,"",ROUND(${doneRef}/${qtyRef}*100,1))`, t: "n" };
+  // Extension: strip "VBC" (case-insensitive) from order_no if Extension is blank
+  wsW[cell(r, W_EXT)] = {
+    f: `IF(${ordRef}="","",SUBSTITUTE(SUBSTITUTE(UPPER(${ordRef}),"VBC-",""),"-VBC",""))`,
+    t: "s",
+  };
+  // Remaining = qty - done
+  wsW[cell(r, W_REM)] = {
+    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",MAX(0,${qtyRef}-${donRef})))`,
+    t: "n",
+  };
+  // Completion % = done / qty * 100
+  wsW[cell(r, W_PCT)] = {
+    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",ROUND(${donRef}/${qtyRef}*100,1)))`,
+    t: "n",
+  };
 }
 
-wsWooden["!cols"] = [
+wsW["!cols"] = [
   { wch: 12 }, { wch: 22 }, { wch: 13 }, { wch: 16 }, { wch: 12 },
-  { wch: 18 }, { wch: 20 }, { wch: 22 }, { wch: 12 }, { wch: 8 },
+  { wch: 18 }, { wch: 20 }, { wch: 22 }, { wch: 12 }, { wch: 8  },
   { wch: 8  }, { wch: 8  }, { wch: 10 }, { wch: 13 }, { wch: 16 },
   { wch: 14 }, { wch: 14 }, { wch: 16 },
 ];
-wsWooden["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 102, c: 17 } });
-XLSX.utils.book_append_sheet(wb, wsWooden, "أوامر خشبي");
+wsW["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 101, c: 17 } });
+XLSX.utils.book_append_sheet(wb, wsW, "أوامر خشبي");
 
-// ─── 3. DASHBOARD ───────────────────────────────────────────────────────────
-const dashRows = [
-  ["لوحة التحكم — مصنعي إبداع", "", "", ""],
-  ["Dashboard — Ebdaa Factories", "", "", ""],
-  ["", "", "", ""],
-  ["المؤشر", "المصنع المعدني", "المصنع الخشبي", "الإجمالي"],
-  ["إجمالي الأوامر",       { f: "COUNTA('أوامر معدني'!A2:A10000)-1" }, { f: "COUNTA('أوامر خشبي'!A2:A10000)-1" }, { f: "B5+C5" }],
-  ["الأوامر النشطة",       { f: "COUNTIF('أوامر معدني'!AA2:AA10000,\"تحت التصنيع\")" }, { f: "COUNTIF('أوامر خشبي'!O2:O10000,\"تحت التصنيع\")" }, { f: "B6+C6" }],
-  ["الأوامر المكتملة",     { f: "COUNTIF('أوامر معدني'!AA2:AA10000,\"تم التسليم\")" }, { f: "COUNTIF('أوامر خشبي'!O2:O10000,\"تم التسليم\")" }, { f: "B7+C7" }],
-  ["الأوامر المتوقفة",     { f: "COUNTIF('أوامر معدني'!AA2:AA10000,\"متوقف\")" }, { f: "COUNTIF('أوامر خشبي'!O2:O10000,\"متوقف\")" }, { f: "B8+C8" }],
-  ["إجمالي المتأخرات (كمية)", { f: "SUMIF('أوامر معدني'!E2:E10000,\">0\",'أوامر معدني'!Y2:Y10000)" }, { f: "SUMIF('أوامر خشبي'!K2:K10000,\">0\",'أوامر خشبي'!M2:M10000)" }, { f: "B9+C9" }],
-  ["متوسط نسبة الإنجاز %", { f: "IFERROR(AVERAGEIF('أوامر معدني'!E2:E10000,\">0\",'أوامر معدني'!X2:X10000),0)" }, { f: "IFERROR(AVERAGEIF('أوامر خشبي'!K2:K10000,\">0\",'أوامر خشبي'!N2:N10000),0)" }, { f: "IFERROR((B10+C10)/2,0)" }],
-  ["", "", "", ""],
-  ["المشاريع المشتركة (عملاء في المصنعين)", "", "", ""],
-  ["", "", "", ""],
-  ["العميل", "أوامر معدني", "أوامر خشبي", "إجمالي"],
+// ══════════════════════════════════════════════════════════════════════════
+//  3. DASHBOARD — لوحة التحكم
+//  KPIs mirror dashboard.ts:
+//    metalTotalOrders, metalActiveOrders, metalCompletedOrders,
+//    metalOverdueOrders, metalBacklogTotal, metalAvgCompletionPct,
+//    woodenTotalOrders, woodenActiveOrders, woodenCompletedOrders,
+//    woodenOverdueOrders, woodenBacklogTotal, woodenAvgCompletionPct,
+//    sharedProjectsCount
+// ══════════════════════════════════════════════════════════════════════════
+const MO = "'أوامر معدني'"; // Metal sheet ref
+const WO = "'أوامر خشبي'";  // Wooden sheet ref
+
+// KPI formulas — exact mirrors of dashboard.ts logic
+const kpiRows = [
+  // [Label (AR), DB Key, Metal formula, Wooden formula, Total formula]
+  [
+    "إجمالي الأوامر\nTotal Orders",
+    "totalOrders",
+    { f: `COUNTA(${MO}!A3:A10000)` },
+    { f: `COUNTA(${WO}!A3:A10000)` },
+    { f: "B5+C5" },
+  ],
+  [
+    "الأوامر النشطة\nActive Orders",
+    "activeOrders",
+    { f: `COUNTIF(${MO}!AA3:AA10000,"تحت التصنيع")+COUNTIF(${MO}!AA3:AA10000,"في المخزن")` },
+    { f: `COUNTIF(${WO}!O3:O10000,"تحت التصنيع")+COUNTIF(${WO}!O3:O10000,"Production")` },
+    { f: "B6+C6" },
+  ],
+  [
+    "الأوامر المكتملة\nCompleted Orders",
+    "completedOrders",
+    { f: `COUNTIF(${MO}!AA3:AA10000,"تم الانتهاء")+COUNTIF(${MO}!AA3:AA10000,"تم التسليم")` },
+    { f: `COUNTIF(${WO}!O3:O10000,"تم التسليم")+COUNTIF(${WO}!O3:O10000,"Delivered")` },
+    { f: "B7+C7" },
+  ],
+  [
+    "الأوامر المتوقفة\nOverdue / Stalled",
+    "overdueOrders",
+    { f: `COUNTIF(${MO}!AA3:AA10000,"متوقف")` },
+    { f: `COUNTIF(${WO}!O3:O10000,"متوقف")+COUNTIF(${WO}!O3:O10000,"Hold")` },
+    { f: "B8+C8" },
+  ],
+  [
+    "إجمالي المتأخرات (كمية)\nBacklog Total (qty)",
+    "backlogTotal",
+    { f: `SUMIF(${MO}!Y3:Y10000,">"&0)` },
+    { f: `SUMIF(${WO}!M3:M10000,">"&0)` },
+    { f: "B9+C9" },
+  ],
+  [
+    "متوسط نسبة الإنجاز %\nAvg Completion %",
+    "avgCompletionPct",
+    { f: `IFERROR(ROUND(AVERAGEIF(${MO}!E3:E10000,">"&0,${MO}!X3:X10000),1),0)` },
+    { f: `IFERROR(ROUND(AVERAGEIF(${WO}!K3:K10000,">"&0,${WO}!N3:N10000),1),0)` },
+    { f: `IFERROR(ROUND((B10+C10)/2,1),0)` },
+  ],
+  [
+    "المشاريع المشتركة (عملاء في كلا المصنعين)\nShared Projects Count",
+    "sharedProjectsCount",
+    // Count metal orders whose client also exists in wooden — mirrors dashboard.ts sharedClients.size
+    { f: `SUMPRODUCT(--(COUNTIF(${WO}!F3:F10000,${MO}!C3:C10000)>0),--(LEN(TRIM(${MO}!C3:C10000))>0))` },
+    { f: `""` },
+    { f: "B11" },
+  ],
 ];
 
-const wsDash = XLSX.utils.aoa_to_sheet(dashRows);
-wsDash["!cols"] = [{ wch: 35 }, { wch: 18 }, { wch: 18 }, { wch: 14 }];
-wsDash["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 20, c: 3 } });
+const dashAOA = [
+  ["لوحة التحكم — مصنعي إبداع للأثاث", "", "", "", ""],
+  ["Dashboard — Ebdaa Factories", "", "", "", ""],
+  ["آخر تحديث / Last Update:", { f: `TEXT(NOW(),"YYYY-MM-DD HH:MM")` }, "", "", ""],
+  ["المؤشر / KPI", "مفتاح DB / DB Key", "معدني / Metal", "خشبي / Wooden", "الإجمالي / Total"],
+  ...kpiRows,
+  ["", "", "", "", ""],
+  ["— راجع شيت 'مشاريع مشتركة' لتفاصيل العملاء المشتركين —", "", "", "", ""],
+];
+
+const wsDash = XLSX.utils.aoa_to_sheet(dashAOA);
+wsDash["!cols"] = [
+  { wch: 40 }, { wch: 22 }, { wch: 18 }, { wch: 18 }, { wch: 16 },
+];
 XLSX.utils.book_append_sheet(wb, wsDash, "لوحة التحكم");
 
-// ─── 4. SHARED PROJECTS ─────────────────────────────────────────────────────
-const sharedHeaders = [
-  "العميل\nClient",
-  "عدد أوامر معدني\nMetal Orders",
-  "عدد أوامر خشبي\nWooden Orders",
-  "إجمالي الأوامر\nTotal Orders",
-  "متوسط إنجاز معدني %\nMetal Completion %",
-  "متوسط إنجاز خشبي %\nWooden Completion %",
-  "ملاحظات\nNotes",
+// ══════════════════════════════════════════════════════════════════════════
+//  4. SHARED PROJECTS — مشاريع مشتركة
+//  Auto-populated via FILTER+COUNTIF cross-sheet formula (Google Sheets)
+// ══════════════════════════════════════════════════════════════════════════
+const sharedHdr = [
+  "العميل (auto)\nclient",
+  "عدد أوامر معدني\nmetal_order_count",
+  "عدد أوامر خشبي\nwooden_order_count",
+  "إجمالي\ntotal_orders",
+  "متوسط إنجاز معدني %\nmetal_completion_pct",
+  "متوسط إنجاز خشبي %\nwooden_completion_pct",
+  "ملاحظات\nnotes",
 ];
-const sharedNote = [
-  ["ملاحظة: أضف هنا العملاء الذين لهم أوامر في كلا المصنعين.", "", "", "", "", "", ""],
-  ["Note: Add clients who appear in both Metal and Wooden factories.", "", "", "", "", "", ""],
-  ["يمكنك استخدام VLOOKUP أو QUERY للمقارنة التلقائية.", "", "", "", "", "", ""],
+
+// Row 2 (r=1): FILTER spill formula auto-populates shared clients list
+// This formula works in Google Sheets (spill array) — shows clients in BOTH factories
+const SHARED_CLIENTS_FORMULA =
+  `IFERROR(FILTER(UNIQUE(FILTER(${MO}!C3:C10000,${MO}!C3:C10000<>"")),` +
+  `COUNTIF(${WO}!F3:F10000,UNIQUE(FILTER(${MO}!C3:C10000,${MO}!C3:C10000<>"")))>0),` +
+  `"لا توجد مشاريع مشتركة — No shared projects")`;
+
+const sharedAOA = [sharedHdr];
+const wsShared = XLSX.utils.aoa_to_sheet(sharedAOA);
+
+// Inject the spill formula into A2 (r=1, c=0)
+wsShared[cell(1, 0)] = { f: SHARED_CLIENTS_FORMULA, t: "s" };
+
+// For rows 2..51 (relative, formula fills down): metal count, wooden count, total, completion
+for (let r = 2; r <= 51; r++) {
+  const sRow = r + 1;
+  const aRef = `A${sRow}`;
+  wsShared[cell(r, 1)] = { f: `IF(${aRef}="","",COUNTIF(${MO}!C:C,${aRef}))`, t: "n" };
+  wsShared[cell(r, 2)] = { f: `IF(${aRef}="","",COUNTIF(${WO}!F:F,${aRef}))`, t: "n" };
+  wsShared[cell(r, 3)] = { f: `IF(${aRef}="","",B${sRow}+C${sRow})`, t: "n" };
+  wsShared[cell(r, 4)] = { f: `IF(${aRef}="","",IFERROR(ROUND(AVERAGEIF(${MO}!C:C,${aRef},${MO}!X:X),1),""))`, t: "n" };
+  wsShared[cell(r, 5)] = { f: `IF(${aRef}="","",IFERROR(ROUND(AVERAGEIF(${WO}!F:F,${aRef},${WO}!N:N),1),""))`, t: "n" };
+}
+
+wsShared["!cols"] = [
+  { wch: 22 }, { wch: 18 }, { wch: 18 }, { wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 25 },
 ];
-const wsShared = XLSX.utils.aoa_to_sheet([sharedHeaders, ...sharedNote]);
-wsShared["!cols"] = [{ wch: 20 }, { wch: 16 }, { wch: 16 }, { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 25 }];
+wsShared["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 51, c: 6 } });
 XLSX.utils.book_append_sheet(wb, wsShared, "مشاريع مشتركة");
 
-// ─── 5. STAGE TRACKER ───────────────────────────────────────────────────────
-const stageHeaders = [
-  "رقم MOM\nMO Number",
-  "التاريخ\nDate",
-  "اسم المرحلة\nStage Name",
-  "الكمية الداخلة\nInput Qty",
-  "الكمية الخارجة\nOutput Qty",
-  "الفاقد\nWaste",
-  "المشغّل\nOperator",
-  "ملاحظات\nNotes",
+// ══════════════════════════════════════════════════════════════════════════
+//  5. STAGE TRACKER — متابعة المراحل
+// ══════════════════════════════════════════════════════════════════════════
+const stageHdr1 = [
+  "رقم MOM", "التاريخ", "اسم المرحلة", "الكمية الداخلة", "الكمية الخارجة",
+  "الفاقد", "المشغّل", "ملاحظات",
 ];
-const stageRows = [
-  ["MOM-1001", "2025-01-15", "ليزر / Laser", 50, 50, { f: "D2-E2" }, "محمد", ""],
-  ["MOM-1001", "2025-01-17", "بانش / Punch", 50, 48, { f: "D3-E3" }, "أحمد", "قطعتان مرفوضتان"],
-  ["MOM-1001", "2025-01-20", "تجليخ / Polishing", 48, 47, { f: "D4-E4" }, "سعيد", ""],
+const stageHdr2 = [
+  "mo_number", "date", "stage_name", "input_qty", "output_qty",
+  "waste_qty", "operator", "notes",
 ];
-const wsStage = XLSX.utils.aoa_to_sheet([stageHeaders, ...stageRows]);
-wsStage["!cols"] = [{ wch: 14 }, { wch: 13 }, { wch: 22 }, { wch: 12 }, { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 22 }];
+const stageSamples = [
+  ["MOM-1001","2025-01-15","ليزر / Laser",50,50,null,"محمد",""],
+  ["MOM-1001","2025-01-17","بانش / Punch",50,48,null,"أحمد","قطعتان مرفوضتان"],
+  ["MOM-1001","2025-01-20","تجليخ / Polishing",48,47,null,"سعيد",""],
+];
+
+const stageAOA = [stageHdr1, stageHdr2, ...stageSamples];
+const wsStage = XLSX.utils.aoa_to_sheet(stageAOA);
+
+// Inject waste formula: waste = input - output (for rows r=2..101)
+for (let r = 2; r <= 101; r++) {
+  const sRow = r + 1;
+  wsStage[cell(r, 5)] = {
+    f: `IF(D${sRow}="","",MAX(0,D${sRow}-E${sRow}))`,
+    t: "n",
+  };
+}
+
+wsStage["!cols"] = [
+  { wch: 14 }, { wch: 13 }, { wch: 24 }, { wch: 12 },
+  { wch: 12 }, { wch: 10 }, { wch: 14 }, { wch: 24 },
+];
+wsStage["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 101, c: 7 } });
 XLSX.utils.book_append_sheet(wb, wsStage, "متابعة المراحل");
 
 // ─── WRITE FILE ─────────────────────────────────────────────────────────────
-const outPath = ".local/outputs/Ebdaa-Sheets-Template.xlsx";
+const outPath = "/home/runner/workspace/.local/outputs/Ebdaa-Sheets-Template.xlsx";
 XLSX.writeFile(wb, outPath);
 console.log("✓ Written:", outPath);
