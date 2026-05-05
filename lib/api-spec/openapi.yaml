@@ -3,20 +3,34 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Ebdaa Furniture Factory Management System API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: metal-orders
+    description: Metal factory work orders
+  - name: metal-stages
+    description: Metal factory production stages
+  - name: wooden-orders
+    description: Wooden factory work orders
+  - name: wooden-stages
+    description: Wooden factory production stages
+  - name: shared-projects
+    description: Cross-factory shared projects
+  - name: dashboard
+    description: Dashboard statistics and KPIs
+  - name: import-export
+    description: Import and export operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +38,525 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  # ---- Metal Work Orders ----
+  /metal/orders:
+    get:
+      operationId: listMetalOrders
+      tags: [metal-orders]
+      summary: List all metal work orders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: client
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of metal work orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MetalWorkOrder"
+    post:
+      operationId: createMetalOrder
+      tags: [metal-orders]
+      summary: Create a new metal work order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMetalOrderBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetalWorkOrder"
+
+  /metal/orders/{id}:
+    get:
+      operationId: getMetalOrder
+      tags: [metal-orders]
+      summary: Get a single metal work order with stages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Metal work order with production stages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetalWorkOrderDetail"
+        "404":
+          description: Not found
+    put:
+      operationId: updateMetalOrder
+      tags: [metal-orders]
+      summary: Update a metal work order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMetalOrderBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetalWorkOrder"
+    delete:
+      operationId: deleteMetalOrder
+      tags: [metal-orders]
+      summary: Delete a metal work order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ---- Metal Production Stages ----
+  /metal/stages:
+    get:
+      operationId: listMetalStages
+      tags: [metal-stages]
+      summary: List metal production stage records
+      parameters:
+        - name: moNumber
+          in: query
+          schema:
+            type: string
+        - name: stageName
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of metal stage records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MetalProductionStage"
+
+  /metal/stages/{id}:
+    put:
+      operationId: updateMetalStage
+      tags: [metal-stages]
+      summary: Update a metal production stage record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMetalStageBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MetalProductionStage"
+
+  /metal/stages/summary:
+    get:
+      operationId: getMetalStagesSummary
+      tags: [metal-stages]
+      summary: Get stage bottleneck summary (WIP per stage)
+      responses:
+        "200":
+          description: Stage summary
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StageSummary"
+
+  # ---- Wooden Work Orders ----
+  /wooden/orders:
+    get:
+      operationId: listWoodenOrders
+      tags: [wooden-orders]
+      summary: List all wooden work orders
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: client
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of wooden work orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WoodenWorkOrder"
+    post:
+      operationId: createWoodenOrder
+      tags: [wooden-orders]
+      summary: Create a new wooden work order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWoodenOrderBody"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WoodenWorkOrder"
+
+  /wooden/orders/{id}:
+    get:
+      operationId: getWoodenOrder
+      tags: [wooden-orders]
+      summary: Get a single wooden work order with stages
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Wooden work order detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WoodenWorkOrderDetail"
+        "404":
+          description: Not found
+    put:
+      operationId: updateWoodenOrder
+      tags: [wooden-orders]
+      summary: Update a wooden work order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateWoodenOrderBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WoodenWorkOrder"
+    delete:
+      operationId: deleteWoodenOrder
+      tags: [wooden-orders]
+      summary: Delete a wooden work order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  # ---- Wooden Production Stages ----
+  /wooden/stages:
+    get:
+      operationId: listWoodenStages
+      tags: [wooden-stages]
+      summary: List wooden production stage records
+      parameters:
+        - name: orderId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of wooden stage records
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/WoodenProductionStage"
+
+  /wooden/stages/{id}:
+    put:
+      operationId: updateWoodenStage
+      tags: [wooden-stages]
+      summary: Update a wooden production stage record
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateWoodenStageBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WoodenProductionStage"
+
+  # ---- Shared Projects ----
+  /shared-projects:
+    get:
+      operationId: listSharedProjects
+      tags: [shared-projects]
+      summary: List projects that appear in both factories
+      responses:
+        "200":
+          description: List of shared projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SharedProject"
+
+  # ---- Dashboard ----
+  /dashboard/stats:
+    get:
+      operationId: getDashboardStats
+      tags: [dashboard]
+      summary: Get dashboard KPI statistics
+      responses:
+        "200":
+          description: Dashboard statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardStats"
+
+  /dashboard/gantt:
+    get:
+      operationId: getDashboardGantt
+      tags: [dashboard]
+      summary: Get Gantt chart data for all work orders
+      parameters:
+        - name: factory
+          in: query
+          schema:
+            type: string
+            enum: [metal, wooden, all]
+        - name: dateFrom
+          in: query
+          schema:
+            type: string
+        - name: dateTo
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Gantt chart data
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GanttItem"
+
+  /dashboard/clients:
+    get:
+      operationId: getDashboardClients
+      tags: [dashboard]
+      summary: Get top clients by order volume
+      responses:
+        "200":
+          description: Client statistics
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ClientStat"
+
+  /dashboard/completion-trend:
+    get:
+      operationId: getCompletionTrend
+      tags: [dashboard]
+      summary: Get completion rate trend over time
+      responses:
+        "200":
+          description: Completion trend
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CompletionTrendPoint"
+
+  # ---- Import / Export ----
+  /import/metal-orders:
+    post:
+      operationId: importMetalOrders
+      tags: [import-export]
+      summary: Import metal orders from Excel file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /import/metal-daily:
+    post:
+      operationId: importMetalDailyProduction
+      tags: [import-export]
+      summary: Import metal daily production from Excel file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /import/wooden-orders:
+    post:
+      operationId: importWoodenOrders
+      tags: [import-export]
+      summary: Import wooden orders from Excel file
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Import result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImportResult"
+
+  /export/metal-orders:
+    get:
+      operationId: exportMetalOrders
+      tags: [import-export]
+      summary: Export metal orders as Excel or PDF
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [xlsx, pdf]
+      responses:
+        "200":
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
+  /export/wooden-orders:
+    get:
+      operationId: exportWoodenOrders
+      tags: [import-export]
+      summary: Export wooden orders as Excel or PDF
+      parameters:
+        - name: format
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [xlsx, pdf]
+      responses:
+        "200":
+          description: File download
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +567,424 @@ components:
       required:
         - status
 
+    MetalWorkOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        moNumber:
+          type: string
+        project:
+          type: string
+        client:
+          type: string
+        product:
+          type: string
+        qty:
+          type: number
+        unit:
+          type: string
+        deliveredQty:
+          type: number
+        completionPct:
+          type: number
+        backlogQty:
+          type: number
+        backlogStatus:
+          type: string
+        notes:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - moNumber
+        - product
+        - qty
+
+    MetalWorkOrderDetail:
+      allOf:
+        - $ref: "#/components/schemas/MetalWorkOrder"
+        - type: object
+          properties:
+            stages:
+              type: array
+              items:
+                $ref: "#/components/schemas/MetalProductionStage"
+
+    CreateMetalOrderBody:
+      type: object
+      properties:
+        moNumber:
+          type: string
+        project:
+          type: string
+        client:
+          type: string
+        product:
+          type: string
+        qty:
+          type: number
+        unit:
+          type: string
+        deliveredQty:
+          type: number
+        completionPct:
+          type: number
+        backlogQty:
+          type: number
+        backlogStatus:
+          type: string
+        notes:
+          type: string
+        status:
+          type: string
+      required:
+        - moNumber
+        - product
+        - qty
+
+    MetalProductionStage:
+      type: object
+      properties:
+        id:
+          type: integer
+        metalOrderId:
+          type: integer
+        moNumber:
+          type: string
+        stageName:
+          type: string
+        stageOrder:
+          type: integer
+        qtyTarget:
+          type: number
+        qtyDone:
+          type: number
+        status:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - stageName
+        - stageOrder
+
+    UpdateMetalStageBody:
+      type: object
+      properties:
+        qtyDone:
+          type: number
+        status:
+          type: string
+
+    StageSummary:
+      type: object
+      properties:
+        stageName:
+          type: string
+        stageOrder:
+          type: integer
+        totalWip:
+          type: number
+        totalDone:
+          type: number
+        orderCount:
+          type: integer
+      required:
+        - stageName
+        - stageOrder
+        - totalWip
+        - totalDone
+        - orderCount
+
+    WoodenWorkOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderNo:
+          type: string
+        extension:
+          type: string
+        orderDate:
+          type: string
+        manufactureRequest:
+          type: string
+        sapCode:
+          type: string
+        client:
+          type: string
+        subProject:
+          type: string
+        product:
+          type: string
+        category:
+          type: string
+        uom:
+          type: string
+        qty:
+          type: number
+        done:
+          type: number
+        rem:
+          type: number
+        status:
+          type: string
+        prodDateStart:
+          type: string
+        prodDateEnd:
+          type: string
+        prodDateFinished:
+          type: string
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - orderNo
+        - product
+        - qty
+
+    WoodenWorkOrderDetail:
+      allOf:
+        - $ref: "#/components/schemas/WoodenWorkOrder"
+        - type: object
+          properties:
+            stages:
+              type: array
+              items:
+                $ref: "#/components/schemas/WoodenProductionStage"
+
+    CreateWoodenOrderBody:
+      type: object
+      properties:
+        orderNo:
+          type: string
+        extension:
+          type: string
+        orderDate:
+          type: string
+        manufactureRequest:
+          type: string
+        sapCode:
+          type: string
+        client:
+          type: string
+        subProject:
+          type: string
+        product:
+          type: string
+        category:
+          type: string
+        uom:
+          type: string
+        qty:
+          type: number
+        done:
+          type: number
+        rem:
+          type: number
+        status:
+          type: string
+        prodDateStart:
+          type: string
+        prodDateEnd:
+          type: string
+        prodDateFinished:
+          type: string
+      required:
+        - orderNo
+        - product
+        - qty
+
+    WoodenProductionStage:
+      type: object
+      properties:
+        id:
+          type: integer
+        woodenOrderId:
+          type: integer
+        stageName:
+          type: string
+        stageOrder:
+          type: integer
+        qtyDone:
+          type: number
+        status:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - stageName
+        - stageOrder
+
+    UpdateWoodenStageBody:
+      type: object
+      properties:
+        qtyDone:
+          type: number
+        status:
+          type: string
+
+    SharedProject:
+      type: object
+      properties:
+        client:
+          type: string
+        metalOrderCount:
+          type: integer
+        woodenOrderCount:
+          type: integer
+        metalOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/MetalWorkOrder"
+        woodenOrders:
+          type: array
+          items:
+            $ref: "#/components/schemas/WoodenWorkOrder"
+        metalCompletionPct:
+          type: number
+        woodenCompletionPct:
+          type: number
+        combinedCompletionPct:
+          type: number
+      required:
+        - client
+        - metalOrderCount
+        - woodenOrderCount
+
+    DashboardStats:
+      type: object
+      properties:
+        metalTotalOrders:
+          type: integer
+        metalActiveOrders:
+          type: integer
+        metalCompletedOrders:
+          type: integer
+        metalOverdueOrders:
+          type: integer
+        metalAvgCompletionPct:
+          type: number
+        woodenTotalOrders:
+          type: integer
+        woodenActiveOrders:
+          type: integer
+        woodenCompletedOrders:
+          type: integer
+        woodenAvgCompletionPct:
+          type: number
+        sharedProjectsCount:
+          type: integer
+        metalStatusBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusCount"
+        woodenStatusBreakdown:
+          type: array
+          items:
+            $ref: "#/components/schemas/StatusCount"
+        metalBacklogTotal:
+          type: number
+        woodenBacklogTotal:
+          type: number
+      required:
+        - metalTotalOrders
+        - woodenTotalOrders
+        - sharedProjectsCount
+
+    StatusCount:
+      type: object
+      properties:
+        status:
+          type: string
+        count:
+          type: integer
+      required:
+        - status
+        - count
+
+    GanttItem:
+      type: object
+      properties:
+        id:
+          type: string
+        factory:
+          type: string
+        moNumber:
+          type: string
+        client:
+          type: string
+        project:
+          type: string
+        product:
+          type: string
+        startDate:
+          type: string
+        endDate:
+          type: string
+        completionPct:
+          type: number
+        status:
+          type: string
+      required:
+        - id
+        - factory
+        - moNumber
+        - product
+        - completionPct
+        - status
+
+    ClientStat:
+      type: object
+      properties:
+        client:
+          type: string
+        metalOrders:
+          type: integer
+        woodenOrders:
+          type: integer
+        totalOrders:
+          type: integer
+        completionPct:
+          type: number
+      required:
+        - client
+        - totalOrders
+
+    CompletionTrendPoint:
+      type: object
+      properties:
+        period:
+          type: string
+        metalCompletionPct:
+          type: number
+        woodenCompletionPct:
+          type: number
+      required:
+        - period
+
+    ImportResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        rowsImported:
+          type: integer
+        rowsSkipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - success
+        - rowsImported
