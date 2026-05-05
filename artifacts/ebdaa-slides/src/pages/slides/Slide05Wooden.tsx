@@ -12,10 +12,20 @@ export default function Slide05Wooden() {
         <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "3.8vw", color: "#f1f5f9", lineHeight: 1.2, marginBottom: "1vh" }}>
           إدارة أوامر الأثاث الخشبي
         </div>
-        <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.8vw", color: "#94a3b8", marginBottom: "3vh" }}>
+        <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.8vw", color: "#94a3b8", marginBottom: "1.5vh" }}>
           128+ work orders tracked across 4 production stages
         </div>
-        <div style={{ width: "9vw", height: "0.35vh", background: "#f59e0b", marginBottom: "4vh" }} />
+        <div className="flex items-center gap-[2vw] mb-[2.5vh]">
+          <div style={{ background: "rgba(245,158,11,0.12)", border: "0.1vw solid rgba(245,158,11,0.35)", borderRadius: "0.6vw", padding: "0.6vh 1.2vw" }}>
+            <span style={{ fontFamily: "Tajawal, sans-serif", fontSize: "1.5vw", color: "#f59e0b", fontWeight: 700 }}>تنظيف VBC تلقائياً</span>
+            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.4vw", color: "#64748b" }}> · Auto VBC cleanup on import</span>
+          </div>
+          <div style={{ background: "rgba(30,58,95,0.5)", border: "0.1vw solid rgba(148,163,184,0.2)", borderRadius: "0.6vw", padding: "0.6vh 1.2vw" }}>
+            <span style={{ fontFamily: "Tajawal, sans-serif", fontSize: "1.5vw", color: "#94a3b8", fontWeight: 600 }}>تتبع الحالة لكل مرحلة</span>
+            <span style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.4vw", color: "#64748b" }}> · Per-stage status tracking</span>
+          </div>
+        </div>
+        <div style={{ width: "9vw", height: "0.35vh", background: "#f59e0b", marginBottom: "2.5vh" }} />
 
         <div className="grid gap-[2.5vw]" style={{ gridTemplateColumns: "1fr 1fr", flex: 1 }}>
           <div style={{ background: "rgba(30,58,95,0.5)", border: "0.1vw solid rgba(245,158,11,0.15)", borderRadius: "1vw", padding: "3.5vh 3vw" }}>
