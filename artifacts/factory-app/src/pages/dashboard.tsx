@@ -66,7 +66,7 @@ export default function Dashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
             <CardTitle className="text-sm font-medium">أوامر المصنع المعدني</CardTitle>
@@ -101,6 +101,17 @@ export default function Dashboard() {
           <CardContent>
             <div className="text-2xl font-bold text-destructive">{stats?.metalBacklogTotal || 0}</div>
             <p className="text-xs text-muted-foreground mt-1">متوقف: {stats?.metalOverdueOrders || 0} أمر</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
+            <CardTitle className="text-sm font-medium">متأخرات خشبي</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-orange-400" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-400">{stats?.woodenBacklogTotal || 0}</div>
+            <p className="text-xs text-muted-foreground mt-1">متوقف: {stats?.woodenOverdueOrders || 0} أمر</p>
           </CardContent>
         </Card>
 

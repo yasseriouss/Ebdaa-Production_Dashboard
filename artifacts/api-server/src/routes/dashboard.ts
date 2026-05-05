@@ -37,6 +37,7 @@ router.get("/stats", async (req, res) => {
 
     const woodenCompleted = woodenOrders.filter(o => o.status === "تم التسليم" || o.status === "Delivered");
     const woodenActive = woodenOrders.filter(o => o.status === "تحت التصنيع" || o.status === "Production");
+    const woodenOverdue = woodenOrders.filter(o => o.status === "متوقف" || o.status === "Hold");
 
     const metalAvgCompletion = metalOrders.length > 0
       ? metalOrders.reduce((acc, o) => acc + parseFloat(o.completionPct || "0"), 0) / metalOrders.length
@@ -68,6 +69,7 @@ router.get("/stats", async (req, res) => {
       woodenStatusBreakdown: Array.from(woodenStatusMap.entries()).map(([status, count]) => ({ status, count })),
       metalBacklogTotal: Math.round(metalBacklog),
       woodenBacklogTotal: Math.round(woodenBacklog),
+      woodenOverdueOrders: woodenOverdue.length,
     });
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch dashboard stats" });
