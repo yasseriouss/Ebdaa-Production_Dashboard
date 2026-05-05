@@ -138,17 +138,22 @@ function recalculateMetalRow_(sheet, row) {
   const qty = parseFloat(sheet.getRange(row, M_COL_QTY).getValue()) || 0;
   if (!qty) return;
 
-  // Sum all 17 stage columns
   const stages = sheet
     .getRange(row, M_COL_STAGE_FIRST, 1, M_COL_STAGE_LAST - M_COL_STAGE_FIRST + 1)
     .getValues()[0];
 
-  // التسليم (delivery) is the last stage — use it as "delivered qty"
-  const delivered  = parseFloat(stages[stages.length - 1]) || 0;
-  const completion = qty > 0 ? Math.round((delivered / qty) * 1000) / 10 : 0;
-  const backlog    = Math.max(0, qty - delivered);
+  // Completion % = SUM(all 17 stage quantities) / (qty × 17) × 100.
+  // Pipeline average completion: 100% when every stage column equals qty.
+  // Matches sheet formula: =ROUND(SUM(G:W)/(E*17)*100, 1)
+  const stageCount = M_COL_STAGE_LAST - M_COL_STAGE_FIRST + 1; // 17
+  const sumStages  = stages.reduce((acc, v) => acc + (parseFloat(v) || 0), 0);
+  const completion = Math.round((sumStages / (qty * stageCount)) * 1000) / 10;
 
-  sheet.getRange(row, M_COL_COMPLETION).setValue(completion);
+  // Backlog = qty - delivered (التسليم = last stage, col W)
+  const delivered = parseFloat(stages[stages.length - 1]) || 0;
+  const backlog   = Math.max(0, qty - delivered);
+
+  sheet.getRange(row, M_COL_COMPLETION).setValue(Math.min(100, completion));
   sheet.getRange(row, M_COL_BACKLOG).setValue(backlog);
 }
 
@@ -277,15 +282,25 @@ function markOverdue() {
   const wooden = ss.getSheetByName(SHEET_WOODEN);
   const today  = new Date();
 
+  // Day-level today (strips time component to avoid same-day false overdue)
+  const todayDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
   if (metal) {
     const lastRow = metal.getLastRow();
     for (let r = METAL_DATA_START_ROW; r <= lastRow; r++) {
       const moNum = metal.getRange(r, M_COL_MO_NUMBER).getValue();
       if (!moNum) continue;
-      const status = (metal.getRange(r, M_COL_STATUS).getValue() || "").toString().trim();
+      const status  = (metal.getRange(r, M_COL_STATUS).getValue() || "").toString().trim();
       const rowRange = metal.getRange(r, 1, 1, M_TOTAL_COLS);
 
-      if (STATUS_METAL_OVERDUE.includes(status)) {
+      // Date-based overdue: metal sheet col AC = expected_delivery_date (optional)
+      const expDelivery = metal.getRange(r, M_TOTAL_COLS + 1).getValue();
+      const isLateMetal = expDelivery
+        ? new Date(new Date(expDelivery).getFullYear(), new Date(expDelivery).getMonth(), new Date(expDelivery).getDate()) < todayDate
+          && !STATUS_METAL_DONE.includes(status)
+        : false;
+
+      if (STATUS_METAL_OVERDUE.includes(status) || isLateMetal) {
         rowRange.setBackground(COLOR_OVERDUE);
       } else if (STATUS_METAL_DONE.includes(status)) {
         rowRange.setBackground(COLOR_DONE);
@@ -302,13 +317,17 @@ function markOverdue() {
     for (let r = WOOD_DATA_START_ROW; r <= lastRow; r++) {
       const orderNo = wooden.getRange(r, W_COL_ORDER_NO).getValue();
       if (!orderNo) continue;
-      const status  = (wooden.getRange(r, W_COL_STATUS).getValue()  || "").toString().trim();
-      const dateEnd = wooden.getRange(r, W_COL_PROD_END).getValue();
+      const status   = (wooden.getRange(r, W_COL_STATUS).getValue()  || "").toString().trim();
+      const dateEnd  = wooden.getRange(r, W_COL_PROD_END).getValue();
       const rowRange = wooden.getRange(r, 1, 1, W_TOTAL_COLS);
 
       const isDone    = STATUS_WOODEN_DONE.some(s => status === s);
       const isOverdue = STATUS_WOODEN_OVERDUE.some(s => status === s);
-      const isLate    = dateEnd && new Date(dateEnd) < today && !isDone;
+      // Day-level comparison: strip time from dateEnd to avoid same-day false positives
+      const isLate    = dateEnd
+        ? new Date(new Date(dateEnd).getFullYear(), new Date(dateEnd).getMonth(), new Date(dateEnd).getDate()) < todayDate
+          && !isDone
+        : false;
 
       if (isOverdue || isLate) {
         rowRange.setBackground(COLOR_OVERDUE);

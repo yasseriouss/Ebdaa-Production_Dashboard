@@ -58,46 +58,45 @@ const metalHeaderRow1 = [
   "رقم MOM", "المشروع", "العميل", "المنتج", "الكمية", "الوحدة",
   ...METAL_STAGES.map(s => s.ar),
   "نسبة الإنجاز %", "المتأخرات", "حالة المتأخرات", "الحالة", "ملاحظات",
+  "تاريخ التسليم المتوقع",
 ];
 const metalHeaderRow2 = [
   "mo_number", "project", "client", "product", "qty", "unit",
   ...METAL_STAGES.map(s => s.en),
   "completion_pct", "backlog_qty", "backlog_status", "status", "notes",
+  "expected_delivery_date",
 ];
 
-// Sample data rows (values only — formulas added below)
+// Sample data rows (values only — formulas injected below for completion/backlog)
 const metalSamples = [
   ["MOM-1001","الكيان العسكري","الكيان العسكري","كرسي معدني",50,"قطعة",
    50,48,48,47,46,46,46,46,46,46,46,45,45,44,44,44,40,
-   null,null,"","تحت التصنيع",""],
+   null,null,"","تحت التصنيع","","2025-06-30"],
   ["MOM-1002","جزيرة مزارين","جزيرة مزارين","طاولة معدنية",30,"قطعة",
    30,30,30,29,28,28,28,28,28,27,27,27,27,26,26,25,20,
-   null,null,"","تحت التصنيع",""],
+   null,null,"","تحت التصنيع","","2025-07-15"],
 ];
 
 // Build sheet as AOA (header rows + samples + blanks)
 const metalAOA = [metalHeaderRow1, metalHeaderRow2, ...metalSamples];
 const wsM = XLSX.utils.aoa_to_sheet(metalAOA);
 
-// Inject completion % and backlog formulas for rows 3..102
-// r=0 → header1, r=1 → header2, r=2 → first data row (sheet row 3)
-// But first data row is index 2, corresponding to sheet row 3.
-// Wait — we want formulas on EVERY data row. Let's check: samples start at
-// AOA index 2 (r=2 in xlsx → sheet row 3). We add formulas for r=2..101.
+// Inject completion % and backlog formulas for data rows (r=2..101 in 0-based xlsx indexing).
+// r=0: Arabic header row, r=1: DB-key header row, r=2..N: data rows.
+// sheetRow = r+1 gives the 1-based row number used inside formula strings.
+// Completion formula: SUM(stages)/(qty*17)*100 — pipeline average completion %.
+// Produces 0-100% range (100% when all 17 stage columns equal qty).
+// Matches Apps Script recalculateMetalRow_() which uses the same logic.
 for (let r = 2; r <= 101; r++) {
-  const sheetRow = r + 1; // 1-based sheet row number for formula strings
-  const qtyRef  = `E${sheetRow}`;
+  const sheetRow = r + 1;
+  const qtyRef   = `E${sheetRow}`;
   const sumRange = `G${sheetRow}:W${sheetRow}`;
-  const delRef   = `W${sheetRow}`; // التسليم (last stage = delivery)
+  const delRef   = `W${sheetRow}`;
 
-  // Completion % = delivered qty (التسليم, col W) / total qty * 100
-  // Matches Apps Script recalculateMetalRow_() which also uses delivered/qty
-  // Col W = التسليم (last/17th stage = delivery)
   wsM[cell(r, M_COMP)] = {
-    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",ROUND(${delRef}/${qtyRef}*100,1)))`,
+    f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",ROUND(SUM(${sumRange})/(${qtyRef}*17)*100,1)))`,
     t: "n",
   };
-  // Backlog qty = qty - delivered, blank if qty=0
   wsM[cell(r, M_BACK)] = {
     f: `IF(${qtyRef}="","",IF(${qtyRef}=0,"",MAX(0,${qtyRef}-${delRef})))`,
     t: "n",
@@ -107,9 +106,9 @@ for (let r = 2; r <= 101; r++) {
 wsM["!cols"] = [
   { wch: 14 }, { wch: 18 }, { wch: 18 }, { wch: 22 }, { wch: 7 }, { wch: 7 },
   ...Array(17).fill({ wch: 8 }),
-  { wch: 13 }, { wch: 11 }, { wch: 16 }, { wch: 16 }, { wch: 22 },
+  { wch: 13 }, { wch: 11 }, { wch: 16 }, { wch: 16 }, { wch: 22 }, { wch: 20 },
 ];
-wsM["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 101, c: 27 } });
+wsM["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 101, c: 28 } });
 XLSX.utils.book_append_sheet(wb, wsM, "أوامر معدني");
 
 // ══════════════════════════════════════════════════════════════════════════
@@ -242,7 +241,7 @@ const kpiRows = [
   [
     "متوسط نسبة الإنجاز %\nAvg Completion %",
     "avgCompletionPct",
-    { f: `IFERROR(ROUND(AVERAGEIF(${MO}!E3:E10000,">"&0,${MO}!X3:X10000),1),0)` },
+    { f: `IFERROR(ROUND(AVERAGEIF(${MO}!E3:E10000,">"&0,${MO}!X3:X10000),1),"")` },
     { f: `IFERROR(ROUND(AVERAGEIF(${WO}!K3:K10000,">"&0,${WO}!N3:N10000),1),0)` },
     { f: `IFERROR(ROUND((B10+C10)/2,1),0)` },
   ],
