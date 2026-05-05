@@ -4,7 +4,7 @@ import { z } from "zod/v4";
 
 export const woodenWorkOrdersTable = pgTable("wooden_work_orders", {
   id: serial("id").primaryKey(),
-  orderNo: text("order_no").notNull(),
+  orderNo: text("order_no").notNull().unique(),
   extension: text("extension"),
   orderDate: text("order_date"),
   manufactureRequest: text("manufacture_request"),

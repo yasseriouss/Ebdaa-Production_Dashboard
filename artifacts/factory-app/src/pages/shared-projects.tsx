@@ -188,7 +188,7 @@ export default function SharedProjects() {
                               {wo.orderNo}
                             </Link>
                             <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium shrink-0 ${STATUS_COLORS[wo.status || ""] || "bg-muted text-muted-foreground"}`}>
-                              {wo.status === "Delivered" ? "مسلّم" : wo.status === "Production" ? "تحت التصنيع" : wo.status}
+                              {(wo.status === "Delivered" || wo.status === "تم التسليم") ? "تم التسليم" : (wo.status === "Production" || wo.status === "تحت التصنيع") ? "تحت التصنيع" : wo.status}
                             </span>
                           </div>
                           <div className="text-[10px] text-muted-foreground truncate mt-0.5">{wo.product}</div>

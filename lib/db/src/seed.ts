@@ -145,10 +145,10 @@ function loadWoodenOrders(): WoodenOrderRow[] {
       const rawOrderNo = safeStr(row[0]);
       if (!rawOrderNo || rawOrderNo === "") continue;
 
-      // Strip VBC from order number and keep the remainder as extension
-      const orderNoClean = rawOrderNo.replace(/\bvbc[-\s]*/gi, "").replace(/\s+/g, " ").trim();
-      const hasVbc = /vbc/i.test(rawOrderNo);
-      const extension = hasVbc ? rawOrderNo.replace(/\bvbc[-\s]*/gi, "").trim() : "";
+      // Keep orderNo as-is (only safe trim), read Extension from dedicated column D (index 1)
+      const orderNoClean = rawOrderNo.trim();
+      const rawExtension = safeStr(row[1]);
+      const extension = rawExtension.replace(/\bvbc[-\s]*/gi, "").trim();
 
       const product = safeStr(row[4]);
       if (!product) continue; // skip completely blank rows
@@ -167,7 +167,7 @@ function loadWoodenOrders(): WoodenOrderRow[] {
         qty,
         done,
         rem,
-        status: safeStr(row[8]) || "Production",
+        status: safeStr(row[8]) || "تحت التصنيع",
         notes: safeStr(row[9]),
         prodDateEnd: excelDateToStr(row[10]),
       });
@@ -227,16 +227,16 @@ const FALLBACK_METAL_ORDERS: MetalOrderRow[] = [
 ];
 
 const FALLBACK_WOODEN_ORDERS: WoodenOrderRow[] = [
-  { orderNo: "10893", extension: "", client: "مزارين", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب جانب بيتش باين", qty: 857, done: 857, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11056", extension: "", client: "مزارين", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب حمام", qty: 707, done: 707, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11057", extension: "", client: "مزارين", orderDate: "2024-06-15", subProject: "ابواب مزارين 1", product: "باب داخلي حمام 0.8م", qty: 11, done: 11, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11060", extension: "", client: "مزارين", orderDate: "2024-06-15", subProject: "منتجع مزارين", product: "قطعة بيتش باين", qty: 6, done: 6, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "10900", extension: "", client: "مزارين", orderDate: "2024-06-20", subProject: "عينات ابواب مزارين 1", product: "تجليدة استربات", qty: 3, done: 3, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11065", extension: "", client: "مزارين", orderDate: "2024-07-01", subProject: "ابواب مزارين 1", product: "باب ارو 90 سم", qty: 46, done: 46, rem: 0, status: "Delivered", notes: "", prodDateEnd: "" },
-  { orderNo: "11070", extension: "", client: "مزارين", orderDate: "2024-08-01", subProject: "مزارين - غرف", product: "غرفة نوم كاملة", qty: 120, done: 80, rem: 40, status: "Production", notes: "جاري التصنيع", prodDateEnd: "2025-02-01" },
-  { orderNo: "11080", extension: "", client: "مزارين", orderDate: "2024-09-01", subProject: "مزارين - صالات", product: "أثاث صالة", qty: 50, done: 20, rem: 30, status: "Production", notes: "", prodDateEnd: "2025-03-01" },
-  { orderNo: "11090", extension: "غرف فندقية", client: "الكيان العسكري", orderDate: "2024-10-01", subProject: "غرف فندقية", product: "طقم غرفة فندق", qty: 80, done: 0, rem: 80, status: "Production", notes: "لم يتم البدء", prodDateEnd: "2025-04-01" },
-  { orderNo: "11100", extension: "", client: "الكيان العسكري", orderDate: "2024-11-01", subProject: "الكيان - مكاتب", product: "مكتب تنفيذي", qty: 30, done: 15, rem: 15, status: "Production", notes: "", prodDateEnd: "2025-05-01" },
+  { orderNo: "10893", extension: "", client: "مزارين", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب جانب بيتش باين", qty: 857, done: 857, rem: 0, status: "تم التسليم", notes: "", prodDateEnd: "" },
+  { orderNo: "11056", extension: "", client: "مزارين", orderDate: "2024-06-01", subProject: "ابواب مزارين 1", product: "باب حمام", qty: 707, done: 707, rem: 0, status: "تم التسليم", notes: "", prodDateEnd: "" },
+  { orderNo: "11057", extension: "", client: "مزارين", orderDate: "2024-06-15", subProject: "ابواب مزارين 1", product: "باب داخلي حمام 0.8م", qty: 11, done: 11, rem: 0, status: "تم التسليم", notes: "", prodDateEnd: "" },
+  { orderNo: "11060", extension: "", client: "مزارين", orderDate: "2024-06-15", subProject: "منتجع مزارين", product: "قطعة بيتش باين", qty: 6, done: 6, rem: 0, status: "تم التسليم", notes: "", prodDateEnd: "" },
+  { orderNo: "10900", extension: "", client: "مزارين", orderDate: "2024-06-20", subProject: "عينات ابواب مزارين 1", product: "تجليدة استربات", qty: 3, done: 3, rem: 0, status: "تم التسليم", notes: "", prodDateEnd: "" },
+  { orderNo: "11065", extension: "", client: "مزارين", orderDate: "2024-07-01", subProject: "ابواب مزارين 1", product: "باب ارو 90 سم", qty: 46, done: 46, rem: 0, status: "تم التسليم", notes: "", prodDateEnd: "" },
+  { orderNo: "11070", extension: "", client: "مزارين", orderDate: "2024-08-01", subProject: "مزارين - غرف", product: "غرفة نوم كاملة", qty: 120, done: 80, rem: 40, status: "تحت التصنيع", notes: "جاري التصنيع", prodDateEnd: "2025-02-01" },
+  { orderNo: "11080", extension: "", client: "مزارين", orderDate: "2024-09-01", subProject: "مزارين - صالات", product: "أثاث صالة", qty: 50, done: 20, rem: 30, status: "تحت التصنيع", notes: "", prodDateEnd: "2025-03-01" },
+  { orderNo: "11090", extension: "غرف فندقية", client: "الكيان العسكري", orderDate: "2024-10-01", subProject: "غرف فندقية", product: "طقم غرفة فندق", qty: 80, done: 0, rem: 80, status: "تحت التصنيع", notes: "لم يتم البدء", prodDateEnd: "2025-04-01" },
+  { orderNo: "11100", extension: "", client: "الكيان العسكري", orderDate: "2024-11-01", subProject: "الكيان - مكاتب", product: "مكتب تنفيذي", qty: 30, done: 15, rem: 15, status: "تحت التصنيع", notes: "", prodDateEnd: "2025-05-01" },
 ];
 
 async function seed() {

@@ -154,7 +154,7 @@ export default function Analytics() {
                 <div className="flex-1 space-y-3">
                   {woodenStatus.map((item, i) => (
                     <div key={i} className="flex justify-between items-center text-xs">
-                      <span className="text-muted-foreground">{item.status === "Delivered" ? "مسلّم" : item.status === "Production" ? "تحت التصنيع" : item.status}</span>
+                      <span className="text-muted-foreground">{(item.status === "Delivered" || item.status === "تم التسليم") ? "تم التسليم" : (item.status === "Production" || item.status === "تحت التصنيع") ? "تحت التصنيع" : item.status}</span>
                       <span className="font-bold text-sm">{item.count}</span>
                     </div>
                   ))}

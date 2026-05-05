@@ -21,6 +21,8 @@ import { Plus, Search, Pencil, Trash2, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const STATUS_COLORS: Record<string, string> = {
+  "تحت التصنيع": "bg-blue-500/20 text-blue-400 border-blue-500/30",
+  "تم التسليم": "bg-green-500/20 text-green-400 border-green-500/30",
   Production: "bg-blue-500/20 text-blue-400 border-blue-500/30",
   Delivered: "bg-green-500/20 text-green-400 border-green-500/30",
 };
@@ -46,7 +48,7 @@ interface WoodenOrder {
 const EMPTY_FORM = {
   orderNo: "", extension: "", orderDate: "", client: "", subProject: "",
   product: "", category: "", uom: "قطعة", qty: 0, done: 0, rem: 0,
-  status: "Production", prodDateStart: "", prodDateEnd: "",
+  status: "تحت التصنيع", prodDateStart: "", prodDateEnd: "",
 };
 
 function WoodenDialog({ open, onClose, order }: { open: boolean; onClose: () => void; order: WoodenOrder | null }) {
@@ -64,7 +66,7 @@ function WoodenDialog({ open, onClose, order }: { open: boolean; onClose: () => 
     qty: parseFloat(String(order.qty)) || 0,
     done: parseFloat(String(order.done || 0)),
     rem: parseFloat(String(order.rem || 0)),
-    status: order.status || "Production",
+    status: order.status || "تحت التصنيع",
     prodDateStart: order.prodDateStart || "",
     prodDateEnd: order.prodDateEnd || "",
   } : EMPTY_FORM);
@@ -105,8 +107,8 @@ function WoodenDialog({ open, onClose, order }: { open: boolean; onClose: () => 
             <Select value={form.status} onValueChange={v => f("status", v)}>
               <SelectTrigger data-testid="select-wooden-status"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="Production">Production</SelectItem>
-                <SelectItem value="Delivered">Delivered</SelectItem>
+                <SelectItem value="تحت التصنيع">تحت التصنيع</SelectItem>
+                <SelectItem value="تم التسليم">تم التسليم</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -154,8 +154,8 @@ export default function WoodenProduction() {
   const totalDone = (orders || []).reduce((s, o) => s + parseFloat(String(o.done ?? 0)), 0);
   const totalQty = (orders || []).reduce((s, o) => s + parseFloat(String(o.qty ?? 0)), 0);
   const overallPct = totalQty > 0 ? Math.round((totalDone / totalQty) * 100) : 0;
-  const deliveredCount = (orders || []).filter(o => o.status === "Delivered").length;
-  const productionCount = (orders || []).filter(o => o.status !== "Delivered").length;
+  const deliveredCount = (orders || []).filter(o => o.status === "تم التسليم" || o.status === "Delivered").length;
+  const productionCount = (orders || []).filter(o => o.status !== "تم التسليم" && o.status !== "Delivered").length;
 
   const maxRem = Math.max(...(orders || []).map(o => parseFloat(String(o.rem ?? 0))), 1);
   const maxWip = Math.max(...stageSummary.map(s => s.wip), 1);

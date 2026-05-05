@@ -16,6 +16,8 @@ const METAL_STATUS_COLORS: Record<string, string> = {
 };
 
 const WOODEN_STATUS_COLORS: Record<string, string> = {
+  "تم التسليم": "#22c55e",
+  "تحت التصنيع": "#3b82f6",
   "Delivered": "#22c55e",
   "Production": "#3b82f6",
 };
@@ -30,7 +32,7 @@ export default function Dashboard() {
     (item: { status: string; count: number }) => ({ name: item.status, value: item.count, fill: METAL_STATUS_COLORS[item.status] || "#6b7280" })
   );
   const woodenStatusData = (stats?.woodenStatusBreakdown || []).map(
-    (item: { status: string; count: number }) => ({ name: item.status === "Delivered" ? "تم التسليم" : item.status === "Production" ? "تحت التصنيع" : item.status, value: item.count, fill: WOODEN_STATUS_COLORS[item.status] || "#6b7280" })
+    (item: { status: string; count: number }) => ({ name: (item.status === "Delivered" || item.status === "تم التسليم") ? "تم التسليم" : (item.status === "Production" || item.status === "تحت التصنيع") ? "تحت التصنيع" : item.status, value: item.count, fill: WOODEN_STATUS_COLORS[item.status] || "#6b7280" })
   );
   const topClients = (clients || []).slice(0, 8).map((c: { client: string; totalOrders: number; completionPct: number }) => ({
     client: c.client.length > 14 ? c.client.slice(0, 14) + "…" : c.client,

@@ -108,7 +108,7 @@ export default function WoodenOrderDetail() {
   const done = parseFloat(String(order.done ?? 0));
   const rem = parseFloat(String(order.rem ?? 0));
   const completionPct = total > 0 ? Math.round((done / total) * 100) : 0;
-  const statusColor = order.status === "Delivered" ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400";
+  const statusColor = (order.status === "تم التسليم" || order.status === "Delivered") ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400";
 
   return (
     <div className="space-y-6">

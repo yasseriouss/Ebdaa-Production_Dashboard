@@ -14,7 +14,7 @@ function StatusBadge({ status }: { status: string }) {
     "لم يتم البدء": "bg-muted text-muted-foreground",
     "في المخزن": "bg-yellow-500/20 text-yellow-400",
     "تم الانتهاء": "bg-green-500/20 text-green-400",
-    "تم التسليم": "bg-primary/20 text-primary",
+    "تم التسليم": "bg-green-500/20 text-green-400",
     "متوقف": "bg-destructive/20 text-destructive",
     Production: "bg-blue-500/20 text-blue-400",
     Delivered: "bg-green-500/20 text-green-400",

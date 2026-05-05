@@ -58,8 +58,11 @@ function safeNum(val: unknown): string {
 }
 
 // ---- IMPORT: Metal work orders ----
+// mode=merge (default): update existing rows on conflict | mode=replace: delete all then insert
 router.post("/metal-orders", upload.single("file"), async (req, res) => {
   if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
+
+  const mode = (req.query.mode as string) || "merge";
 
   try {
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
@@ -69,6 +72,11 @@ router.post("/metal-orders", upload.single("file"), async (req, res) => {
 
     let rowsImported = 0, rowsSkipped = 0;
     const errors: string[] = [];
+
+    // replace mode: delete all existing metal orders (cascades to stages)
+    if (mode === "replace") {
+      await db.delete(metalWorkOrdersTable);
+    }
 
     let headerRow = -1;
     for (let i = 0; i < Math.min(10, data.length); i++) {
@@ -92,21 +100,29 @@ router.post("/metal-orders", upload.single("file"), async (req, res) => {
       const qtyIdx = headers.findIndex(h => h.includes("qty"));
       const clientIdx = headers.findIndex(h => h.includes("project") || h.includes("client"));
 
+      const orderValues = {
+        moNumber: moNum,
+        project: safeStr(row[0]),
+        client: safeStr(row[clientIdx] || row[0]),
+        product: product || safeStr(row[3]),
+        qty: safeNum(qtyIdx >= 0 ? row[qtyIdx] : row[5]),
+        unit: safeStr(row[6]),
+        deliveredQty: "0",
+        completionPct: "0",
+        backlogQty: "0",
+        status: "لم يتم البدء",
+      };
+
       try {
-        const [order] = await db.insert(metalWorkOrdersTable).values({
-          moNumber: moNum,
-          project: safeStr(row[0]),
-          client: safeStr(row[clientIdx] || row[0]),
-          product: product || safeStr(row[3]),
-          qty: safeNum(qtyIdx >= 0 ? row[qtyIdx] : row[5]),
-          unit: safeStr(row[6]),
-          deliveredQty: "0",
-          completionPct: "0",
-          backlogQty: "0",
-          status: "لم يتم البدء",
-        }).onConflictDoNothing().returning();
+        const [order] = await db.insert(metalWorkOrdersTable).values(orderValues)
+          .onConflictDoUpdate({
+            target: metalWorkOrdersTable.moNumber,
+            set: { product: orderValues.product, qty: orderValues.qty, client: orderValues.client, project: orderValues.project, unit: orderValues.unit, updatedAt: new Date() },
+          })
+          .returning();
 
         if (order) {
+          // Insert stages only if they don't exist yet (merge: keep stage progress)
           await db.insert(metalProductionStagesTable).values(
             METAL_STAGES.map(s => ({
               metalOrderId: order.id,
@@ -197,10 +213,17 @@ router.post("/metal-daily", upload.single("file"), async (req, res) => {
 });
 
 // ---- IMPORT: Wooden work orders ----
+// mode=merge (default): update existing rows on conflict | mode=replace: delete all then insert
 router.post("/wooden-orders", upload.single("file"), async (req, res) => {
   if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
 
+  const mode = (req.query.mode as string) || "merge";
+
   try {
+    if (mode === "replace") {
+      await db.delete(woodenWorkOrdersTable);
+    }
+
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
     const sheetName = wb.SheetNames.find(s => s === "Sheet1") || wb.SheetNames[0];
     const ws = wb.Sheets[sheetName];
@@ -238,8 +261,7 @@ router.post("/wooden-orders", upload.single("file"), async (req, res) => {
       const categoryIdx = headers.findIndex(h => h === "category");
       const uomIdx = headers.findIndex(h => h === "uom");
 
-      try {
-        const [order] = await db.insert(woodenWorkOrdersTable).values({
+      const woodenValues = {
           orderNo,
           extension,
           orderDate: safeStr(row[2]),
@@ -253,11 +275,19 @@ router.post("/wooden-orders", upload.single("file"), async (req, res) => {
           qty: safeNum(qtyIdx >= 0 ? row[qtyIdx] : row[10]),
           done: safeNum(doneIdx >= 0 ? row[doneIdx] : row[11]),
           rem: safeNum(remIdx >= 0 ? row[remIdx] : row[12]),
-          status: safeStr(statusIdx >= 0 ? row[statusIdx] : "Production"),
+          status: safeStr(statusIdx >= 0 ? row[statusIdx] : "تحت التصنيع"),
           prodDateStart: safeStr(row[14]),
           prodDateEnd: safeStr(row[15]),
           prodDateFinished: safeStr(row[16]),
-        }).onConflictDoNothing().returning();
+        };
+
+      try {
+        const [order] = await db.insert(woodenWorkOrdersTable).values(woodenValues)
+          .onConflictDoUpdate({
+            target: woodenWorkOrdersTable.orderNo,
+            set: { product: woodenValues.product, qty: woodenValues.qty, done: woodenValues.done, rem: woodenValues.rem, client: woodenValues.client, subProject: woodenValues.subProject, status: woodenValues.status, updatedAt: new Date() },
+          })
+          .returning();
 
         if (order) {
           await db.insert(woodenProductionStagesTable).values(
