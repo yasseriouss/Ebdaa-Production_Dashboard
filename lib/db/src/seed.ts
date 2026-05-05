@@ -244,18 +244,24 @@ async function seed() {
     process.exit(0);
   }
 
-  // Load from real Excel files, fall back to synthetic data
+  // Load from real Excel files; fallback only when files are absent from attached_assets
   console.log("Loading data from attached Excel files...");
-  let metalOrders = loadMetalOrders();
+  const metalOrders = loadMetalOrders();
   if (metalOrders.length === 0) {
-    console.log("  Using fallback metal orders data");
-    metalOrders = FALLBACK_METAL_ORDERS;
+    console.warn(
+      "  WARNING: No metal orders parsed from Excel. Using fallback dataset " +
+      "(place Metal_Work_Orders.xlsx in attached_assets/ to seed from real data)."
+    );
+    metalOrders.push(...FALLBACK_METAL_ORDERS);
   }
 
-  let woodenOrders = loadWoodenOrders();
+  const woodenOrders = loadWoodenOrders();
   if (woodenOrders.length === 0) {
-    console.log("  Using fallback wooden orders data");
-    woodenOrders = FALLBACK_WOODEN_ORDERS;
+    console.warn(
+      "  WARNING: No wooden orders parsed from Excel. Using fallback dataset " +
+      "(place Wooden_Work_Orders.xlsx in attached_assets/ to seed from real data)."
+    )
+    woodenOrders.push(...FALLBACK_WOODEN_ORDERS);
   }
 
   const dailyStageStatuses = loadMetalDailyStageStatuses();

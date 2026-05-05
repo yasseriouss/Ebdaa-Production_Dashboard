@@ -16,6 +16,7 @@ export const metalWorkOrdersTable = pgTable("metal_work_orders", {
   backlogStatus: text("backlog_status"),
   notes: text("notes"),
   status: text("status").default("لم يتم البدء"),
+  factory: text("factory").default("metal"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });

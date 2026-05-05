@@ -149,16 +149,17 @@ router.post("/metal-daily", upload.single("file"), async (req, res) => {
       const ws = wb.Sheets[sheetName];
       const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
 
+      // Header: [start_date, Project, M.O, Product, Qty, Sub_Assembly, Qty2, Status, ...]
+      // MO is column index 2, Qty is index 4, Status is index 7
       for (let i = 1; i < data.length; i++) {
         const row = data[i] as unknown[];
-        const moNum = safeStr(row[0]);
+        const moNum = safeStr(row[2]);
         if (!moNum || moNum === "M.O" || moNum === "") { rowsSkipped++; continue; }
 
-        const qtyDone = safeNum(row[1]);
-        const statusRaw = safeStr(row[row.length - 1]);
+        const qtyDone = safeNum(row[4]);
+        const statusRaw = safeStr(row[7]) || "تحت التصنيع";
 
         try {
-          // Find the specific order
           const [order] = await db
             .select()
             .from(metalWorkOrdersTable)
@@ -166,23 +167,17 @@ router.post("/metal-daily", upload.single("file"), async (req, res) => {
 
           if (!order) { rowsSkipped++; continue; }
 
-          // Find the specific stage for this order + sheet name
-          const [stage] = await db
+          const allStages = await db
             .select()
             .from(metalProductionStagesTable)
             .where(eq(metalProductionStagesTable.metalOrderId, order.id));
 
-          const matchedStage = stage
-            ? (await db.select().from(metalProductionStagesTable)
-                .where(eq(metalProductionStagesTable.metalOrderId, order.id)))
-                .find(s => s.stageName === sheetName)
-            : null;
+          const matchedStage = allStages.find(s => s.stageName === sheetName);
 
           if (matchedStage) {
-            // Fix: use eq() predicate to target only the correct stage row
             await db
               .update(metalProductionStagesTable)
-              .set({ qtyDone, status: statusRaw || "تحت التصنيع", updatedAt: new Date() })
+              .set({ qtyDone: String(qtyDone), status: statusRaw, updatedAt: new Date() })
               .where(eq(metalProductionStagesTable.id, matchedStage.id));
             rowsImported++;
           } else {
