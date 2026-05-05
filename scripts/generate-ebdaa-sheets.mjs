@@ -436,6 +436,44 @@ wsLog["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 1002, c: 7 
 wsLog["!freeze"] = { xSplit: 0, ySplit: 2, topLeftCell: "A3", activePane: "bottomLeft" };
 XLSX.utils.book_append_sheet(wb, wsLog, "سجل التعديلات");
 
+// ══════════════════════════════════════════════════════════════════════════
+//  7. ARCHIVE — أرشيف الأوامر المكتملة
+//  يُملأ تلقائياً بواسطة Apps Script عند تشغيل "أرشفة الأوامر المكتملة".
+//  Auto-populated by Apps Script when "Archive Completed Orders" is run.
+//  الأعمدة: وقت الأرشفة | المصدر | بيانات الأمر الكاملة كما كانت في الشيت الأصلي.
+//  Columns: archived_at | source_sheet | full row data from source sheet.
+// ══════════════════════════════════════════════════════════════════════════
+const archHdr1 = [
+  "وقت الأرشفة",
+  "المصدر",
+  "← بيانات الأمر كما كانت في الشيت الأصلي / Original row data →",
+];
+const archHdr2 = [
+  "archived_at",
+  "source_sheet",
+  "← see source sheet column layout (أوامر معدني / أوامر خشبي) →",
+];
+const archNote = [
+  "مثال / Example:",
+  "أوامر معدني",
+  "MOM-1001",
+  "مشروع",
+  "عميل",
+  "منتج",
+  "…",
+];
+
+const archAOA = [archHdr1, archHdr2, archNote];
+const wsArch  = XLSX.utils.aoa_to_sheet(archAOA);
+
+wsArch["!cols"] = [
+  { wch: 22 }, { wch: 14 }, { wch: 60 },
+];
+wsArch["!ref"] = XLSX.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: 2002, c: 35 } });
+// Freeze rows 1-2 so headers stay visible
+wsArch["!freeze"] = { xSplit: 0, ySplit: 2, topLeftCell: "A3", activePane: "bottomLeft" };
+XLSX.utils.book_append_sheet(wb, wsArch, "أرشيف");
+
 // ─── WRITE FILE ─────────────────────────────────────────────────────────────
 const outPath = "/home/runner/workspace/.local/outputs/Ebdaa-Sheets-Template.xlsx";
 XLSX.writeFile(wb, outPath);

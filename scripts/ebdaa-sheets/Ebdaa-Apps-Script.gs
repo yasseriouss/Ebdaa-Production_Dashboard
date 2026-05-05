@@ -33,6 +33,7 @@ const SHEET_DASH     = "لوحة التحكم";
 const SHEET_SHARED   = "مشاريع مشتركة";
 const SHEET_TRACKER  = "متابعة المراحل";
 const SHEET_LOG      = "سجل التعديلات";   // Audit log sheet
+const SHEET_ARCHIVE  = "أرشيف";           // Completed orders archive
 
 // ─── Metal sheet column indices (1-based, for getRange) ─────────────────────
 // Row 1 = Arabic headers, Row 2 = DB keys, Row 3+ = data
@@ -134,6 +135,8 @@ function onOpen() {
       .addItem("📤 إرسال السجل بالبريد — Export Log by Email",      "exportEditLog")
       .addItem("🗑️ مسح السجل القديم — Clear Old Log Entries",       "clearEditLog")
     )
+    .addSeparator()
+    .addItem("📦 أرشفة الأوامر المكتملة 100٪ — Archive Completed", "archiveCompleted")
     .addSeparator()
     .addItem("ℹ️ تعليمات الاستخدام — Instructions",               "showInstructions")
     .addToUi();
@@ -589,6 +592,142 @@ function clearEditLog() {
     `✅ تم حذف ${deleteCount} سطر قديم.\n` +
     `Deleted ${deleteCount} old log entries.\n` +
     `السجل الحالي: 1000 سطر / Current log: 1000 entries.`
+  );
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+//  ARCHIVE COMPLETED ORDERS — أرشفة الأوامر المكتملة 100٪
+//
+//  شرط الأرشفة / Archive condition:
+//   • معدني: نسبة الإنجاز = 17 (كل المراحل مكتملة) أو الحالة "تم الانتهاء"/"تم التسليم"
+//     Metal:  completion_pct = 17 (all 17 stages done) OR status in done list
+//   • خشبي:  نسبة الإنجاز = 100 أو الحالة "تم التسليم"/"Delivered"
+//     Wooden: completion_pct = 100 OR status in done list
+//
+//  العملية / Process:
+//   1. تحديد الصفوف المكتملة في كل شيت.
+//   2. نسخها إلى شيت "أرشيف" مع إضافة عمودَي: وقت الأرشفة + المصدر.
+//   3. حذفها من الشيت الأصلي (من الأسفل للأعلى لتجنب إزاحة الفهارس).
+//   4. تسجيل العملية في سجل التعديلات.
+// ══════════════════════════════════════════════════════════════════════════════
+
+function archiveCompleted() {
+  const ss      = SpreadsheetApp.getActiveSpreadsheet();
+  const ui      = SpreadsheetApp.getUi();
+  const metal   = ss.getSheetByName(SHEET_METAL);
+  const wooden  = ss.getSheetByName(SHEET_WOODEN);
+
+  // Confirm before moving
+  const confirm = ui.alert(
+    "📦 تأكيد الأرشفة / Confirm Archive",
+    "سيتم نقل جميع الأوامر ذات نسبة الإنجاز 100٪ إلى شيت 'أرشيف'.\n" +
+    "All 100% completed orders will be moved to the 'أرشيف' sheet.\n\n" +
+    "هذا الإجراء لا يمكن التراجع عنه مباشرةً.\n" +
+    "This action cannot be easily undone.\n\n" +
+    "هل تريد المتابعة؟ / Continue?",
+    ui.ButtonSet.YES_NO
+  );
+  if (confirm !== ui.Button.YES) return;
+
+  // Get or create the Archive sheet
+  let archive = ss.getSheetByName(SHEET_ARCHIVE);
+  if (!archive) {
+    archive = ss.insertSheet(SHEET_ARCHIVE);
+    // Write header rows
+    archive.getRange(1, 1, 1, 3).setValues([[
+      "وقت الأرشفة", "المصدر",
+      "← بيانات الأمر الكاملة / Full order row data →",
+    ]]);
+    archive.getRange(2, 1, 1, 3).setValues([[
+      "archived_at", "source_sheet",
+      "← see source sheet column layout →",
+    ]]);
+    archive.getRange("1:2").setFontWeight("bold").setBackground("#1a1a2e").setFontColor("#ffffff");
+    archive.setFrozenRows(2);
+  }
+
+  const tz        = Session.getScriptTimeZone();
+  const timestamp = Utilities.formatDate(new Date(), tz, "yyyy-MM-dd HH:mm:ss");
+
+  let metalArchived  = 0;
+  let woodenArchived = 0;
+
+  // ── METAL: collect rows to archive ────────────────────────────────────────
+  const metalRowsToDelete = [];
+  if (metal) {
+    const mLastRow = metal.getLastRow();
+    for (let r = METAL_DATA_START_ROW; r <= mLastRow; r++) {
+      const moNum = metal.getRange(r, M_COL_MO_NUMBER).getValue();
+      if (!moNum) continue;
+
+      const compPct = parseFloat(metal.getRange(r, M_COL_COMPLETION).getValue()) || 0;
+      const status  = (metal.getRange(r, M_COL_STATUS).getValue() || "").toString().trim();
+      const isDone  = STATUS_METAL_DONE.includes(status) || compPct >= 17;
+
+      if (!isDone) continue;
+
+      // Read full row data
+      const rowData = metal.getRange(r, 1, 1, M_TOTAL_COLS).getValues()[0];
+
+      // Append to archive: [timestamp, source, ...rowData]
+      archive.appendRow([timestamp, SHEET_METAL, ...rowData]);
+
+      logEntry_(SHEET_METAL, `row ${r}`, moNum.toString(), status, "أرشيف", "ARCHIVE");
+      metalRowsToDelete.push(r);
+      metalArchived++;
+    }
+  }
+
+  // ── WOODEN: collect rows to archive ───────────────────────────────────────
+  const woodenRowsToDelete = [];
+  if (wooden) {
+    const wLastRow = wooden.getLastRow();
+    for (let r = WOOD_DATA_START_ROW; r <= wLastRow; r++) {
+      const orderNo = wooden.getRange(r, W_COL_ORDER_NO).getValue();
+      if (!orderNo) continue;
+
+      const compPct = parseFloat(wooden.getRange(r, W_COL_PCT).getValue()) || 0;
+      const status  = (wooden.getRange(r, W_COL_STATUS).getValue() || "").toString().trim();
+      const isDone  = STATUS_WOODEN_DONE.includes(status) || compPct >= 100;
+
+      if (!isDone) continue;
+
+      const rowData = wooden.getRange(r, 1, 1, W_TOTAL_COLS).getValues()[0];
+      archive.appendRow([timestamp, SHEET_WOODEN, ...rowData]);
+
+      logEntry_(SHEET_WOODEN, `row ${r}`, orderNo.toString(), status, "أرشيف", "ARCHIVE");
+      woodenRowsToDelete.push(r);
+      woodenArchived++;
+    }
+  }
+
+  // ── Delete source rows bottom-to-top (avoids index shift) ─────────────────
+  metalRowsToDelete.slice().reverse().forEach(r => metal.deleteRow(r));
+  woodenRowsToDelete.slice().reverse().forEach(r => wooden.deleteRow(r));
+
+  // ── Style archive rows (green background for new entries) ─────────────────
+  const archLastRow = archive.getLastRow();
+  const newRows     = metalArchived + woodenArchived;
+  if (newRows > 0 && archLastRow >= 3) {
+    archive.getRange(archLastRow - newRows + 1, 1, newRows, archive.getLastColumn())
+      .setBackground(COLOR_DONE);
+  }
+
+  if (metalArchived + woodenArchived === 0) {
+    ui.alert(
+      "ℹ️ لا توجد أوامر مكتملة 100٪ للأرشفة.\n" +
+      "No 100% completed orders found to archive."
+    );
+    return;
+  }
+
+  ui.alert(
+    `✅ تمت الأرشفة بنجاح! / Archive complete!\n\n` +
+    `🔩 معدني / Metal:  ${metalArchived} أمر\n` +
+    `🪵 خشبي / Wooden:  ${woodenArchived} أمر\n` +
+    `📦 الإجمالي / Total: ${metalArchived + woodenArchived} أمر\n\n` +
+    `جميع الأوامر المكتملة نُقلت إلى شيت "أرشيف".\n` +
+    `All completed orders moved to the 'أرشيف' sheet.`
   );
 }
 
