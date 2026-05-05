@@ -152,12 +152,10 @@ export default function ImportExport() {
   });
 
   const handle = (type: "metal" | "daily" | "wooden", file: File) => {
-    const fd = new FormData();
-    fd.append("file", file);
-    const body = { data: fd as unknown as { file: Blob } };
-    if (type === "metal") metalMut.mutate(body);
-    else if (type === "daily") dailyMut.mutate(body);
-    else woodenMut.mutate(body);
+    const data = { file: file as Blob };
+    if (type === "metal") metalMut.mutate({ data });
+    else if (type === "daily") dailyMut.mutate({ data });
+    else woodenMut.mutate({ data });
   };
 
   return (
