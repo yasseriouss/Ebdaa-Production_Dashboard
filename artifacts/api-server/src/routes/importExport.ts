@@ -225,7 +225,7 @@ router.post("/wooden-orders", upload.single("file"), async (req, res) => {
     }
 
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
-    const sheetName = wb.SheetNames.find(s => s === "Sheet1") || wb.SheetNames[0];
+    const sheetName = wb.SheetNames.find(s => s === "Sheet4") || wb.SheetNames.find(s => s === "Sheet1") || wb.SheetNames[0];
     const ws = wb.Sheets[sheetName];
     const data = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
 

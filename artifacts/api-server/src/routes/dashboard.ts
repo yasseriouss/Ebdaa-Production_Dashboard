@@ -35,8 +35,8 @@ router.get("/stats", async (req, res) => {
     const metalActive = metalOrders.filter(o => o.status === "تحت التصنيع" || o.status === "في المخزن");
     const metalOverdue = metalOrders.filter(o => o.status === "متوقف");
 
-    const woodenCompleted = woodenOrders.filter(o => o.status === "Delivered");
-    const woodenActive = woodenOrders.filter(o => o.status === "Production");
+    const woodenCompleted = woodenOrders.filter(o => o.status === "تم التسليم" || o.status === "Delivered");
+    const woodenActive = woodenOrders.filter(o => o.status === "تحت التصنيع" || o.status === "Production");
 
     const metalAvgCompletion = metalOrders.length > 0
       ? metalOrders.reduce((acc, o) => acc + parseFloat(o.completionPct || "0"), 0) / metalOrders.length
@@ -74,22 +74,33 @@ router.get("/stats", async (req, res) => {
   }
 });
 
-// Gantt chart data
+// Gantt chart data — supports ?factory=metal|wooden|all &dateFrom=YYYY-MM-DD &dateTo=YYYY-MM-DD
 router.get("/gantt", async (req, res) => {
   try {
     const query = GetDashboardGanttQueryParams.parse(req.query);
     const ganttItems: unknown[] = [];
 
+    // Parse server-side date-range filters
+    const filterFrom = query.dateFrom ? new Date(query.dateFrom) : null;
+    const filterTo = query.dateTo ? new Date(query.dateTo) : null;
+
+    /** Return true when the item's [itemStart, itemEnd] overlaps [filterFrom, filterTo] */
+    function inRange(itemStart: Date, itemEnd: Date): boolean {
+      if (filterFrom && itemEnd < filterFrom) return false;
+      if (filterTo && itemStart > filterTo) return false;
+      return true;
+    }
+
     if (!query.factory || query.factory === "all" || query.factory === "metal") {
       const metalOrders = await db.select().from(metalWorkOrdersTable);
       for (const o of metalOrders) {
-        // Estimate dates based on creation and completion
         const start = o.createdAt ? new Date(o.createdAt) : new Date("2025-01-01");
         const completionPct = parseFloat(o.completionPct || "0");
-        // Estimate duration: 30-90 days depending on quantity
         const qty = parseFloat(o.qty || "0");
         const durationDays = Math.max(30, Math.min(120, Math.round(qty * 0.5)));
         const end = new Date(start.getTime() + durationDays * 24 * 60 * 60 * 1000);
+
+        if (!inRange(start, end)) continue;
 
         ganttItems.push({
           id: `metal-${o.id}`,
@@ -115,6 +126,8 @@ router.get("/gantt", async (req, res) => {
         const done = parseFloat(o.done || "0");
         const completionPct = total > 0 ? (done / total) * 100 : 0;
 
+        if (!inRange(start, end)) continue;
+
         ganttItems.push({
           id: `wooden-${o.id}`,
           factory: "wooden",
@@ -125,7 +138,7 @@ router.get("/gantt", async (req, res) => {
           startDate: start.toISOString().split("T")[0],
           endDate: end.toISOString().split("T")[0],
           completionPct: Math.round(completionPct * 10) / 10,
-          status: o.status || "Production",
+          status: o.status || "تحت التصنيع",
         });
       }
     }

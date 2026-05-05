@@ -145,10 +145,12 @@ function loadWoodenOrders(): WoodenOrderRow[] {
       const rawOrderNo = safeStr(row[0]);
       if (!rawOrderNo || rawOrderNo === "") continue;
 
-      // Keep orderNo as-is (only safe trim), read Extension from dedicated column D (index 1)
-      const orderNoClean = rawOrderNo.trim();
-      const rawExtension = safeStr(row[1]);
-      const extension = rawExtension.replace(/\bvbc[-\s]*/gi, "").trim();
+      // Sheet4 layout: col0=Order, col1=Date, col2=Project(client), col3=Sub-Project,
+      // col4=Product, col5=QTY, col6=Done, col7=Rem, col8=Status, col9=Notes, col10=expected_finish
+      // Extension: strip VBC from orderNo; keep orderNo without VBC prefix
+      const hasVbc = /vbc/i.test(rawOrderNo);
+      const orderNoClean = rawOrderNo.replace(/\bvbc[-\s]*/gi, "").replace(/\s+/g, " ").trim();
+      const extension = hasVbc ? rawOrderNo.replace(/\bvbc[-\s]*/gi, "").trim() : "";
 
       const product = safeStr(row[4]);
       if (!product) continue; // skip completely blank rows
@@ -161,7 +163,7 @@ function loadWoodenOrders(): WoodenOrderRow[] {
         orderNo: orderNoClean,
         extension,
         client: stripVbc(safeStr(row[2])),          // "Project" column = client name
-        orderDate: excelDateToStr(row[1]),
+        orderDate: excelDateToStr(row[1]),           // col1 = Date
         subProject: stripVbc(safeStr(row[3])),
         product: stripVbc(product) || "منتج خشبي",
         qty,
