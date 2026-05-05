@@ -181,27 +181,30 @@ function loadWoodenOrders(): WoodenOrderRow[] {
   }
 }
 
-/** Build a map of { moNumber -> { stageName -> status } } from the daily production Excel */
-function loadMetalDailyStageStatuses(): Map<string, Map<string, string>> {
-  const result = new Map<string, Map<string, string>>();
+interface StageEntry { status: string; qty: number }
+
+/** Build a map of { moNumber -> { stageName -> { status, qty } } } from the daily production Excel */
+function loadMetalDailyStageStatuses(): Map<string, Map<string, StageEntry>> {
+  const result = new Map<string, Map<string, StageEntry>>();
   try {
     const wb = XLSX.readFile(path.join(ASSETS_DIR, "Metal_daily_Production_1777969955661.xlsx"));
     for (const sheetName of wb.SheetNames) {
       if (sheetName.startsWith("_xlnm")) continue;
       const ws = wb.Sheets[sheetName];
       const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "" }) as unknown[][];
-      // Row 1 is the header (date columns), row 2+ are data
+      // Row 0 is the header, Row 1+ are data
       // Columns: 0=start_date, 1=Project, 2=M.O, 3=product, 4=qty, 5=sub_assembly, 6=qty2, 7=status
-      for (let i = 2; i < rows.length; i++) {
+      for (let i = 1; i < rows.length; i++) {
         const row = rows[i] as unknown[];
         const moNum = safeStr(row[2]);
-        if (!moNum) continue;
+        if (!moNum || moNum === "M.O") continue;
         const status = safeStr(row[7]);
+        const qty = safeNum(row[4], 0);
         if (!result.has(moNum)) result.set(moNum, new Map());
-        if (status) result.get(moNum)!.set(sheetName, status);
+        result.get(moNum)!.set(sheetName, { status, qty });
       }
     }
-    console.log(`  Parsed stage statuses for ${result.size} MO numbers from daily production Excel`);
+    console.log(`  Parsed stage data for ${result.size} MO numbers from daily production Excel`);
   } catch (e) {
     console.warn("  Could not parse Metal_daily_Production.xlsx:", String(e));
   }
@@ -282,21 +285,27 @@ async function seed() {
       status: orderData.status,
     }).returning();
 
-    const moStageStatuses = dailyStageStatuses.get(orderData.moNumber) ?? new Map<string, string>();
+    const moStageData = dailyStageStatuses.get(orderData.moNumber) ?? new Map<string, StageEntry>();
 
     const stagesToInsert = METAL_STAGES.map(s => {
-      const rawStatus = moStageStatuses.get(s.name) ?? "";
+      const entry = moStageData.get(s.name);
       let status = "لم يتم البدء";
-      if (rawStatus) {
-        const r = rawStatus.toLowerCase();
-        if (r.includes("تم الانتهاء") || r.includes("تم")) status = "تم الانتهاء";
-        else if (r.includes("جاري") || r.includes("تحت")) status = "تحت التصنيع";
-        else status = rawStatus;
+      let qtyDone = "0";
+      if (entry && entry.status) {
+        const r = entry.status.toLowerCase();
+        if (r.includes("تم الانتهاء") || r.includes("تم") || r.includes("done") || r.includes("finish")) {
+          status = "تم الانتهاء";
+        } else if (r.includes("جاري") || r.includes("تحت") || r.includes("progress") || r.includes("wip")) {
+          status = "تحت التصنيع";
+        } else {
+          status = entry.status;
+        }
+        // Use real parsed qty from Excel; fall back to order qty when stage is fully done
+        qtyDone = entry.qty > 0 ? String(entry.qty) : (status === "تم الانتهاء" ? orderData.qty : "0");
       } else if (orderData.status === "تم الانتهاء") {
         status = "تم الانتهاء";
+        qtyDone = orderData.qty;
       }
-      const qty = parseFloat(orderData.qty);
-      const qtyDone = status === "تم الانتهاء" ? orderData.qty : status === "تحت التصنيع" ? String(Math.round(qty * 0.5)) : "0";
       return { metalOrderId: order.id, moNumber: order.moNumber, stageName: s.name, stageOrder: s.order, qtyTarget: orderData.qty, qtyDone, status };
     });
     await db.insert(metalProductionStagesTable).values(stagesToInsert);

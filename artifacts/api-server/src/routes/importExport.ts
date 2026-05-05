@@ -1,7 +1,7 @@
 import { Router } from "express";
 import multer from "multer";
 import * as XLSX from "xlsx";
-import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import PDFDocument from "pdfkit";
 import { db } from "@workspace/db";
 import {
   metalWorkOrdersTable,
@@ -285,112 +285,66 @@ router.post("/wooden-orders", upload.single("file"), async (req, res) => {
   }
 });
 
-// Map Arabic status values to English for PDF (WinAnsi doesn't support Arabic)
-const STATUS_MAP: Record<string, string> = {
-  "تم الانتهاء": "Completed",
-  "تحت التصنيع": "In Production",
-  "لم يتم البدء": "Not Started",
-  "متأخر": "Delayed",
-  "Production": "Production",
-  "Done": "Done",
-  "Pending": "Pending",
-};
+// ---- Helper: Build PDF buffer using pdfkit with DejaVu font (Unicode-capable) ----
+function buildPdf(title: string, headers: string[], rows: string[][]): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    try {
+      const DEJAVU = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+      const DEJAVU_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf";
 
-function pdfSafeText(val: string): string {
-  // Replace Arabic status values, then strip remaining non-ASCII chars
-  const mapped = STATUS_MAP[val.trim()] ?? val;
-  // Keep printable ASCII only
-  return mapped.replace(/[^\x20-\x7E]/g, "?").substring(0, 25);
-}
+      const doc = new PDFDocument({ size: "A4", layout: "landscape", margin: 40 });
+      const chunks: Buffer[] = [];
+      doc.on("data", (c: Buffer) => chunks.push(c));
+      doc.on("end", () => resolve(Buffer.concat(chunks)));
+      doc.on("error", reject);
 
-// ---- Helper: Generate PDF buffer using pdf-lib ----
-async function buildPdf(title: string, headers: string[], rows: string[][]): Promise<Uint8Array> {
-  const pdfDoc = await PDFDocument.create();
-  const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-  const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const pageWidth = doc.page.width;
+      const margin = 40;
+      const colWidth = Math.floor((pageWidth - margin * 2) / headers.length);
+      const lineH = 18;
 
-  const pageWidth = 841.89; // A4 landscape width
-  const pageHeight = 595.28; // A4 landscape height
-  const margin = 40;
-  const lineHeight = 18;
-  const colWidth = Math.floor((pageWidth - margin * 2) / headers.length);
+      // Title
+      doc.font(DEJAVU_BOLD).fontSize(13).fillColor("#000000")
+        .text(title, margin, 40, { width: pageWidth - margin * 2, lineBreak: false });
 
-  let page = pdfDoc.addPage([pageWidth, pageHeight]);
-  let y = pageHeight - margin;
+      // Date
+      doc.font(DEJAVU).fontSize(8).fillColor("#666666")
+        .text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, margin, 58);
 
-  // Title (title is already in English)
-  page.drawText(pdfSafeText(title), {
-    x: margin,
-    y,
-    size: 14,
-    font: boldFont,
-    color: rgb(0, 0, 0),
-  });
-  y -= 24;
+      let y = 76;
 
-  // Date
-  page.drawText(`Generated: ${new Date().toLocaleDateString("en-GB")}`, {
-    x: margin,
-    y,
-    size: 9,
-    font,
-    color: rgb(0.4, 0.4, 0.4),
-  });
-  y -= 20;
+      // Header row background
+      doc.rect(margin, y - 2, pageWidth - margin * 2, lineH).fill("#222222");
 
-  // Header row background
-  page.drawRectangle({
-    x: margin,
-    y: y - 4,
-    width: pageWidth - margin * 2,
-    height: lineHeight,
-    color: rgb(0.15, 0.15, 0.15),
-  });
-
-  // Header cells
-  headers.forEach((h, i) => {
-    page.drawText(h.substring(0, 12), {
-      x: margin + i * colWidth + 4,
-      y: y,
-      size: 8,
-      font: boldFont,
-      color: rgb(1, 0.8, 0),
-    });
-  });
-  y -= lineHeight + 4;
-
-  // Data rows
-  for (const [rowIdx, row] of rows.entries()) {
-    if (y < margin + lineHeight) {
-      page = pdfDoc.addPage([pageWidth, pageHeight]);
-      y = pageHeight - margin;
-    }
-
-    // Alternating row background
-    if (rowIdx % 2 === 0) {
-      page.drawRectangle({
-        x: margin,
-        y: y - 4,
-        width: pageWidth - margin * 2,
-        height: lineHeight,
-        color: rgb(0.95, 0.95, 0.95),
+      // Header cells (English labels)
+      headers.forEach((h, i) => {
+        doc.font(DEJAVU_BOLD).fontSize(8).fillColor("#FFD700")
+          .text(h.substring(0, 14), margin + i * colWidth + 3, y, { width: colWidth - 4, lineBreak: false });
       });
+      y += lineH + 4;
+
+      // Data rows — Arabic text preserved using DejaVu (partial coverage)
+      for (const [rowIdx, row] of rows.entries()) {
+        if (y > doc.page.height - margin - lineH) {
+          doc.addPage({ size: "A4", layout: "landscape", margin: 40 });
+          y = 40;
+        }
+        if (rowIdx % 2 === 0) {
+          doc.rect(margin, y - 2, pageWidth - margin * 2, lineH).fill("#f0f0f0");
+        }
+        row.forEach((cell, i) => {
+          const text = (cell || "-").substring(0, 30);
+          doc.font(DEJAVU).fontSize(7).fillColor("#111111")
+            .text(text, margin + i * colWidth + 3, y, { width: colWidth - 4, lineBreak: false });
+        });
+        y += lineH;
+      }
+
+      doc.end();
+    } catch (err) {
+      reject(err);
     }
-
-    row.forEach((cell, i) => {
-      const text = pdfSafeText(cell || "-");
-      page.drawText(text, {
-        x: margin + i * colWidth + 4,
-        y: y,
-        size: 7,
-        font,
-        color: rgb(0.1, 0.1, 0.1),
-      });
-    });
-    y -= lineHeight;
-  }
-
-  return pdfDoc.save();
+  });
 }
 
 // ---- EXPORT: Metal orders ----
@@ -420,7 +374,7 @@ router.get("/metal-orders", async (req, res) => {
     );
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="metal-orders.pdf"`);
-    res.send(Buffer.from(pdfBytes));
+    res.send(pdfBytes);
   } catch (err) {
     res.status(500).json({ error: "Export failed" });
   }
@@ -453,7 +407,7 @@ router.get("/wooden-orders", async (req, res) => {
     );
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader("Content-Disposition", `attachment; filename="wooden-orders.pdf"`);
-    res.send(Buffer.from(pdfBytes));
+    res.send(pdfBytes);
   } catch (err) {
     res.status(500).json({ error: "Export failed" });
   }
