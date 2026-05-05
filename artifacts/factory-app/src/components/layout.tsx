@@ -1,6 +1,6 @@
 import { Link, useLocation } from "wouter";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarGroup, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarHeader, SidebarTrigger } from "@/components/ui/sidebar";
-import { LayoutDashboard, Factory, Wrench, Boxes, CalendarClock, LineChart, FileUp, Users } from "lucide-react";
+import { LayoutDashboard, Factory, Wrench, Boxes, CalendarClock, LineChart, FileUp, Users, TreePine } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +11,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     { name: "المصنع المعدني", href: "/metal/orders", icon: Factory },
     { name: "الإنتاج اليومي المعدني", href: "/metal/production", icon: Wrench },
     { name: "المصنع الخشبي", href: "/wooden/orders", icon: Boxes },
+    { name: "الإنتاج اليومي الخشبي", href: "/wooden/production", icon: TreePine },
     { name: "المشاريع المشتركة", href: "/shared-projects", icon: Users },
     { name: "التخطيط والجدولة", href: "/planning", icon: CalendarClock },
     { name: "التحليلات", href: "/analytics", icon: LineChart },

@@ -169,8 +169,8 @@ function loadWoodenOrders(): WoodenOrderRow[] {
       }
     }
 
-    const results = Array.from(orderMap.values()).slice(0, 30);
-    console.log(`  Parsed ${results.length} wooden orders from Excel (${orderMap.size} unique order numbers)`);
+    const results = Array.from(orderMap.values());
+    console.log(`  Parsed ${results.length} wooden orders from Excel (${results.length} unique order numbers)`);
     return results;
   } catch (e) {
     console.warn("  Could not parse wooden_orders.xlsx, using fallback data:", String(e));

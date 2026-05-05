@@ -5,6 +5,7 @@ import {
   useUpdateWoodenStage,
   getGetWoodenOrderQueryKey,
 } from "@workspace/api-client-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,8 +29,9 @@ const STATUS_COLORS: Record<string, string> = {
   "تم الانتهاء": "bg-green-500/20 text-green-400",
 };
 
-function WoodenStageRow({ stage, totalQty }: { stage: WoodenStage; totalQty: number }) {
+function WoodenStageRow({ stage, totalQty, orderId }: { stage: WoodenStage; totalQty: number; orderId: number }) {
   const { toast } = useToast();
+  const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
   const [qtyDone, setQtyDone] = useState(stage.qtyDone || "0");
   const [status, setStatus] = useState(stage.status || "لم يتم البدء");
@@ -38,6 +40,7 @@ function WoodenStageRow({ stage, totalQty }: { stage: WoodenStage; totalQty: num
     mutation: {
       onSuccess: () => {
         setEditing(false);
+        qc.invalidateQueries({ queryKey: getGetWoodenOrderQueryKey(orderId) });
         toast({ title: "تم تحديث المرحلة" });
       },
     },
@@ -160,7 +163,7 @@ export default function WoodenOrderDetail() {
           {stages.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">لا توجد مراحل</p>
           ) : (
-            stages.map(stage => <WoodenStageRow key={stage.id} stage={stage} totalQty={total} />)
+            stages.map(stage => <WoodenStageRow key={stage.id} stage={stage} totalQty={total} orderId={id} />)
           )}
         </CardContent>
       </Card>

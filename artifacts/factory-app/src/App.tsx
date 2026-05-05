@@ -12,6 +12,7 @@ import MetalOrderDetail from "@/pages/metal-order-detail";
 import MetalProduction from "@/pages/metal-production";
 import WoodenOrders from "@/pages/wooden-orders";
 import WoodenOrderDetail from "@/pages/wooden-order-detail";
+import WoodenProduction from "@/pages/wooden-production";
 import SharedProjects from "@/pages/shared-projects";
 import Planning from "@/pages/planning";
 import Analytics from "@/pages/analytics";
@@ -29,6 +30,7 @@ function Router() {
         <Route path="/metal/production" component={MetalProduction} />
         <Route path="/wooden/orders" component={WoodenOrders} />
         <Route path="/wooden/orders/:id" component={WoodenOrderDetail} />
+        <Route path="/wooden/production" component={WoodenProduction} />
         <Route path="/shared-projects" component={SharedProjects} />
         <Route path="/planning" component={Planning} />
         <Route path="/analytics" component={Analytics} />

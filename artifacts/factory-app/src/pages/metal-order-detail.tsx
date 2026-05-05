@@ -28,6 +28,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 interface Stage {
   id: number;
+  metalOrderId?: number;
   stageName: string;
   stageOrder: number;
   qtyTarget?: number | string | null;
@@ -35,7 +36,7 @@ interface Stage {
   status?: string | null;
 }
 
-function StageRow({ stage }: { stage: Stage }) {
+function StageRow({ stage, orderId }: { stage: Stage; orderId: number }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
@@ -46,7 +47,7 @@ function StageRow({ stage }: { stage: Stage }) {
     mutation: {
       onSuccess: () => {
         setEditing(false);
-        qc.invalidateQueries({ queryKey: getGetMetalOrderQueryKey(stage.id) });
+        qc.invalidateQueries({ queryKey: getGetMetalOrderQueryKey(orderId) });
         toast({ title: "تم تحديث المرحلة" });
       },
     },
@@ -230,7 +231,7 @@ export default function MetalOrderDetail() {
           {stages.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">لا توجد مراحل</p>
           ) : (
-            stages.map(stage => <StageRow key={stage.id} stage={stage} />)
+            stages.map(stage => <StageRow key={stage.id} stage={stage} orderId={id} />)
           )}
         </CardContent>
       </Card>
