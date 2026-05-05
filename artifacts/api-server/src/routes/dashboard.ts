@@ -193,25 +193,33 @@ router.get("/completion-trend", async (req, res) => {
       months.push({ period, metalCompletion: 0, metalCount: 0, woodenCompletion: 0, woodenCount: 0 });
     }
 
-    // For simplicity, distribute orders across months proportionally
-    if (metalOrders.length > 0) {
-      const avgCompletion = metalOrders.reduce((a, o) => a + parseFloat(o.completionPct || "0"), 0) / metalOrders.length;
-      months.forEach((m, i) => {
-        m.metalCompletion = Math.min(100, avgCompletion * (0.7 + i * 0.06));
-        m.metalCount = Math.ceil(metalOrders.length / 6);
-      });
+    // Distribute orders into months by their createdAt date, compute real avg completion per month
+    for (const o of metalOrders) {
+      const created = o.createdAt ? new Date(o.createdAt) : null;
+      if (!created) continue;
+      const period = created.toLocaleDateString("ar-EG", { year: "numeric", month: "short" });
+      const bucket = months.find(m => m.period === period);
+      if (!bucket) continue;
+      bucket.metalCompletion += parseFloat(o.completionPct || "0");
+      bucket.metalCount++;
     }
+    months.forEach(m => {
+      if (m.metalCount > 0) m.metalCompletion = m.metalCompletion / m.metalCount;
+    });
 
-    if (woodenOrders.length > 0) {
-      const avgCompletion = woodenOrders.reduce((a, o) => {
-        const t = parseFloat(o.qty || "1"); const d = parseFloat(o.done || "0");
-        return a + (t > 0 ? (d / t) * 100 : 0);
-      }, 0) / woodenOrders.length;
-      months.forEach((m, i) => {
-        m.woodenCompletion = Math.min(100, avgCompletion * (0.7 + i * 0.06));
-        m.woodenCount = Math.ceil(woodenOrders.length / 6);
-      });
+    for (const o of woodenOrders) {
+      const created = o.createdAt ? new Date(o.createdAt) : null;
+      if (!created) continue;
+      const period = created.toLocaleDateString("ar-EG", { year: "numeric", month: "short" });
+      const bucket = months.find(m => m.period === period);
+      if (!bucket) continue;
+      const t = parseFloat(o.qty || "1"); const d = parseFloat(o.done || "0");
+      bucket.woodenCompletion += t > 0 ? (d / t) * 100 : 0;
+      bucket.woodenCount++;
     }
+    months.forEach(m => {
+      if (m.woodenCount > 0) m.woodenCompletion = m.woodenCompletion / m.woodenCount;
+    });
 
     const trend = months.map(m => ({
       period: m.period,
