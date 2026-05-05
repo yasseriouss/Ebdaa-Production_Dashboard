@@ -5,8 +5,8 @@ export default function Slide12StatusUpdate() {
 
       <div className="flex h-full">
         <div className="flex flex-col justify-center px-[5vw] w-[42vw]" style={{ borderRight: "0.1vw solid rgba(245,158,11,0.2)" }}>
-          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.4vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "1.5vh" }}>
-            STATUS UPDATE · تحديث الحالة
+          <div style={{ fontSize: "1.4vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "1.5vh" }}>
+            <span style={{ fontFamily: "DM Sans, sans-serif" }}>STATUS UPDATE · </span><span style={{ fontFamily: "Tajawal, sans-serif" }}>تحديث الحالة</span>
           </div>
           <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "4vw", color: "#f1f5f9", lineHeight: 1.2, marginBottom: "2vh" }}>
             تتبع الكميات بالأرقام

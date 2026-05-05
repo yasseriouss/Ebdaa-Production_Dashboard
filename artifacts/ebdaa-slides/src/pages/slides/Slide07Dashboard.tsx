@@ -5,8 +5,8 @@ export default function Slide07Dashboard() {
 
       <div className="flex h-full px-[6vw] pt-[7vh] pb-[6vh]" style={{ flexDirection: "column" }}>
         <div className="mb-[1vh]">
-          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.5vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.2em", textTransform: "uppercase" }}>
-            DASHBOARD & KPIs · لوحة التحكم
+          <div style={{ fontSize: "1.5vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.2em", textTransform: "uppercase" }}>
+            <span style={{ fontFamily: "DM Sans, sans-serif" }}>DASHBOARD &amp; KPIs · </span><span style={{ fontFamily: "Tajawal, sans-serif" }}>لوحة التحكم</span>
           </div>
         </div>
         <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "3.8vw", color: "#f1f5f9", lineHeight: 1.2, marginBottom: "1vh" }}>

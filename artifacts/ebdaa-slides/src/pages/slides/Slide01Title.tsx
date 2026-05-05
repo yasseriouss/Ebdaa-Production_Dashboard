@@ -15,8 +15,8 @@ export default function Slide01Title() {
       <div className="absolute bottom-0 left-0 right-0 h-[0.4vh]" style={{ background: "rgba(245,158,11,0.3)" }} />
 
       <div className="relative flex flex-col items-center justify-center w-full h-full px-[8vw]">
-        <div className="mb-[3vh]" style={{ color: "#f59e0b", fontFamily: "DM Sans, sans-serif", fontSize: "1.6vw", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase" }}>
-          ENCID FACTORIES · مصانع إبداع
+        <div className="mb-[3vh]" style={{ color: "#f59e0b", fontSize: "1.6vw", fontWeight: 600, letterSpacing: "0.25em", textTransform: "uppercase" }}>
+          <span style={{ fontFamily: "DM Sans, sans-serif" }}>ENCID FACTORIES · </span><span style={{ fontFamily: "Tajawal, sans-serif" }}>مصانع إبداع</span>
         </div>
 
         <div className="text-center" style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "5.5vw", color: "#f1f5f9", lineHeight: 1.15, textWrap: "balance" }}>
@@ -47,8 +47,8 @@ export default function Slide01Title() {
         </div>
       </div>
 
-      <div className="absolute bottom-[3vh] left-[4vw]" style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.5vw", color: "rgba(148,163,184,0.6)" }}>
-        2026 · نظام إدارة المصانع المتكامل
+      <div className="absolute bottom-[3vh] left-[4vw]" style={{ fontSize: "1.5vw", color: "rgba(148,163,184,0.6)" }}>
+        <span style={{ fontFamily: "DM Sans, sans-serif" }}>2026 · </span><span style={{ fontFamily: "Tajawal, sans-serif" }}>نظام إدارة المصانع المتكامل</span>
       </div>
     </div>
   );

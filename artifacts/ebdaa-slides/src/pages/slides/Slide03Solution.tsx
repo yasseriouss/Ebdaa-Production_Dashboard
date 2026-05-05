@@ -6,8 +6,8 @@ export default function Slide03Solution() {
 
       <div className="flex flex-col h-full px-[6vw] pt-[8vh] pb-[6vh]">
         <div className="mb-[1vh]">
-          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.5vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.2em", textTransform: "uppercase" }}>
-            THE SOLUTION · الحل
+          <div style={{ fontSize: "1.5vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.2em", textTransform: "uppercase" }}>
+            <span style={{ fontFamily: "DM Sans, sans-serif" }}>THE SOLUTION · </span><span style={{ fontFamily: "Tajawal, sans-serif" }}>الحل</span>
           </div>
         </div>
         <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "3.8vw", color: "#f1f5f9", lineHeight: 1.15, textWrap: "balance", marginBottom: "1.5vh" }}>

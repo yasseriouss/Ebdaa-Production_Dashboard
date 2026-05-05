@@ -15,8 +15,8 @@ export default function Slide14ThankYou() {
       <div className="absolute bottom-0 left-0 right-0 h-[0.4vh]" style={{ background: "rgba(245,158,11,0.3)" }} />
 
       <div className="relative flex flex-col items-center justify-center w-full h-full px-[8vw]">
-        <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.5vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: "2.5vh" }}>
-          ENCID FACTORIES · مصانع إبداع
+        <div style={{ fontSize: "1.5vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.25em", textTransform: "uppercase", marginBottom: "2.5vh" }}>
+          <span style={{ fontFamily: "DM Sans, sans-serif" }}>ENCID FACTORIES · </span><span style={{ fontFamily: "Tajawal, sans-serif" }}>مصانع إبداع</span>
         </div>
 
         <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "6vw", color: "#f1f5f9", lineHeight: 1.1, textAlign: "center", textWrap: "balance", marginBottom: "2vh" }}>

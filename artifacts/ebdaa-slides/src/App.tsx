@@ -27,6 +27,10 @@ function getSlideIndex(pathname: string): number {
 function SlideEditor() {
   const [location, navigate] = useLocation();
   const currentIndex = getSlideIndex(location);
+  const [slideKey, setSlideKey] = useState(`k-${currentIndex}`);
+  useEffect(() => {
+    setSlideKey(`k-${currentIndex}-${Date.now()}`);
+  }, [currentIndex]);
 
   // In the workspace, the slide iframe is nested inside another iframe,
   // so window.parent !== window.parent.parent. In the deployed SlideViewer,
@@ -131,7 +135,9 @@ function SlideEditor() {
           key={slide.id}
           style={{ display: index === currentIndex ? "block" : "none" }}
         >
-          <slide.Component />
+          <div key={index === currentIndex ? slideKey : slide.id} className={index === currentIndex ? "slide-transition" : ""}>
+            <slide.Component />
+          </div>
         </div>
       ))}
     </div>

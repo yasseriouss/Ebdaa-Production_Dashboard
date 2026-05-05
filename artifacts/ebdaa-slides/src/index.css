@@ -45,3 +45,12 @@ body {
   user-select: none;
   -webkit-user-select: none;
 }
+
+@keyframes slide-fade-in {
+  from { opacity: 0; transform: translateY(0.8vh); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.slide-transition {
+  animation: slide-fade-in 0.38s ease-out forwards;
+}

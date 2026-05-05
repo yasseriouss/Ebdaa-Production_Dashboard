@@ -7,8 +7,8 @@ export default function Slide02Problem() {
 
       <div className="flex h-full">
         <div className="flex flex-col justify-center px-[6vw] w-[55vw]">
-          <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.5vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "1.5vh" }}>
-            THE CHALLENGE · التحدي
+          <div style={{ fontSize: "1.5vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.2em", textTransform: "uppercase", marginBottom: "1.5vh" }}>
+            <span style={{ fontFamily: "DM Sans, sans-serif" }}>THE CHALLENGE · </span><span style={{ fontFamily: "Tajawal, sans-serif" }}>التحدي</span>
           </div>
           <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "4vw", color: "#f1f5f9", lineHeight: 1.2, textWrap: "balance", marginBottom: "2.5vh" }}>
             بيانات مشتتة
