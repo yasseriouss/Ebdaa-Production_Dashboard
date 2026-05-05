@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface DashboardStats {
   metalTotalOrders: number;
@@ -24,33 +24,92 @@ const FALLBACK: DashboardStats = {
   woodenActiveOrders: 80,
 };
 
+const REFRESH_INTERVAL_MS = 60_000;
+
 function formatBacklog(n: number): string {
   if (n >= 1000) return `${Math.round(n / 1000)}k`;
   return String(n);
+}
+
+function formatTime(date: Date): string {
+  return date.toLocaleTimeString("ar-SA", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
 }
 
 export default function Slide07Dashboard() {
   const [stats, setStats] = useState<DashboardStats>(FALLBACK);
   const [live, setLive] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  const [isIntersecting, setIsIntersecting] = useState(false);
+  const [isTabVisible, setIsTabVisible] = useState(!document.hidden);
+
+  const containerRef = useRef<HTMLDivElement>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
-    const controller = new AbortController();
-    fetch("/api/dashboard/stats", { signal: controller.signal })
-      .then((r) => {
-        if (!r.ok) throw new Error("API error");
-        return r.json();
-      })
-      .then((data: DashboardStats) => {
-        setStats(data);
-        setLive(true);
-      })
-      .catch(() => {
-        // keep fallback values
-      })
-      .finally(() => setLoading(false));
-    return () => controller.abort();
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsIntersecting(entry.isIntersecting),
+      { threshold: 0.3 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
   }, []);
+
+  useEffect(() => {
+    const onVisibilityChange = () => setIsTabVisible(!document.hidden);
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, []);
+
+  const shouldPoll = isIntersecting && isTabVisible;
+
+  useEffect(() => {
+    if (!shouldPoll) {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+      return;
+    }
+
+    let cancelled = false;
+
+    const doFetch = () => {
+      fetch("/api/dashboard/stats")
+        .then((r) => {
+          if (!r.ok) throw new Error("API error");
+          return r.json();
+        })
+        .then((data: DashboardStats) => {
+          if (cancelled) return;
+          setStats(data);
+          setLive(true);
+          setLastUpdated(new Date());
+        })
+        .catch(() => {})
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    };
+
+    doFetch();
+    intervalRef.current = setInterval(doFetch, REFRESH_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
+    };
+  }, [shouldPoll]);
 
   const kpis = [
     { value: stats.metalTotalOrders, label: "أوامر معدني", color: "#f59e0b" },
@@ -68,98 +127,267 @@ export default function Slide07Dashboard() {
   };
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden" style={{ background: "linear-gradient(160deg, #0e1628 0%, #111c35 100%)" }}>
+    <div
+      ref={containerRef}
+      className="relative w-screen h-screen overflow-hidden"
+      style={{ background: "linear-gradient(160deg, #0e1628 0%, #111c35 100%)" }}
+    >
       <div className="absolute top-0 left-0 right-0 h-[0.7vh]" style={{ background: "#f59e0b" }} />
 
       <div className="flex h-full px-[6vw] pt-[7vh] pb-[6vh]" style={{ flexDirection: "column" }}>
         <div className="mb-[1vh]">
-          <div style={{ fontSize: "1.5vw", fontWeight: 600, color: "#f59e0b", letterSpacing: "0.2em", textTransform: "uppercase", display: "flex", alignItems: "center", gap: "1vw" }}>
+          <div
+            style={{
+              fontSize: "1.5vw",
+              fontWeight: 600,
+              color: "#f59e0b",
+              letterSpacing: "0.2em",
+              textTransform: "uppercase",
+              display: "flex",
+              alignItems: "center",
+              gap: "1vw",
+              flexWrap: "wrap",
+            }}
+          >
             <span style={{ fontFamily: "DM Sans, sans-serif" }}>DASHBOARD &amp; KPIs · </span>
             <span style={{ fontFamily: "Tajawal, sans-serif" }}>لوحة التحكم</span>
             {!loading && (
-              <span style={{
-                fontFamily: "DM Sans, sans-serif",
-                fontSize: "0.9vw",
-                fontWeight: 500,
-                letterSpacing: "0.1em",
-                color: live ? "#4ade80" : "#94a3b8",
-                background: live ? "rgba(74,222,128,0.1)" : "rgba(148,163,184,0.1)",
-                border: `0.05vw solid ${live ? "rgba(74,222,128,0.3)" : "rgba(148,163,184,0.3)"}`,
-                borderRadius: "9999px",
-                padding: "0.2vh 0.8vw",
-              }}>
+              <span
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.9vw",
+                  fontWeight: 500,
+                  letterSpacing: "0.1em",
+                  color: live ? "#4ade80" : "#94a3b8",
+                  background: live ? "rgba(74,222,128,0.1)" : "rgba(148,163,184,0.1)",
+                  border: `0.05vw solid ${live ? "rgba(74,222,128,0.3)" : "rgba(148,163,184,0.3)"}`,
+                  borderRadius: "9999px",
+                  padding: "0.2vh 0.8vw",
+                }}
+              >
                 {live ? "● LIVE" : "● STATIC"}
+              </span>
+            )}
+            {lastUpdated && (
+              <span
+                style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.85vw",
+                  fontWeight: 400,
+                  letterSpacing: "0.05em",
+                  color: "#64748b",
+                  marginRight: "auto",
+                }}
+              >
+                آخر تحديث: {formatTime(lastUpdated)}
               </span>
             )}
           </div>
         </div>
 
-        <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "3.8vw", color: "#f1f5f9", lineHeight: 1.2, marginBottom: "1vh" }}>
+        <div
+          style={{
+            fontFamily: "Tajawal, sans-serif",
+            fontWeight: 900,
+            fontSize: "3.8vw",
+            color: "#f1f5f9",
+            lineHeight: 1.2,
+            marginBottom: "1vh",
+          }}
+        >
           رؤية كاملة في لمحة واحدة
         </div>
-        <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.8vw", color: "#94a3b8", marginBottom: "3vh" }}>
+        <div
+          style={{
+            fontFamily: "DM Sans, sans-serif",
+            fontSize: "1.8vw",
+            color: "#94a3b8",
+            marginBottom: "3vh",
+          }}
+        >
           Management visibility across both factories at a glance
         </div>
         <div style={{ width: "9vw", height: "0.35vh", background: "#f59e0b", marginBottom: "3vh" }} />
 
-        <div className="grid gap-[2vw]" style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr", marginBottom: "2.5vh" }}>
+        <div
+          className="grid gap-[2vw]"
+          style={{ gridTemplateColumns: "1fr 1fr 1fr 1fr", marginBottom: "2.5vh" }}
+        >
           {kpis.map((kpi) => (
-            <div key={kpi.label} style={{ background: "rgba(30,58,95,0.5)", borderRadius: "0.8vw", padding: "2.5vh 2vw", textAlign: "center" }}>
-              <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "4vw", color: kpi.color }}>
+            <div
+              key={kpi.label}
+              style={{
+                background: "rgba(30,58,95,0.5)",
+                borderRadius: "0.8vw",
+                padding: "2.5vh 2vw",
+                textAlign: "center",
+              }}
+            >
+              <div
+                style={{
+                  fontFamily: "Tajawal, sans-serif",
+                  fontWeight: 900,
+                  fontSize: "4vw",
+                  color: kpi.color,
+                }}
+              >
                 {kpi.value}
               </div>
-              <div style={{ fontFamily: "Tajawal, sans-serif", fontSize: "1.6vw", color: "#94a3b8" }}>{kpi.label}</div>
+              <div style={{ fontFamily: "Tajawal, sans-serif", fontSize: "1.6vw", color: "#94a3b8" }}>
+                {kpi.label}
+              </div>
             </div>
           ))}
         </div>
 
         <div className="grid gap-[2vw]" style={{ gridTemplateColumns: "1fr 1fr 1fr" }}>
-          <div style={{ background: "rgba(245,158,11,0.06)", border: "0.1vw solid rgba(245,158,11,0.2)", borderRadius: "0.8vw", padding: "2vh 2vw" }}>
-            <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "1.8vw", color: "#f59e0b", marginBottom: "0.8vh" }}>مؤشر الإنجاز</div>
+          <div
+            style={{
+              background: "rgba(245,158,11,0.06)",
+              border: "0.1vw solid rgba(245,158,11,0.2)",
+              borderRadius: "0.8vw",
+              padding: "2vh 2vw",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "Tajawal, sans-serif",
+                fontWeight: 700,
+                fontSize: "1.8vw",
+                color: "#f59e0b",
+                marginBottom: "0.8vh",
+              }}
+            >
+              مؤشر الإنجاز
+            </div>
             <div style={{ display: "flex", gap: "1.5vw", marginBottom: "0.8vh" }}>
               <div>
-                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.3vw", color: "#94a3b8" }}>Metal</div>
-                <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "2vw", color: "#f1f5f9" }}>
+                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.3vw", color: "#94a3b8" }}>
+                  Metal
+                </div>
+                <div
+                  style={{
+                    fontFamily: "Tajawal, sans-serif",
+                    fontWeight: 700,
+                    fontSize: "2vw",
+                    color: "#f1f5f9",
+                  }}
+                >
                   {`${safeStats.metalAvgCompletionPct}%`}
                 </div>
               </div>
               <div style={{ width: "0.1vw", background: "rgba(245,158,11,0.2)" }} />
               <div>
-                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.3vw", color: "#94a3b8" }}>Wood</div>
-                <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "2vw", color: "#f1f5f9" }}>
+                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.3vw", color: "#94a3b8" }}>
+                  Wood
+                </div>
+                <div
+                  style={{
+                    fontFamily: "Tajawal, sans-serif",
+                    fontWeight: 700,
+                    fontSize: "2vw",
+                    color: "#f1f5f9",
+                  }}
+                >
                   {`${safeStats.woodenAvgCompletionPct}%`}
                 </div>
               </div>
             </div>
-            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.4vw", color: "#94a3b8" }}>Average completion per factory, updated live</div>
+            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.4vw", color: "#94a3b8" }}>
+              Average completion per factory, updated live
+            </div>
           </div>
 
-          <div style={{ background: "rgba(245,158,11,0.06)", border: "0.1vw solid rgba(245,158,11,0.2)", borderRadius: "0.8vw", padding: "2vh 2vw" }}>
-            <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "1.8vw", color: "#f59e0b", marginBottom: "0.8vh" }}>أوامر نشطة</div>
+          <div
+            style={{
+              background: "rgba(245,158,11,0.06)",
+              border: "0.1vw solid rgba(245,158,11,0.2)",
+              borderRadius: "0.8vw",
+              padding: "2vh 2vw",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "Tajawal, sans-serif",
+                fontWeight: 700,
+                fontSize: "1.8vw",
+                color: "#f59e0b",
+                marginBottom: "0.8vh",
+              }}
+            >
+              أوامر نشطة
+            </div>
             <div style={{ display: "flex", gap: "1.5vw", marginBottom: "0.8vh" }}>
               <div>
-                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.3vw", color: "#94a3b8" }}>Metal</div>
-                <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "2vw", color: "#f1f5f9" }}>
+                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.3vw", color: "#94a3b8" }}>
+                  Metal
+                </div>
+                <div
+                  style={{
+                    fontFamily: "Tajawal, sans-serif",
+                    fontWeight: 700,
+                    fontSize: "2vw",
+                    color: "#f1f5f9",
+                  }}
+                >
                   {safeStats.metalActiveOrders}
                 </div>
               </div>
               <div style={{ width: "0.1vw", background: "rgba(245,158,11,0.2)" }} />
               <div>
-                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.3vw", color: "#94a3b8" }}>Wood</div>
-                <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "2vw", color: "#f1f5f9" }}>
+                <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.3vw", color: "#94a3b8" }}>
+                  Wood
+                </div>
+                <div
+                  style={{
+                    fontFamily: "Tajawal, sans-serif",
+                    fontWeight: 700,
+                    fontSize: "2vw",
+                    color: "#f1f5f9",
+                  }}
+                >
                   {safeStats.woodenActiveOrders}
                 </div>
               </div>
             </div>
-            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.4vw", color: "#94a3b8" }}>Active orders in production across both factories</div>
+            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.4vw", color: "#94a3b8" }}>
+              Active orders in production across both factories
+            </div>
           </div>
 
-          <div style={{ background: "rgba(245,158,11,0.06)", border: "0.1vw solid rgba(245,158,11,0.2)", borderRadius: "0.8vw", padding: "2vh 2vw" }}>
-            <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 700, fontSize: "1.8vw", color: "#f59e0b", marginBottom: "0.8vh" }}>مشاريع مشتركة</div>
-            <div style={{ fontFamily: "Tajawal, sans-serif", fontWeight: 900, fontSize: "3vw", color: "#f1f5f9", marginBottom: "0.5vh" }}>
+          <div
+            style={{
+              background: "rgba(245,158,11,0.06)",
+              border: "0.1vw solid rgba(245,158,11,0.2)",
+              borderRadius: "0.8vw",
+              padding: "2vh 2vw",
+            }}
+          >
+            <div
+              style={{
+                fontFamily: "Tajawal, sans-serif",
+                fontWeight: 700,
+                fontSize: "1.8vw",
+                color: "#f59e0b",
+                marginBottom: "0.8vh",
+              }}
+            >
+              مشاريع مشتركة
+            </div>
+            <div
+              style={{
+                fontFamily: "Tajawal, sans-serif",
+                fontWeight: 900,
+                fontSize: "3vw",
+                color: "#f1f5f9",
+                marginBottom: "0.5vh",
+              }}
+            >
               {safeStats.sharedProjectsCount}
             </div>
-            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.4vw", color: "#94a3b8" }}>Cross-factory clients visible from one screen</div>
+            <div style={{ fontFamily: "DM Sans, sans-serif", fontSize: "1.4vw", color: "#94a3b8" }}>
+              Cross-factory clients visible from one screen
+            </div>
           </div>
         </div>
       </div>
