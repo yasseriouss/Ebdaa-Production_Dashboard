@@ -132,11 +132,28 @@ export default function WoodenOrders() {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editOrder, setEditOrder] = useState<WoodenOrder | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
-  const { data: orders, isLoading } = useListWoodenOrders({ search });
+  const { data: orders, isLoading } = useListWoodenOrders({
+    search,
+    ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+  });
+
+  const exportUrl = (() => {
+    const params = new URLSearchParams({ format: "xlsx" });
+    if (search.trim()) params.set("search", search.trim());
+    if (statusFilter !== "all") params.set("status", statusFilter);
+    if (dateFrom) params.set("dateFrom", dateFrom);
+    if (dateTo) params.set("dateTo", dateTo);
+    return `${API_BASE}/export/wooden-orders?${params.toString()}`;
+  })();
+
+  const WOODEN_STATUS_OPTIONS = ["تحت التصنيع", "تم التسليم", "متوقف", "لم يتم البدء"];
 
   const del = useDeleteWoodenOrder({
     mutation: {
@@ -151,7 +168,7 @@ export default function WoodenOrders() {
         <h1 className="text-3xl font-bold tracking-tight">أوامر المصنع الخشبي</h1>
         <div className="flex items-center gap-2">
           <Button variant="outline" asChild data-testid="btn-export-wooden">
-            <a href={`${API_BASE}/export/wooden-orders?format=xlsx`} download>
+            <a href={exportUrl} download>
               <FileSpreadsheet className="ml-2 h-4 w-4" />
               تصدير Excel
             </a>
@@ -163,11 +180,40 @@ export default function WoodenOrders() {
         </div>
       </div>
 
-      <div className="flex items-center gap-2 max-w-sm">
-        <div className="relative flex-1">
-          <Search className="absolute right-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="relative w-full sm:w-72">
+          <Label className="mb-1 block text-xs text-muted-foreground">بحث</Label>
+          <Search className="absolute right-2.5 top-[34px] h-4 w-4 text-muted-foreground" />
           <Input placeholder="بحث برقم الأمر أو العميل..." className="pr-9" value={search} onChange={e => setSearch(e.target.value)} data-testid="input-wooden-search" />
         </div>
+        <div className="w-44">
+          <Label className="mb-1 block text-xs text-muted-foreground">الحالة</Label>
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger data-testid="select-wooden-status-filter"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">الكل</SelectItem>
+              {WOODEN_STATUS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-40">
+          <Label className="mb-1 block text-xs text-muted-foreground">من تاريخ (للتصدير)</Label>
+          <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} data-testid="input-wooden-date-from" />
+        </div>
+        <div className="w-40">
+          <Label className="mb-1 block text-xs text-muted-foreground">إلى تاريخ (للتصدير)</Label>
+          <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} data-testid="input-wooden-date-to" />
+        </div>
+        {(search || statusFilter !== "all" || dateFrom || dateTo) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => { setSearch(""); setStatusFilter("all"); setDateFrom(""); setDateTo(""); }}
+            data-testid="btn-wooden-clear-filters"
+          >
+            مسح الفلاتر
+          </Button>
+        )}
       </div>
 
       <div className="rounded-md border border-border bg-card overflow-x-auto">

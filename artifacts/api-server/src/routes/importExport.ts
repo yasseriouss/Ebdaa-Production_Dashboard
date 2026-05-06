@@ -884,7 +884,30 @@ const METAL_EXPORT_STAGE_KEYS = [
 router.get("/metal-orders", async (req, res) => {
   try {
     const format = String(req.query.format || "xlsx");
-    const orders = await db.select().from(metalWorkOrdersTable).orderBy(metalWorkOrdersTable.id);
+    const search = (req.query.search as string | undefined)?.trim().toLowerCase() || "";
+    const status = (req.query.status as string | undefined)?.trim() || "";
+    const dateFrom = (req.query.dateFrom as string | undefined)?.trim() || "";
+    const dateTo = (req.query.dateTo as string | undefined)?.trim() || "";
+
+    let orders = await db.select().from(metalWorkOrdersTable).orderBy(metalWorkOrdersTable.id);
+    if (status) orders = orders.filter(o => (o.status || "").toLowerCase() === status.toLowerCase());
+    if (search) {
+      orders = orders.filter(o =>
+        o.moNumber.toLowerCase().includes(search) ||
+        o.product.toLowerCase().includes(search) ||
+        (o.client?.toLowerCase().includes(search) ?? false) ||
+        (o.project?.toLowerCase().includes(search) ?? false)
+      );
+    }
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime();
+      if (!isNaN(from)) orders = orders.filter(o => o.createdAt && o.createdAt.getTime() >= from);
+    }
+    if (dateTo) {
+      // Include the entire `dateTo` day
+      const to = new Date(dateTo).getTime() + 24 * 60 * 60 * 1000 - 1;
+      if (!isNaN(to)) orders = orders.filter(o => o.createdAt && o.createdAt.getTime() <= to);
+    }
 
     if (format === "xlsx") {
       // Fetch all stages once, then group by metalOrderId
@@ -948,7 +971,24 @@ const WOODEN_EXPORT_KEYS = [
 router.get("/wooden-orders", async (req, res) => {
   try {
     const format = String(req.query.format || "xlsx");
-    const orders = await db.select().from(woodenWorkOrdersTable).orderBy(woodenWorkOrdersTable.id);
+    const search = (req.query.search as string | undefined)?.trim().toLowerCase() || "";
+    const status = (req.query.status as string | undefined)?.trim() || "";
+    const dateFrom = (req.query.dateFrom as string | undefined)?.trim() || "";
+    const dateTo = (req.query.dateTo as string | undefined)?.trim() || "";
+
+    let orders = await db.select().from(woodenWorkOrdersTable).orderBy(woodenWorkOrdersTable.id);
+    if (status) orders = orders.filter(o => o.status?.toLowerCase() === status.toLowerCase());
+    if (search) {
+      orders = orders.filter(o =>
+        o.orderNo.toLowerCase().includes(search) ||
+        o.product.toLowerCase().includes(search) ||
+        (o.client?.toLowerCase().includes(search) ?? false) ||
+        (o.subProject?.toLowerCase().includes(search) ?? false)
+      );
+    }
+    // Wooden orderDate is a free-text ISO-ish string; ISO `yyyy-mm-dd` compares lexicographically.
+    if (dateFrom) orders = orders.filter(o => (o.orderDate || "") >= dateFrom);
+    if (dateTo) orders = orders.filter(o => (o.orderDate || "") <= dateTo);
 
     if (format === "xlsx") {
       const wsData: unknown[][] = [WOODEN_EXPORT_AR_HEADERS, WOODEN_EXPORT_KEYS];
