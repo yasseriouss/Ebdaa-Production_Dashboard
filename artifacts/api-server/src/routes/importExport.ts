@@ -384,6 +384,251 @@ router.post("/wooden-orders", upload.single("file"), async (req, res) => {
   }
 });
 
+// ---- IMPORT: Full Ebdaa Sheets template (auto column mapping + duplicate detection) ----
+//
+// Accepts the official `Ebdaa-Sheets-Template.xlsx` directly. Reads sheets:
+//   - "أوامر معدني"  → metal_work_orders + metal_production_stages
+//   - "أوامر خشبي"  → wooden_work_orders + wooden_production_stages
+//
+// Column mapping uses ROW INDEX 1 (English DB keys: mo_number, project, qty, laser, ...)
+// produced by the template, so it stays stable even if the Arabic header text changes.
+// Duplicate MO# / Order No are detected against existing DB rows AND skipped (flagged in
+// `duplicates`) so staff can review without overwriting in-flight production data.
+
+const METAL_STAGE_KEY_TO_NAME: Record<string, string> = {
+  laser: "الليزر",
+  shear: "المقص",
+  coil: "الكويل",
+  punch: "البانش",
+  press_form: "مكابس و تكويع",
+  drill: "المثقاب",
+  stripping: "التخليع",
+  bending: "التنايات",
+  co2_weld: "لحام CO2",
+  polishing: "تجليخ",
+  patch_weld: "لحام بنطة",
+  brass_weld: "لحام نحاس",
+  argon_weld: "لحام أرجون استالنس",
+  stainless_finish: "تشطيب استالنس",
+  painting: "الدهان",
+  assembly: "التجميع",
+  delivery: "التسليم",
+};
+
+type SectionResult = {
+  sheetFound: boolean;
+  rowsImported: number;
+  rowsSkipped: number;
+  duplicates: string[];
+  errors: string[];
+};
+
+function emptySection(): SectionResult {
+  return { sheetFound: false, rowsImported: 0, rowsSkipped: 0, duplicates: [], errors: [] };
+}
+
+/** Build a header → column index map from the template's row 1 (English DB keys). */
+function buildKeyMap(headerRow: unknown[]): Map<string, number> {
+  const map = new Map<string, number>();
+  headerRow.forEach((cell, idx) => {
+    // strip "(derived)" / "(optional)" suffixes the template adds
+    const key = safeStr(cell).toLowerCase().replace(/\s*\(.*?\)\s*/g, "").trim();
+    if (key) map.set(key, idx);
+  });
+  return map;
+}
+
+async function importMetalSection(rows: unknown[][]): Promise<SectionResult> {
+  const result = emptySection();
+  result.sheetFound = true;
+  if (rows.length < 3) return result;
+
+  const keyMap = buildKeyMap(rows[1]);
+  const get = (row: unknown[], key: string) => {
+    const idx = keyMap.get(key);
+    return idx === undefined ? "" : safeStr(row[idx]);
+  };
+
+  // pre-fetch existing MO numbers for duplicate detection
+  const existing = await db.select({ moNumber: metalWorkOrdersTable.moNumber }).from(metalWorkOrdersTable);
+  const existingSet = new Set(existing.map(e => e.moNumber));
+
+  for (let i = 2; i < rows.length; i++) {
+    const row = rows[i];
+    const moNumber = get(row, "mo_number");
+    if (!moNumber) { result.rowsSkipped++; continue; }
+
+    if (existingSet.has(moNumber)) {
+      result.duplicates.push(moNumber);
+      result.rowsSkipped++;
+      continue;
+    }
+
+    try {
+      const qty = safeNum(get(row, "qty"));
+      const [order] = await db.insert(metalWorkOrdersTable).values({
+        moNumber,
+        project: get(row, "project"),
+        client: get(row, "client"),
+        product: get(row, "product") || moNumber,
+        qty,
+        unit: get(row, "unit"),
+        deliveredQty: safeNum(get(row, "delivered_qty")),
+        completionPct: safeNum(get(row, "completion_pct")),
+        backlogQty: safeNum(get(row, "backlog_qty")),
+        backlogStatus: get(row, "backlog_status"),
+        notes: get(row, "notes"),
+        status: get(row, "status") || "لم يتم البدء",
+        factory: get(row, "factory") || "metal",
+      }).returning();
+
+      if (!order) { result.rowsSkipped++; continue; }
+      existingSet.add(moNumber);
+
+      // Insert all 17 stages, populating qtyDone from the inline per-stage columns
+      for (const s of METAL_STAGES) {
+        const tplKey = Object.entries(METAL_STAGE_KEY_TO_NAME).find(([, n]) => n === s.name)?.[0];
+        const qtyDone = tplKey ? safeNum(get(row, tplKey)) : "0";
+        const qtyDoneNum = parseFloat(qtyDone);
+        const qtyTargetNum = parseFloat(qty);
+        const stageStatus = qtyDoneNum <= 0
+          ? "لم يتم البدء"
+          : qtyDoneNum >= qtyTargetNum && qtyTargetNum > 0
+            ? "مكتمل"
+            : "تحت التصنيع";
+        await db.insert(metalProductionStagesTable).values({
+          metalOrderId: order.id,
+          moNumber: order.moNumber,
+          stageName: s.name,
+          stageOrder: s.order,
+          qtyTarget: qty,
+          qtyDone,
+          status: stageStatus,
+        }).onConflictDoUpdate({
+          target: [metalProductionStagesTable.metalOrderId, metalProductionStagesTable.stageName],
+          set: { qtyTarget: qty, qtyDone, status: stageStatus, stageOrder: s.order, updatedAt: new Date() },
+        });
+      }
+      result.rowsImported++;
+    } catch (e) {
+      result.errors.push(`Metal row ${i + 1} (${moNumber}): ${String(e)}`);
+      result.rowsSkipped++;
+    }
+  }
+  return result;
+}
+
+async function importWoodenSection(rows: unknown[][]): Promise<SectionResult> {
+  const result = emptySection();
+  result.sheetFound = true;
+  if (rows.length < 3) return result;
+
+  const keyMap = buildKeyMap(rows[1]);
+  const get = (row: unknown[], key: string) => {
+    const idx = keyMap.get(key);
+    return idx === undefined ? "" : safeStr(row[idx]);
+  };
+  // Date getter: if the cell is a numeric Excel serial, convert to ISO; otherwise pass through trimmed string.
+  const getDate = (row: unknown[], key: string) => {
+    const idx = keyMap.get(key);
+    if (idx === undefined) return "";
+    const raw = row[idx];
+    if (raw === null || raw === undefined || raw === "") return "";
+    const iso = excelDateToStr(raw);
+    return iso || safeStr(raw);
+  };
+
+  const existing = await db.select({ orderNo: woodenWorkOrdersTable.orderNo }).from(woodenWorkOrdersTable);
+  const existingSet = new Set(existing.map(e => e.orderNo));
+
+  for (let i = 2; i < rows.length; i++) {
+    const row = rows[i];
+    const orderNo = get(row, "order_no");
+    if (!orderNo) { result.rowsSkipped++; continue; }
+
+    if (existingSet.has(orderNo)) {
+      result.duplicates.push(orderNo);
+      result.rowsSkipped++;
+      continue;
+    }
+
+    try {
+      const product = get(row, "product");
+      if (!product) { result.rowsSkipped++; continue; }
+
+      const [order] = await db.insert(woodenWorkOrdersTable).values({
+        orderNo,
+        extension: stripVbc(get(row, "extension")),
+        orderDate: getDate(row, "order_date"),
+        manufactureRequest: get(row, "manufacture_request"),
+        sapCode: get(row, "sap_code"),
+        client: get(row, "client"),
+        subProject: get(row, "sub_project"),
+        product,
+        category: get(row, "category"),
+        uom: get(row, "uom"),
+        qty: safeNum(get(row, "qty")),
+        done: safeNum(get(row, "done")),
+        rem: safeNum(get(row, "rem")),
+        status: parseWoodenStatus(get(row, "status")),
+        prodDateStart: getDate(row, "prod_date_start"),
+        prodDateEnd: getDate(row, "prod_date_end"),
+        prodDateFinished: getDate(row, "prod_date_finished"),
+      }).returning();
+
+      if (!order) { result.rowsSkipped++; continue; }
+      existingSet.add(orderNo);
+
+      for (const s of WOODEN_STAGES) {
+        await db.insert(woodenProductionStagesTable).values({
+          woodenOrderId: order.id,
+          stageName: s.name,
+          stageOrder: s.order,
+          qtyDone: "0",
+          status: "لم يتم البدء",
+        }).onConflictDoUpdate({
+          target: [woodenProductionStagesTable.woodenOrderId, woodenProductionStagesTable.stageName],
+          set: { stageOrder: s.order },
+        });
+      }
+      result.rowsImported++;
+    } catch (e) {
+      result.errors.push(`Wooden row ${i + 1} (${orderNo}): ${String(e)}`);
+      result.rowsSkipped++;
+    }
+  }
+  return result;
+}
+
+router.post("/sheets-template", upload.single("file"), async (req, res) => {
+  if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
+  try {
+    const wb = XLSX.read(req.file.buffer, { type: "buffer" });
+    const metalSheet = wb.SheetNames.find(s => s.includes("معدني"));
+    const woodenSheet = wb.SheetNames.find(s => s.includes("خشبي"));
+
+    const metal = metalSheet
+      ? await importMetalSection(XLSX.utils.sheet_to_json(wb.Sheets[metalSheet], { header: 1, defval: "" }) as unknown[][])
+      : emptySection();
+    const wooden = woodenSheet
+      ? await importWoodenSection(XLSX.utils.sheet_to_json(wb.Sheets[woodenSheet], { header: 1, defval: "" }) as unknown[][])
+      : emptySection();
+
+    const errors: string[] = [];
+    if (!metalSheet) errors.push('Sheet "أوامر معدني" not found in workbook');
+    if (!woodenSheet) errors.push('Sheet "أوامر خشبي" not found in workbook');
+
+    res.json({ success: errors.length === 0 || metal.rowsImported > 0 || wooden.rowsImported > 0, metal, wooden, errors });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      metal: emptySection(),
+      wooden: emptySection(),
+      errors: [String(err)],
+    });
+  }
+});
+
 // ---- Helper: Build PDF buffer using pdfkit with DejaVu font (Unicode-capable) ----
 function buildPdf(title: string, headers: string[], rows: string[][]): Promise<Buffer> {
   return new Promise((resolve, reject) => {

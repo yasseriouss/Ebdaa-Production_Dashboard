@@ -32,6 +32,7 @@ import type {
   ImportMetalDailyProductionBody,
   ImportMetalOrdersBody,
   ImportResult,
+  ImportSheetsTemplateBody,
   ImportWoodenOrdersBody,
   ListMetalOrdersParams,
   ListMetalStagesParams,
@@ -41,6 +42,7 @@ import type {
   MetalWorkOrder,
   MetalWorkOrderDetail,
   SharedProject,
+  SheetsTemplateImportResult,
   StageSummary,
   UpdateMetalStageBody,
   UpdateWoodenStageBody,
@@ -2632,6 +2634,97 @@ export const useImportWoodenOrders = <
   TContext
 > => {
   return useMutation(getImportWoodenOrdersMutationOptions(options));
+};
+
+/**
+ * @summary Import the full Ebdaa Google Sheets template (metal + wooden) in one shot with auto column mapping and duplicate detection
+ */
+export const getImportSheetsTemplateUrl = () => {
+  return `/api/import/sheets-template`;
+};
+
+export const importSheetsTemplate = async (
+  importSheetsTemplateBody: ImportSheetsTemplateBody,
+  options?: RequestInit,
+): Promise<SheetsTemplateImportResult> => {
+  const formData = new FormData();
+  if (importSheetsTemplateBody.file !== undefined) {
+    formData.append(`file`, importSheetsTemplateBody.file);
+  }
+
+  return customFetch<SheetsTemplateImportResult>(getImportSheetsTemplateUrl(), {
+    ...options,
+    method: "POST",
+    body: formData,
+  });
+};
+
+export const getImportSheetsTemplateMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importSheetsTemplate>>,
+    TError,
+    { data: BodyType<ImportSheetsTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof importSheetsTemplate>>,
+  TError,
+  { data: BodyType<ImportSheetsTemplateBody> },
+  TContext
+> => {
+  const mutationKey = ["importSheetsTemplate"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof importSheetsTemplate>>,
+    { data: BodyType<ImportSheetsTemplateBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return importSheetsTemplate(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type ImportSheetsTemplateMutationResult = NonNullable<
+  Awaited<ReturnType<typeof importSheetsTemplate>>
+>;
+export type ImportSheetsTemplateMutationBody =
+  BodyType<ImportSheetsTemplateBody>;
+export type ImportSheetsTemplateMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Import the full Ebdaa Google Sheets template (metal + wooden) in one shot with auto column mapping and duplicate detection
+ */
+export const useImportSheetsTemplate = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof importSheetsTemplate>>,
+    TError,
+    { data: BodyType<ImportSheetsTemplateBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof importSheetsTemplate>>,
+  TError,
+  { data: BodyType<ImportSheetsTemplateBody> },
+  TContext
+> => {
+  return useMutation(getImportSheetsTemplateMutationOptions(options));
 };
 
 /**

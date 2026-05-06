@@ -676,6 +676,32 @@ export const ImportWoodenOrdersResponse = zod.object({
 });
 
 /**
+ * @summary Import the full Ebdaa Google Sheets template (metal + wooden) in one shot with auto column mapping and duplicate detection
+ */
+export const ImportSheetsTemplateBody = zod.object({
+  file: zod.instanceof(File).optional(),
+});
+
+export const ImportSheetsTemplateResponse = zod.object({
+  success: zod.boolean(),
+  metal: zod.object({
+    sheetFound: zod.boolean(),
+    rowsImported: zod.number(),
+    rowsSkipped: zod.number(),
+    duplicates: zod.array(zod.string()),
+    errors: zod.array(zod.string()).optional(),
+  }),
+  wooden: zod.object({
+    sheetFound: zod.boolean(),
+    rowsImported: zod.number(),
+    rowsSkipped: zod.number(),
+    duplicates: zod.array(zod.string()),
+    errors: zod.array(zod.string()).optional(),
+  }),
+  errors: zod.array(zod.string()).optional(),
+});
+
+/**
  * @summary Export metal orders as Excel or PDF
  */
 export const ExportMetalOrdersQueryParams = zod.object({

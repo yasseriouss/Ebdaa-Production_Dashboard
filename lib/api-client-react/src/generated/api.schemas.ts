@@ -218,6 +218,21 @@ export interface ImportResult {
   errors?: string[];
 }
 
+export interface SheetsTemplateSectionResult {
+  sheetFound: boolean;
+  rowsImported: number;
+  rowsSkipped: number;
+  duplicates: string[];
+  errors?: string[];
+}
+
+export interface SheetsTemplateImportResult {
+  success: boolean;
+  metal: SheetsTemplateSectionResult;
+  wooden: SheetsTemplateSectionResult;
+  errors?: string[];
+}
+
 export type ListMetalOrdersParams = {
   status?: string;
   client?: string;
@@ -263,6 +278,10 @@ export type ImportMetalDailyProductionBody = {
 };
 
 export type ImportWoodenOrdersBody = {
+  file?: Blob;
+};
+
+export type ImportSheetsTemplateBody = {
   file?: Blob;
 };
 

@@ -613,6 +613,29 @@ paths:
               schema:
                 $ref: "#/components/schemas/ImportResult"
 
+  /import/sheets-template:
+    post:
+      operationId: importSheetsTemplate
+      tags: [import-export]
+      summary: Import the full Ebdaa Google Sheets template (metal + wooden) in one shot with auto column mapping and duplicate detection
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        "200":
+          description: Combined import result for both factories
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SheetsTemplateImportResult"
+
   /export/metal-orders:
     get:
       operationId: exportMetalOrders
@@ -1127,3 +1150,44 @@ components:
       required:
         - success
         - rowsImported
+
+    SheetsTemplateImportResult:
+      type: object
+      properties:
+        success:
+          type: boolean
+        metal:
+          $ref: "#/components/schemas/SheetsTemplateSectionResult"
+        wooden:
+          $ref: "#/components/schemas/SheetsTemplateSectionResult"
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - success
+        - metal
+        - wooden
+
+    SheetsTemplateSectionResult:
+      type: object
+      properties:
+        sheetFound:
+          type: boolean
+        rowsImported:
+          type: integer
+        rowsSkipped:
+          type: integer
+        duplicates:
+          type: array
+          items:
+            type: string
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - sheetFound
+        - rowsImported
+        - rowsSkipped
+        - duplicates

@@ -6,8 +6,9 @@ import {
   useImportMetalOrders,
   useImportMetalDailyProduction,
   useImportWoodenOrders,
+  useImportSheetsTemplate,
 } from "@workspace/api-client-react";
-import { Upload, Download, FileText, CheckCircle2, XCircle } from "lucide-react";
+import { Upload, Download, FileText, CheckCircle2, XCircle, FileSpreadsheet, AlertTriangle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
@@ -126,11 +127,85 @@ function ExportCard({ title, endpoint, filename }: { title: string; endpoint: st
   );
 }
 
+type SectionResult = { sheetFound: boolean; rowsImported: number; rowsSkipped: number; duplicates: string[]; errors?: string[] };
+type TemplateResult = { success: boolean; metal: SectionResult; wooden: SectionResult; errors?: string[] };
+
+function TemplateResultPanel({ res }: { res: TemplateResult }) {
+  const renderSection = (label: string, s: SectionResult) => (
+    <div className="rounded-md border p-3 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="font-semibold text-sm">{label}</span>
+        {s.sheetFound
+          ? <Badge variant="secondary">{s.rowsImported} مستورد</Badge>
+          : <Badge variant="outline" className="text-destructive">الورقة غير موجودة</Badge>}
+      </div>
+      <div className="flex flex-wrap gap-2 text-xs">
+        <span>متخطى: <Badge variant="outline">{s.rowsSkipped}</Badge></span>
+        <span>مكرر: <Badge variant="outline">{s.duplicates.length}</Badge></span>
+      </div>
+      {s.duplicates.length > 0 && (
+        <div className="text-xs">
+          <div className="flex items-center gap-1 text-amber-600 mb-1">
+            <AlertTriangle className="h-3 w-3" /> أرقام مكررة (تم تخطيها للمراجعة):
+          </div>
+          <div className="max-h-20 overflow-y-auto font-mono text-[11px] text-muted-foreground">
+            {s.duplicates.slice(0, 20).join("، ")}
+            {s.duplicates.length > 20 && ` … (+${s.duplicates.length - 20})`}
+          </div>
+        </div>
+      )}
+      {s.errors && s.errors.length > 0 && (
+        <div className="text-[11px] text-destructive max-h-16 overflow-y-auto">
+          {s.errors.slice(0, 3).map((e, i) => <div key={i} className="truncate">{e}</div>)}
+        </div>
+      )}
+    </div>
+  );
+  return (
+    <div className={`rounded-lg p-3 text-sm space-y-3 ${res.success ? "bg-green-500/10 border border-green-500/30" : "bg-destructive/10 border border-destructive/30"}`}>
+      <div className="flex items-center gap-2 font-semibold">
+        {res.success
+          ? <CheckCircle2 className="h-4 w-4 text-green-500" />
+          : <XCircle className="h-4 w-4 text-destructive" />}
+        {res.success ? "اكتمل استيراد القالب" : "فشل استيراد القالب"}
+      </div>
+      <div className="grid gap-2 md:grid-cols-2">
+        {renderSection("معدني (أوامر معدني)", res.metal)}
+        {renderSection("خشبي (أوامر خشبي)", res.wooden)}
+      </div>
+      {res.errors && res.errors.length > 0 && (
+        <div className="text-xs text-destructive">
+          {res.errors.map((e, i) => <div key={i}>{e}</div>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function ImportExport() {
   const { toast } = useToast();
   const [metalRes, setMetalRes] = useState<ImportResult | null>(null);
   const [dailyRes, setDailyRes] = useState<ImportResult | null>(null);
   const [woodenRes, setWoodenRes] = useState<ImportResult | null>(null);
+  const [templateRes, setTemplateRes] = useState<TemplateResult | null>(null);
+  const templateRef = useRef<HTMLInputElement>(null);
+
+  const templateMut = useImportSheetsTemplate({
+    mutation: {
+      onSuccess: d => {
+        const r = d as TemplateResult;
+        setTemplateRes(r);
+        const total = r.metal.rowsImported + r.wooden.rowsImported;
+        const dups = r.metal.duplicates.length + r.wooden.duplicates.length;
+        toast({
+          title: r.success ? "تم استيراد قالب الشيتس" : "فشل استيراد القالب",
+          description: `${total} صف مستورد، ${dups} مكرر`,
+          variant: r.success ? "default" : "destructive",
+        });
+      },
+      onError: () => toast({ title: "فشل استيراد القالب", variant: "destructive" }),
+    },
+  });
 
   const metalMut = useImportMetalOrders({
     mutation: {
@@ -170,6 +245,43 @@ export default function ImportExport() {
           <Upload className="h-5 w-5 text-primary" />
           استيراد البيانات
         </h2>
+
+        <Card className="mb-4 border-primary/40 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <FileSpreadsheet className="h-5 w-5 text-primary" />
+              استيراد قالب Google Sheets الكامل (Ebdaa-Sheets-Template.xlsx)
+            </CardTitle>
+            <CardDescription className="text-xs">
+              يقرأ الأوراق "أوامر معدني" و"أوامر خشبي" تلقائياً ويعيّن الأعمدة بدون أي إعداد يدوي. يكتشف أرقام الأوامر المكررة ويتخطّاها للمراجعة بدلاً من الكتابة فوقها.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <input
+              ref={templateRef}
+              type="file"
+              accept=".xlsx,.xls"
+              className="hidden"
+              data-testid="file-sheets-template"
+              onChange={e => {
+                const f = e.target.files?.[0];
+                if (f) { templateMut.mutate({ data: { file: f as Blob } }); e.target.value = ""; }
+              }}
+            />
+            <Button
+              className="w-full"
+              disabled={templateMut.isPending}
+              data-testid="btn-import-sheets-template"
+              onClick={() => templateRef.current?.click()}
+            >
+              <Upload className="ml-2 h-4 w-4" />
+              {templateMut.isPending ? "جاري الاستيراد..." : "اختر ملف القالب لاستيراده"}
+            </Button>
+            {templateRes && <TemplateResultPanel res={templateRes} />}
+          </CardContent>
+        </Card>
+
+        <h3 className="text-sm font-semibold text-muted-foreground mb-3">استيراد متقدم (لكل ورقة على حدة)</h3>
         <div className="grid gap-4 md:grid-cols-3">
           <ImportCard title="أوامر المصنع المعدني" description="ملف Excel يحتوي على ورقة MO بأوامر الشغل المعدنية" testId="metal-orders" onImport={f => handle("metal", f)} isPending={metalMut.isPending} result={metalRes} />
           <ImportCard title="الإنتاج اليومي المعدني" description="ملف Excel يحتوي على 17 ورقة لكل مرحلة إنتاج" testId="metal-daily" onImport={f => handle("daily", f)} isPending={dailyMut.isPending} result={dailyRes} />
