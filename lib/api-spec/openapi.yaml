@@ -1160,6 +1160,8 @@ components:
           $ref: "#/components/schemas/SheetsTemplateSectionResult"
         wooden:
           $ref: "#/components/schemas/SheetsTemplateSectionResult"
+        stageLog:
+          $ref: "#/components/schemas/SheetsTemplateStageLogResult"
         errors:
           type: array
           items:
@@ -1168,6 +1170,25 @@ components:
         - success
         - metal
         - wooden
+        - stageLog
+
+    SheetsTemplateStageLogResult:
+      type: object
+      properties:
+        sheetFound:
+          type: boolean
+        rowsImported:
+          type: integer
+        rowsSkipped:
+          type: integer
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - sheetFound
+        - rowsImported
+        - rowsSkipped
 
     SheetsTemplateSectionResult:
       type: object

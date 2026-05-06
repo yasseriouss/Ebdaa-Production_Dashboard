@@ -698,6 +698,12 @@ export const ImportSheetsTemplateResponse = zod.object({
     duplicates: zod.array(zod.string()),
     errors: zod.array(zod.string()).optional(),
   }),
+  stageLog: zod.object({
+    sheetFound: zod.boolean(),
+    rowsImported: zod.number(),
+    rowsSkipped: zod.number(),
+    errors: zod.array(zod.string()).optional(),
+  }),
   errors: zod.array(zod.string()).optional(),
 });
 

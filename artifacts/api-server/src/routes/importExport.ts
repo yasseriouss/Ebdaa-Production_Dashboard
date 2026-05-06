@@ -6,6 +6,7 @@ import { db } from "@workspace/db";
 import {
   metalWorkOrdersTable,
   metalProductionStagesTable,
+  metalStageLogTable,
   woodenWorkOrdersTable,
   woodenProductionStagesTable,
 } from "@workspace/db";
@@ -600,12 +601,167 @@ async function importWoodenSection(rows: unknown[][]): Promise<SectionResult> {
   return result;
 }
 
+type StageLogResult = {
+  sheetFound: boolean;
+  rowsImported: number;
+  rowsSkipped: number;
+  errors: string[];
+};
+
+function emptyStageLog(): StageLogResult {
+  return { sheetFound: false, rowsImported: 0, rowsSkipped: 0, errors: [] };
+}
+
+/** Strip leading "ال" + normalize hamza for fuzzy stage-name matching */
+function canonicalStageKey(s: string): string {
+  return normalizeArabic(s).replace(/^ال/, "").trim().toLowerCase();
+}
+
+/** Map an English stage token (e.g. "Laser") to the canonical Arabic stage name. */
+const ENGLISH_STAGE_TO_AR: Record<string, string> = {
+  laser: "الليزر",
+  shear: "المقص",
+  coil: "الكويل",
+  punch: "البانش",
+  "press_form": "مكابس و تكويع",
+  "press form": "مكابس و تكويع",
+  press: "مكابس و تكويع",
+  drill: "المثقاب",
+  stripping: "التخليع",
+  bending: "التنايات",
+  "co2_weld": "لحام CO2",
+  "co2 weld": "لحام CO2",
+  co2: "لحام CO2",
+  polishing: "تجليخ",
+  "patch_weld": "لحام بنطة",
+  "patch weld": "لحام بنطة",
+  "brass_weld": "لحام نحاس",
+  "brass weld": "لحام نحاس",
+  "argon_weld": "لحام أرجون استالنس",
+  "argon weld": "لحام أرجون استالنس",
+  argon: "لحام أرجون استالنس",
+  "stainless_finish": "تشطيب استالنس",
+  "stainless finish": "تشطيب استالنس",
+  stainless: "تشطيب استالنس",
+  painting: "الدهان",
+  assembly: "التجميع",
+  delivery: "التسليم",
+};
+
+/**
+ * Resolve a raw stage cell ("ليزر / Laser", "Punch", "البانش") to the
+ * canonical Arabic stage name used by metal_production_stages.
+ * Returns null if no match is found.
+ */
+function resolveStageName(raw: string): string | null {
+  if (!raw) return null;
+  const parts = raw.split("/").map(p => p.trim()).filter(Boolean);
+  // 1) try Arabic side(s) — match against METAL_STAGES by canonical key
+  for (const part of parts) {
+    const key = canonicalStageKey(part);
+    const hit = METAL_STAGES.find(s => canonicalStageKey(s.name) === key);
+    if (hit) return hit.name;
+  }
+  // 2) try English side(s) via lookup map
+  for (const part of parts) {
+    const en = part.toLowerCase().trim();
+    if (ENGLISH_STAGE_TO_AR[en]) return ENGLISH_STAGE_TO_AR[en];
+  }
+  return null;
+}
+
+async function importStageLogSection(rows: unknown[][]): Promise<StageLogResult> {
+  const result = emptyStageLog();
+  result.sheetFound = true;
+  if (rows.length < 3) return result;
+
+  const keyMap = buildKeyMap(rows[1]);
+  const get = (row: unknown[], key: string) => {
+    const idx = keyMap.get(key);
+    return idx === undefined ? "" : safeStr(row[idx]);
+  };
+  const getRaw = (row: unknown[], key: string): unknown => {
+    const idx = keyMap.get(key);
+    return idx === undefined ? "" : row[idx];
+  };
+
+  // Cache MO# → metal_order_id lookups so we don't re-query for repeated MOs
+  const orderIdCache = new Map<string, number | null>();
+
+  for (let i = 2; i < rows.length; i++) {
+    const row = rows[i];
+    const moNumber = get(row, "mo_number");
+    if (!moNumber) { result.rowsSkipped++; continue; }
+
+    const stageRaw = get(row, "stage_name");
+    const stageName = resolveStageName(stageRaw);
+    if (!stageName) {
+      result.rowsSkipped++;
+      result.errors.push(`Row ${i + 1}: unknown stage "${stageRaw}"`);
+      continue;
+    }
+
+    // Date may be an Excel serial number OR a yyyy-mm-dd string. Only treat as
+    // a serial when it's actually numeric — a string like "2025-01-15" must not
+    // be parseFloat'd into 2025 (which would map to 1905-07-17).
+    const rawDate = getRaw(row, "date");
+    let isoDate = "";
+    if (typeof rawDate === "number") {
+      isoDate = excelDateToStr(rawDate);
+    } else if (rawDate) {
+      isoDate = safeStr(rawDate);
+    }
+    if (!isoDate) { result.rowsSkipped++; continue; }
+
+    try {
+      let orderId = orderIdCache.get(moNumber);
+      if (orderId === undefined) {
+        const [order] = await db
+          .select({ id: metalWorkOrdersTable.id })
+          .from(metalWorkOrdersTable)
+          .where(eq(metalWorkOrdersTable.moNumber, moNumber));
+        orderId = order ? order.id : null;
+        orderIdCache.set(moNumber, orderId);
+      }
+      if (orderId === null) { result.rowsSkipped++; continue; }
+
+      await db.insert(metalStageLogTable).values({
+        metalOrderId: orderId,
+        moNumber,
+        logDate: isoDate,
+        stageName,
+        inputQty: safeNum(get(row, "input_qty")),
+        outputQty: safeNum(get(row, "output_qty")),
+        wasteQty: safeNum(get(row, "waste_qty")),
+        operator: get(row, "operator"),
+        notes: get(row, "notes"),
+      }).onConflictDoUpdate({
+        target: [metalStageLogTable.metalOrderId, metalStageLogTable.logDate, metalStageLogTable.stageName],
+        set: {
+          inputQty: safeNum(get(row, "input_qty")),
+          outputQty: safeNum(get(row, "output_qty")),
+          wasteQty: safeNum(get(row, "waste_qty")),
+          operator: get(row, "operator"),
+          notes: get(row, "notes"),
+          updatedAt: new Date(),
+        },
+      });
+      result.rowsImported++;
+    } catch (e) {
+      result.errors.push(`Stage log row ${i + 1} (${moNumber}): ${String(e)}`);
+      result.rowsSkipped++;
+    }
+  }
+  return result;
+}
+
 router.post("/sheets-template", upload.single("file"), async (req, res) => {
   if (!req.file) { res.status(400).json({ error: "No file uploaded" }); return; }
   try {
     const wb = XLSX.read(req.file.buffer, { type: "buffer" });
     const metalSheet = wb.SheetNames.find(s => s.includes("معدني"));
     const woodenSheet = wb.SheetNames.find(s => s.includes("خشبي"));
+    const stageLogSheet = wb.SheetNames.find(s => s.includes("متابعة"));
 
     const metal = metalSheet
       ? await importMetalSection(XLSX.utils.sheet_to_json(wb.Sheets[metalSheet], { header: 1, defval: "" }) as unknown[][])
@@ -613,17 +769,29 @@ router.post("/sheets-template", upload.single("file"), async (req, res) => {
     const wooden = woodenSheet
       ? await importWoodenSection(XLSX.utils.sheet_to_json(wb.Sheets[woodenSheet], { header: 1, defval: "" }) as unknown[][])
       : emptySection();
+    // stage log import runs after metal so MO IDs exist for first-time imports
+    const stageLog = stageLogSheet
+      ? await importStageLogSection(XLSX.utils.sheet_to_json(wb.Sheets[stageLogSheet], { header: 1, defval: "" }) as unknown[][])
+      : emptyStageLog();
 
     const errors: string[] = [];
     if (!metalSheet) errors.push('Sheet "أوامر معدني" not found in workbook');
     if (!woodenSheet) errors.push('Sheet "أوامر خشبي" not found in workbook');
+    if (!stageLogSheet) errors.push('Sheet "متابعة المراحل" not found in workbook');
 
-    res.json({ success: errors.length === 0 || metal.rowsImported > 0 || wooden.rowsImported > 0, metal, wooden, errors });
+    res.json({
+      success: errors.length === 0 || metal.rowsImported > 0 || wooden.rowsImported > 0 || stageLog.rowsImported > 0,
+      metal,
+      wooden,
+      stageLog,
+      errors,
+    });
   } catch (err) {
     res.status(500).json({
       success: false,
       metal: emptySection(),
       wooden: emptySection(),
+      stageLog: emptyStageLog(),
       errors: [String(err)],
     });
   }

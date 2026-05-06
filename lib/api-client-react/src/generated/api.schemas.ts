@@ -226,10 +226,18 @@ export interface SheetsTemplateSectionResult {
   errors?: string[];
 }
 
+export interface SheetsTemplateStageLogResult {
+  sheetFound: boolean;
+  rowsImported: number;
+  rowsSkipped: number;
+  errors?: string[];
+}
+
 export interface SheetsTemplateImportResult {
   success: boolean;
   metal: SheetsTemplateSectionResult;
   wooden: SheetsTemplateSectionResult;
+  stageLog: SheetsTemplateStageLogResult;
   errors?: string[];
 }
 

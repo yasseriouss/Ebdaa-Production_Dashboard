@@ -128,7 +128,8 @@ function ExportCard({ title, endpoint, filename }: { title: string; endpoint: st
 }
 
 type SectionResult = { sheetFound: boolean; rowsImported: number; rowsSkipped: number; duplicates: string[]; errors?: string[] };
-type TemplateResult = { success: boolean; metal: SectionResult; wooden: SectionResult; errors?: string[] };
+type StageLogSectionResult = { sheetFound: boolean; rowsImported: number; rowsSkipped: number; errors?: string[] };
+type TemplateResult = { success: boolean; metal: SectionResult; wooden: SectionResult; stageLog: StageLogSectionResult; errors?: string[] };
 
 function TemplateResultPanel({ res }: { res: TemplateResult }) {
   const renderSection = (label: string, s: SectionResult) => (
@@ -169,9 +170,25 @@ function TemplateResultPanel({ res }: { res: TemplateResult }) {
           : <XCircle className="h-4 w-4 text-destructive" />}
         {res.success ? "اكتمل استيراد القالب" : "فشل استيراد القالب"}
       </div>
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-3">
         {renderSection("معدني (أوامر معدني)", res.metal)}
         {renderSection("خشبي (أوامر خشبي)", res.wooden)}
+        <div className="rounded-md border p-3 space-y-2">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-sm">سجل المراحل (متابعة المراحل)</span>
+            {res.stageLog.sheetFound
+              ? <Badge variant="secondary">{res.stageLog.rowsImported} مستورد</Badge>
+              : <Badge variant="outline" className="text-destructive">الورقة غير موجودة</Badge>}
+          </div>
+          <div className="flex flex-wrap gap-2 text-xs">
+            <span>متخطى: <Badge variant="outline">{res.stageLog.rowsSkipped}</Badge></span>
+          </div>
+          {res.stageLog.errors && res.stageLog.errors.length > 0 && (
+            <div className="text-[11px] text-destructive max-h-16 overflow-y-auto">
+              {res.stageLog.errors.slice(0, 3).map((e, i) => <div key={i} className="truncate">{e}</div>)}
+            </div>
+          )}
+        </div>
       </div>
       {res.errors && res.errors.length > 0 && (
         <div className="text-xs text-destructive">
@@ -195,11 +212,11 @@ export default function ImportExport() {
       onSuccess: d => {
         const r = d as TemplateResult;
         setTemplateRes(r);
-        const total = r.metal.rowsImported + r.wooden.rowsImported;
+        const total = r.metal.rowsImported + r.wooden.rowsImported + r.stageLog.rowsImported;
         const dups = r.metal.duplicates.length + r.wooden.duplicates.length;
         toast({
           title: r.success ? "تم استيراد قالب الشيتس" : "فشل استيراد القالب",
-          description: `${total} صف مستورد، ${dups} مكرر`,
+          description: `${total} صف مستورد (شامل سجل المراحل)، ${dups} مكرر`,
           variant: r.success ? "default" : "destructive",
         });
       },
