@@ -17,8 +17,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
-import { Plus, Search, Pencil, Trash2, ExternalLink } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, ExternalLink, FileSpreadsheet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
+const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
 
 const STATUS_OPTIONS = ["لم يتم البدء", "تحت التصنيع", "في المخزن", "تم الانتهاء", "متوقف", "تم التسليم"];
 
@@ -211,10 +213,18 @@ export default function MetalOrders() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h1 className="text-3xl font-bold tracking-tight">أوامر المصنع المعدني</h1>
-        <Button onClick={() => { setEditOrder(null); setDialogOpen(true); }} data-testid="btn-new-order">
-          <Plus className="ml-2 h-4 w-4" />
-          أمر تشغيل جديد
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild data-testid="btn-export-metal">
+            <a href={`${API_BASE}/export/metal-orders?format=xlsx`} download>
+              <FileSpreadsheet className="ml-2 h-4 w-4" />
+              تصدير Excel
+            </a>
+          </Button>
+          <Button onClick={() => { setEditOrder(null); setDialogOpen(true); }} data-testid="btn-new-order">
+            <Plus className="ml-2 h-4 w-4" />
+            أمر تشغيل جديد
+          </Button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 max-w-sm">

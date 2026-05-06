@@ -692,18 +692,54 @@ function buildPdf(title: string, headers: string[], rows: string[][]): Promise<B
 }
 
 // ---- EXPORT: Metal orders ----
+// xlsx format mirrors the Sheets template "أوامر معدني" sheet exactly:
+//   row 0 = Arabic headers, row 1 = English DB keys, rows 2+ = data
+// Includes all 17 stage columns (qtyDone per stage joined from metal_production_stages).
+const METAL_EXPORT_AR_HEADERS = [
+  "رقم MOM","المشروع","العميل","المنتج","الكمية","الوحدة",
+  "ليزر","بانش","تخليع","تجليخ","لحام أرجون","لحام بنطة","لحام نحاس","لحام CO₂",
+  "التنايات","مكابس وتكويع","المثقاب","المقص","الكويل","التجميع","تشطيب إستانلس","الدهان","التسليم",
+  "نسبة الإنجاز %","متأخرات","حالة المتأخرات","الحالة","ملاحظات","الكمية المسلّمة","المصنع","تاريخ التسليم المتوقع",
+];
+const METAL_EXPORT_KEYS = [
+  "mo_number","project","client","product","qty","unit",
+  "laser","punch","stripping","polishing","argon_weld","patch_weld","brass_weld","co2_weld",
+  "bending","press_form","drill","shear","coil","assembly","stainless_finish","painting","delivery",
+  "completion_pct(derived)","backlog_qty(derived)","backlog_status","status","notes","delivered_qty","factory","expected_delivery_date(optional)",
+];
+// Order of stage keys in the export, matched to METAL_STAGE_KEY_TO_NAME.
+const METAL_EXPORT_STAGE_KEYS = [
+  "laser","punch","stripping","polishing","argon_weld","patch_weld","brass_weld","co2_weld",
+  "bending","press_form","drill","shear","coil","assembly","stainless_finish","painting","delivery",
+];
+
 router.get("/metal-orders", async (req, res) => {
   try {
     const format = String(req.query.format || "xlsx");
     const orders = await db.select().from(metalWorkOrdersTable).orderBy(metalWorkOrdersTable.id);
 
     if (format === "xlsx") {
-      const wsData = [
-        ["رقم MO", "المشروع", "العميل", "المنتج", "الكمية", "الوحدة", "المُسلَّم", "نسبة الإنجاز%", "المتأخرات", "الحالة"],
-        ...orders.map(o => [o.moNumber, o.project || "", o.client || "", o.product, o.qty, o.unit || "", o.deliveredQty || "0", o.completionPct || "0", o.backlogQty || "0", o.status || ""]),
-      ];
+      // Fetch all stages once, then group by metalOrderId
+      const allStages = await db.select().from(metalProductionStagesTable);
+      const stagesByOrder = new Map<number, Map<string, string>>();
+      for (const s of allStages) {
+        if (!stagesByOrder.has(s.metalOrderId)) stagesByOrder.set(s.metalOrderId, new Map());
+        stagesByOrder.get(s.metalOrderId)!.set(s.stageName, String(s.qtyDone ?? "0"));
+      }
+
+      const wsData: unknown[][] = [METAL_EXPORT_AR_HEADERS, METAL_EXPORT_KEYS];
+      for (const o of orders) {
+        const stageQty = stagesByOrder.get(o.id) || new Map<string, string>();
+        const stageCells = METAL_EXPORT_STAGE_KEYS.map(k => stageQty.get(METAL_STAGE_KEY_TO_NAME[k]) ?? "0");
+        wsData.push([
+          o.moNumber, o.project || "", o.client || "", o.product, o.qty, o.unit || "",
+          ...stageCells,
+          o.completionPct || "0", o.backlogQty || "0", o.backlogStatus || "",
+          o.status || "", o.notes || "", o.deliveredQty || "0", o.factory || "metal", "",
+        ]);
+      }
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "Metal Orders");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "أوامر معدني");
       const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", `attachment; filename="metal-orders.xlsx"`);
@@ -725,18 +761,42 @@ router.get("/metal-orders", async (req, res) => {
 });
 
 // ---- EXPORT: Wooden orders ----
+// xlsx format mirrors the Sheets template "أوامر خشبي" sheet exactly:
+//   row 0 = Arabic headers, row 1 = English DB keys, rows 2+ = data
+// Includes all production date fields (start, end, finished).
+const WOODEN_EXPORT_AR_HEADERS = [
+  "رقم الأمر","الامتداد (بعد تنظيف VBC)","تاريخ الأمر","طلب التصنيع","كود SAP",
+  "العميل","المشروع الفرعي","المنتج","الفئة","وحدة القياس",
+  "الكمية","المنجز","المتبقي","نسبة الإنجاز %","الحالة",
+  "تاريخ بدء الإنتاج","تاريخ انتهاء الإنتاج","تاريخ الانتهاء الفعلي",
+];
+const WOODEN_EXPORT_KEYS = [
+  "order_no","extension","order_date","manufacture_request","sap_code",
+  "client","sub_project","product","category","uom",
+  "qty","done","rem(derived)","completion_pct(derived)","status",
+  "prod_date_start","prod_date_end","prod_date_finished",
+];
+
 router.get("/wooden-orders", async (req, res) => {
   try {
     const format = String(req.query.format || "xlsx");
     const orders = await db.select().from(woodenWorkOrdersTable).orderBy(woodenWorkOrdersTable.id);
 
     if (format === "xlsx") {
-      const wsData = [
-        ["Order No", "Extension", "Client", "Sub-Project", "Product", "Category", "Qty", "Done", "Rem", "Status"],
-        ...orders.map(o => [o.orderNo, o.extension || "", o.client || "", o.subProject || "", o.product, o.category || "", o.qty, o.done || "0", o.rem || "0", o.status || ""]),
-      ];
+      const wsData: unknown[][] = [WOODEN_EXPORT_AR_HEADERS, WOODEN_EXPORT_KEYS];
+      for (const o of orders) {
+        const qtyN = parseFloat(String(o.qty ?? 0));
+        const doneN = parseFloat(String(o.done ?? 0));
+        const pct = qtyN > 0 ? Math.round((doneN / qtyN) * 100) : 0;
+        wsData.push([
+          o.orderNo, o.extension || "", o.orderDate || "", o.manufactureRequest || "", o.sapCode || "",
+          o.client || "", o.subProject || "", o.product, o.category || "", o.uom || "",
+          o.qty, o.done || "0", o.rem || "0", pct, o.status || "",
+          o.prodDateStart || "", o.prodDateEnd || "", o.prodDateFinished || "",
+        ]);
+      }
       const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "Wooden Orders");
+      XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(wsData), "أوامر خشبي");
       const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
       res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
       res.setHeader("Content-Disposition", `attachment; filename="wooden-orders.xlsx"`);
