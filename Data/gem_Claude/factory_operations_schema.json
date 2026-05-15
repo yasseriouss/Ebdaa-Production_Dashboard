@@ -1,0 +1,338 @@
+{
+    "metal_factory": {
+        "factory_id": "MF-001",
+        "name": "مصنع تشكيل المعادن",
+        "departments": [
+            {
+                "id": "DEPT_PREP",
+                "name": "قسم تجهيز الصاج والقص الأولي",
+                "process_step": 1,
+                "description": "فك اللفائف وتفصيل الألواح والمقاطع لتقليل الهالك",
+                "tasks": [
+                    {
+                        "id": "TASK_COIL",
+                        "name": "الكويل",
+                        "type": "Handling/Decoiling"
+                    },
+                    {
+                        "id": "TASK_SHEAR",
+                        "name": "المقص",
+                        "type": "Cutting"
+                    },
+                    {
+                        "id": "TASK_LASER",
+                        "name": "الليزر",
+                        "type": "Precision Cutting"
+                    },
+                    {
+                        "id": "TASK_PUNCH",
+                        "name": "البانش",
+                        "type": "Punching"
+                    },
+                    {
+                        "id": "TASK_SAW",
+                        "name": "الديسك والمنشار",
+                        "type": "Section Cutting"
+                    },
+                    {
+                        "id": "TASK_NOTCH",
+                        "name": "التخليع",
+                        "type": "Notching"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_FORMING",
+                "name": "قسم التشكيل الميكانيكي",
+                "process_step": 2,
+                "description": "تحويل القطع إلى 3D وتشكيل المواسير والثقوب",
+                "tasks": [
+                    {
+                        "id": "TASK_BENDING",
+                        "name": "التنايات",
+                        "type": "Bending"
+                    },
+                    {
+                        "id": "TASK_PRESS",
+                        "name": "مكابس وتكويع",
+                        "type": "Stamping/Bending"
+                    },
+                    {
+                        "id": "TASK_DRILL",
+                        "name": "المثقاب",
+                        "type": "Drilling"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_WELDING",
+                "name": "قسم اللحام",
+                "process_step": 3,
+                "description": "التجميع الإنشائي للمنتج باختلاف الخامات",
+                "tasks": [
+                    {
+                        "id": "WELD_CO2",
+                        "name": "لحام CO2",
+                        "type": "MIG/MAG Welding"
+                    },
+                    {
+                        "id": "WELD_ARGON",
+                        "name": "لحام أرجون ستانلس",
+                        "type": "TIG Welding"
+                    },
+                    {
+                        "id": "WELD_COPPER",
+                        "name": "لحام نحاس",
+                        "type": "Brazing"
+                    },
+                    {
+                        "id": "WELD_SPOT",
+                        "name": "لحام بنطة",
+                        "type": "Resistance Welding"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_FINISHING",
+                "name": "قسم المعالجة وتشطيب الأسطح",
+                "process_step": 4,
+                "description": "إزالة الزوائد والوصول للمظهر النهائي خاصة للستانلس",
+                "tasks": [
+                    {
+                        "id": "FINISH_GRIND",
+                        "name": "تجليخ",
+                        "type": "Grinding"
+                    },
+                    {
+                        "id": "FINISH_STAINLESS",
+                        "name": "تشطيب استالنس",
+                        "type": "Polishing/Brushing"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_COATING_ASSY",
+                "name": "قسم الدهان والتجميع النهائي",
+                "process_step": 5,
+                "description": "التغطية النهائية وتجميع المكونات غير المعدنية",
+                "tasks": [
+                    {
+                        "id": "COAT_PAINT",
+                        "name": "الدهان",
+                        "type": "Powder/Liquid Coating"
+                    },
+                    {
+                        "id": "FINAL_ASSY",
+                        "name": "التجميع",
+                        "type": "Assembly"
+                    }
+                ]
+            }
+        ]
+    },
+    "woodworking_factory": {
+        "factory_id": "WF-001",
+        "name": "مصنع الأخشاب والأثاث",
+        "departments": [
+            {
+                "id": "DEPT_SOLID_WOOD",
+                "name": "قسم الخشب الطبيعي",
+                "process_step": 1,
+                "description": "تجهيز وتشكيل الأخشاب الطبيعية والقوائم",
+                "tasks": [
+                    {
+                        "id": "SAW_BAND",
+                        "name": "منشار شريط طبيعي",
+                        "type": "Cutting"
+                    },
+                    {
+                        "id": "PLANER",
+                        "name": "ماكينة رابوه",
+                        "type": "Leveling"
+                    },
+                    {
+                        "id": "THICKNESSER",
+                        "name": "ماكينة تخانة",
+                        "type": "Thicknessing"
+                    },
+                    {
+                        "id": "SAW_CIRC",
+                        "name": "منشار صينية",
+                        "type": "Cutting"
+                    },
+                    {
+                        "id": "SAW_DISC_MAN",
+                        "name": "دسك يدوي",
+                        "type": "Cutting"
+                    },
+                    {
+                        "id": "SAW_MULTI",
+                        "name": "منشار تقطيع متعدد",
+                        "type": "Rip Sawing"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_PANEL_PROC",
+                "name": "قسم المسطحات والتشغيل الآلي",
+                "process_step": 2,
+                "description": "تقطيع وحفر ولصق حواف الألواح الصناعية",
+                "tasks": [
+                    {
+                        "id": "PANEL_CUT",
+                        "name": "المقطع",
+                        "type": "Sizing"
+                    },
+                    {
+                        "id": "SAW_SLIDE",
+                        "name": "مقطع سحاب",
+                        "type": "Precision Sizing"
+                    },
+                    {
+                        "id": "EDGE_BANDING",
+                        "name": "ماكينة لزق شريط",
+                        "type": "Edge Banding"
+                    },
+                    {
+                        "id": "CNC_ROUTER",
+                        "name": "الراوتر",
+                        "type": "CNC Routing"
+                    },
+                    {
+                        "id": "BORING",
+                        "name": "التخريم",
+                        "type": "Drilling/Boring"
+                    },
+                    {
+                        "id": "DOUBLE_END",
+                        "name": "ماكينة دبل إيند",
+                        "type": "Tenoning/Shaping"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_VENEER",
+                "name": "قسم القشرة والمكابس",
+                "process_step": 3,
+                "description": "قص وخياطة وكبس القشرة على المسطحات",
+                "tasks": [
+                    {
+                        "id": "VEN_CLIP",
+                        "name": "ماكينة مقص القشرة",
+                        "type": "Cutting"
+                    },
+                    {
+                        "id": "VEN_STITCH",
+                        "name": "ماكينة خياطة قشرة",
+                        "type": "Stitching"
+                    },
+                    {
+                        "id": "GLUER",
+                        "name": "غراية",
+                        "type": "Glue Spreading"
+                    },
+                    {
+                        "id": "PRESS_FLAT",
+                        "name": "مكبس مسطح",
+                        "type": "Pressing"
+                    },
+                    {
+                        "id": "PRESS_LAYER",
+                        "name": "مكبس طبقات",
+                        "type": "Hot/Cold Pressing"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_JOINERY",
+                "name": "قسم الحلايا والنجارة الدقيقة",
+                "process_step": 4,
+                "description": "تشكيل الحلوق والشمابر وأعمال النقر واللسان",
+                "tasks": [
+                    {
+                        "id": "DOOR_FRAME",
+                        "name": "ماكينة تشكيل حلق الباب",
+                        "type": "Molding"
+                    },
+                    {
+                        "id": "ARCHITRAVE",
+                        "name": "ماكينة شمبران",
+                        "type": "Molding"
+                    },
+                    {
+                        "id": "MORTISER",
+                        "name": "منقار يدوي",
+                        "type": "Mortising"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_SANDING",
+                "name": "قسم الصنفرة",
+                "process_step": 5,
+                "description": "تنعيم الأسطح والحلايا لتهيئتها للدهان",
+                "tasks": [
+                    {
+                        "id": "SAND_WIDE",
+                        "name": "صنفرة",
+                        "type": "Wide Belt Sanding"
+                    },
+                    {
+                        "id": "SAND_DRUM",
+                        "name": "ماكينة صنفرة دولاب",
+                        "type": "Drum Sanding"
+                    },
+                    {
+                        "id": "SAND_PROF",
+                        "name": "ماكينة صنفرة حلايا",
+                        "type": "Profile Sanding"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_UPHOLSTERY",
+                "name": "قسم التنجيد",
+                "process_step": 6,
+                "description": "تجهيز وخياطة الأقمشة",
+                "tasks": [
+                    {
+                        "id": "SEW_FABRIC",
+                        "name": "ماكينة خياطة قماش",
+                        "type": "Sewing"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_WOOD_PAINT",
+                "name": "قسم الدهانات",
+                "process_step": 7,
+                "description": "عزل وتلوين الأخشاب في بيئة معزولة",
+                "tasks": [
+                    {
+                        "id": "PAINT_BOOTH",
+                        "name": "كابينة دهانات",
+                        "type": "Spray Painting"
+                    }
+                ]
+            },
+            {
+                "id": "DEPT_WOOD_ASSY",
+                "name": "قسم التجميع",
+                "process_step": 8,
+                "description": "تجميع الكبائن والتقفيل النهائي",
+                "tasks": [
+                    {
+                        "id": "PRESS_CARCASS",
+                        "name": "ماكينة كبس العلب",
+                        "type": "Carcass Pressing"
+                    },
+                    {
+                        "id": "WOOD_ASSY_MAN",
+                        "name": "التجميع",
+                        "type": "Manual Assembly"
+                    }
+                ]
+            }
+        ]
+    }
+}

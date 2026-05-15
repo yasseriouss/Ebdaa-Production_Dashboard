@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useGetMetalStagesSummary, useListMetalOrders, useListMetalStages, useUpdateMetalStage } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +42,11 @@ interface InlineStageCellProps {
 function InlineStageCell({ stageId, qtyDone, status, onSave }: InlineStageCellProps) {
   const [editQty, setEditQty] = useState(String(qtyDone ?? "0"));
   const [editStatus, setEditStatus] = useState(status || "لم يتم البدء");
+
+  useEffect(() => {
+    setEditQty(String(qtyDone ?? "0"));
+    setEditStatus(status || "لم يتم البدء");
+  }, [stageId, qtyDone, status]);
 
   if (!stageId) {
     return (

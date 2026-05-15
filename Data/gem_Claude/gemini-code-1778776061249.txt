@@ -1,0 +1,25 @@
+Act as an Expert Frontend Developer and UI/UX Designer. I need you to build the "Production Work Orders (أوامر الشغل)" view for the Woodworking Factory in our ERP system.
+
+Please use modern tools (React/Next.js, Tailwind CSS, Shadcn UI). Support RTL layout (Arabic).
+
+### UI Layout & Components Needed:
+
+1. **Kanban Board / Advanced Data Table View:**
+   * Create a dashboard view showing all active Work Orders.
+   * Columns/Cards should display: Project Name, Product Name, Order ID, Progress Bar (Completed vs Total Required), and Delivery Date.
+   * Add Quick Filters at the top: Filter by Project, Filter by Status (Pending, In Progress, Done), and Filter by Department (e.g., Show me all orders currently waiting at the CNC).
+
+2. **Work Order Detail Modal/Page (The Routing Tracker):**
+   * When a user clicks on a specific Work Order, open a detailed view.
+   * **Header Info:** Display Order ID, Client, Priority Badge (High/Normal), and overall Progress percentage.
+   * **The Routing Stepper:** Create a visual Stepper or Timeline component that dynamically shows the production path.
+     * Example path based on JSON: Solid Wood -> Panel Saw -> Edge Banding -> CNC -> Upholstery -> Painting -> Assembly.
+   * **Stage Controls:** For each stage in the stepper, provide an input field for the Factory Supervisor to update the `qty_passed` (كمية ما تم تنفيذه), and a dropdown to update the stage status (Not Started, In Progress, Completed).
+
+3. **Mock Data Integration:**
+   * Please parse and use the structure from the provided `wood_work_orders.json` file to populate this UI realistically. Handle the `routing_progress` object dynamically so that only the stages with required quantities appear in the Stepper.
+
+### Design Guidelines:
+* Use a clean industrial dashboard theme.
+* Use color-coded badges (e.g., Red for delayed delivery dates, Green for completed stages, Yellow for In-progress).
+* Ensure form inputs for quantities are easy to click and edit for users operating tablets on the factory floor.

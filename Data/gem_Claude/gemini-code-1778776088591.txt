@@ -1,0 +1,42 @@
+Act as an Expert Frontend Developer and UI/UX Architect. Your task is to build a highly reusable, advanced "Data Grid & CRUD Manager" component for "The Grand Line ERP" system. 
+
+Please use React (Next.js App Router preferred), TypeScript, Tailwind CSS, and Shadcn UI. For the table logic, utilize **TanStack Table v8** (React Table) to ensure maximum performance and flexibility.
+
+I need a deep, production-ready implementation that covers the following core pillars:
+
+### 1. Data View & Architecture (Advanced Data Table)
+* **Dynamic Columns:** Create a generic table component that accepts columns and data as props. Include features for column resizing, reordering, and a "Column Visibility" toggle menu.
+* **Pagination:** Implement server-side pagination logic (visually display rows per page limit, current page, and total count).
+* **Sorting:** Enable multi-column sorting (Ascending/Descending) with clear visual indicators (arrows) on column headers.
+* **Responsive UI:** Ensure the table wraps cleanly or allows horizontal scrolling on smaller screens.
+
+### 2. Full CRUD Operations (Create, Read, Update, Delete)
+* **Create:** A primary "Add New" button that opens a Slider/Drawer (Sheet component) or a Modal containing a dynamic form with validation (using React Hook Form + Zod).
+* **Read:** Clicking a row should either open a detailed "View Modal" or redirect to a details page (e.g., Work Order Details).
+* **Update:** * Include an "Edit" action in the row's context menu (Dropdown Menu).
+    * *Bonus feature:* Implement "Inline Editing" for specific quick-change columns (e.g., updating a Status dropdown directly inside the table cell).
+* **Delete:** A "Delete" action in the row menu that triggers a safe Confirmation Dialog (Alert Dialog) before execution. Include toast notifications for success/error states.
+
+### 3. Multi-Selection & Bulk Actions
+* **Checkbox Column:** The first column must be a sticky checkbox for row selection (include a "Select All" checkbox in the header).
+* **Floating Action Bar:** When one or more rows are selected, a floating toolbar or a dynamic header section should appear revealing Bulk Actions.
+* **Required Bulk Functions:**
+    * *Bulk Delete:* With a confirmation showing the number of selected items.
+    * *Bulk Update Status:* A dropdown to change the status of all selected items simultaneously.
+    * *Bulk Export:* Export selected rows to CSV/Excel.
+
+### 4. Full Filtering Functions (Faceted & Global)
+* **Global Search:** A debounced search bar at the top right that searches across all primary text columns.
+* **Advanced Filter Bar:** * Include faceted filters (like Notion or Linear) for Enums/Categories (e.g., Filter by "Department", "Status", "Priority"). Show badges indicating how many active filters are applied.
+    * Include a Date Range Picker to filter records created or due within specific dates.
+* **Filter State Management:** Sync the filter, sort, and pagination state with the URL Search Parameters (e.g., `?status=pending&page=2`) so users can share links to specific data views.
+
+### Code Structure Requirements:
+Do not write a monolithic file. Break the code down into:
+1.  `DataTable.tsx` (The core table logic and rendering).
+2.  `DataTableToolbar.tsx` (Search, Filters, View options).
+3.  `DataTablePagination.tsx` (Pagination controls).
+4.  `DataTableRowActions.tsx` (The 3-dot menu for Edit/Delete per row).
+5.  `useDataTable.ts` (A custom hook managing the TanStack table state, selections, and URL syncing).
+
+Ensure the UI fully supports RTL (Right-to-Left) direction for Arabic localization. Write clean, heavily commented TypeScript code with proper interfaces for the data models.

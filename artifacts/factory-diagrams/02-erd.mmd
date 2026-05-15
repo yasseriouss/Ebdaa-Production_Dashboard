@@ -1,0 +1,62 @@
+erDiagram
+  metalWorkOrders ||--o{ metalProductionStages : "metal_order_id"
+  metalProductionStages ||--o{ metalStageLog : "stage_id"
+  woodenWorkOrders ||--o{ woodenProductionStages : "wooden_order_id"
+  factories ||--o{ departments : "factory_id"
+  departments ||--o{ tasks : "department_id"
+  factories ||--o{ employees : "factory_id"
+  departments o|--o{ employees : "department_id"
+  metalWorkOrders {
+    text id PK
+    text mo_number UK
+    text project
+    text client
+    text status
+  }
+  metalProductionStages {
+    text id PK
+    text metal_order_id FK
+    text stage_name
+    int stage_order
+  }
+  metalStageLog {
+    text id PK
+    text stage_id FK
+    text action
+    int qty_delta
+  }
+  woodenWorkOrders {
+    text id PK
+    text order_no UK
+    text client
+    text status
+  }
+  woodenProductionStages {
+    text id PK
+    text wooden_order_id FK
+    text stage_name
+  }
+  sharedProjects {
+    text id PK
+    text name UK
+    text status
+  }
+  factories {
+    text id PK
+    text name
+  }
+  departments {
+    text id PK
+    text factory_id FK
+    int process_step
+  }
+  tasks {
+    text id PK
+    text department_id FK
+    text name
+  }
+  employees {
+    text id PK
+    text factory_id FK
+    text department_id FK
+  }

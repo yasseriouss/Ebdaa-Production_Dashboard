@@ -1,0 +1,67 @@
+Act as an Expert Frontend Developer and UI/UX Designer. Your task is to build the frontend architecture and UI layout for "The Grand Line ERP" - a comprehensive Factory OS managing two main facilities: a Metalworking Factory and a Woodworking Factory.
+
+Please use modern web development technologies (e.g., React/Next.js, Tailwind CSS, and a component library like Shadcn UI or MUI). 
+
+Below is the required layout, routing structure, and functional specifications:
+
+### 1. Global Layout & Sidebar Navigation
+Implement a persistent responsive Sidebar with the following navigation items:
+* **Dashboard** (Main overview)
+* **Production Orders** (Expandable/Accordion or Sub-tabs)
+    * Metal Factory
+    * Wood Factory
+* **Daily Production** (Expandable/Accordion or Sub-tabs)
+    * Metal Factory
+    * Wood Factory
+* **Joint Projects** (Projects requiring both factories)
+* **Planning & Scheduling**
+* **Analytics**
+    * Multi-Factory Analytics
+    * Wood Factory Analytics
+    * Metal Factory Analytics
+* **Project Analytics** (Detailed drill-down view)
+
+### 2. Page-Specific Requirements
+
+**A. Dashboard (لوحة التحكم)**
+* Master command center displaying comprehensive metrics for the ENTIRE company.
+* Dynamic charts (Bar, Line, Pie) showing Productivity per day/week/month.
+* Tables/charts showing performance breakdown per Department and per specific Machine.
+
+**B. Analytics Page (التحليلات)**
+* Single scrolling view (or tabbed) with clear visual dividers `<hr />`.
+* **Section 1:** Overall Analytics (Aggregated data).
+* **Section 2:** Woodworking Factory Analytics (Specific KPIs, machine utilization, labor efficiency).
+* **Section 3:** Metalworking Factory Analytics (Specific KPIs, CNC/Laser utilization, material waste).
+
+**C. Project Analytics Page (تحليلات المشاريع)**
+* **Header:** Prominent dropdown menu to select an active project.
+* **Dynamic View:** * **Project Routing/Path:** A visual timeline/flowchart showing the project's journey through departments.
+    * **BOM Breakdown:** A tree-view showing Products -> Parts -> Raw Materials.
+    * **Time-Series Productivity:** Charts showing output for this specific project over time.
+    * **Resource Utilization:** Granular data showing which machines/departments are actively working on this project.
+
+**D. New Project Data Entry Workflow (إدخال مشروع جديد)**
+* Multi-step wizard for project creation.
+* **Crucial Step (Routing & Operations Assignment):**
+    1. Add a Product.
+    2. Break down Product into Parts (Metal/Wood).
+    3. Assign sequential routing paths by selecting the Department, then specific Machine (e.g., Wood Prep -> Panel Saw -> Edge Bander), with cycle times.
+
+**E. Export Data Entry Sheets (ميزة تصدير شيتات المهام الورقية)**
+* Within the "Daily Production" or "Production Orders" view, implement a prominent feature/button: **"Export Daily Task Sheet (تصدير يومية القسم)"**.
+* **Functionality:** * The user selects a specific Department (e.g., CNC, Painting, Assembly).
+    * The system generates and downloads a `.xlsx` or `.pdf` file.
+* **Sheet Structure Requirements:**
+    * It must contain a table of all active tasks currently assigned to that specific department.
+    * Pre-filled Columns: Order ID, Project Name, Product/Part Name, Target Quantity.
+    * Blank Input Columns (styled with a light grey background for physical handwriting): "Completed Qty", "Scrap/Waste", "Technician Name", "Date", and "Notes".
+    * *Purpose:* This paper traveler is handed to factory floor workers. At the end of the shift, a Data Entry clerk inputs the handwritten values back into the ERP to track exact routing progress.
+
+### 3. UI/UX Guidelines
+* **Theme:** Professional, clean, industrial tech vibe (e.g., Slate grey, deep blue, crisp white).
+* **Components:** Use Data Tables with sorting/filtering, Kanban boards for WIP, and Cards for key stats.
+* **Interactivity:** Smooth transitions for dropdowns and tabs. Ensure form inputs for Data Entry are highly accessible and keyboard-friendly for fast typing.
+* **Language:** Support RTL (Right-to-Left) layout readiness, as the primary users will operate in Arabic. Use clear placeholder text.
+
+Please generate the foundational code, including the layout wrapper, the sidebar component, and placeholders for the core components based on these instructions.

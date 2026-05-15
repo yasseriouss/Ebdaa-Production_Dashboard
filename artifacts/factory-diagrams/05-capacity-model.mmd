@@ -1,0 +1,5 @@
+flowchart LR
+  factory["Factory"] --> dept["Department process_step"]
+  dept --> task["Task capacity cycle labor cost"]
+  factory --> emp["Employee"]
+  dept -. optional .-> emp

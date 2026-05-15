@@ -3,7 +3,13 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: Ebdaa Furniture Factory Management System API
+  description: |
+    Ebdaa Furniture Factory Management System API
+
+    **Integration (web vs legacy routes):**
+    - `factory-hub` paths (`/factory-hub/*`) back the Grand Line React dashboard — JSON-first `fh_*` tables in LibSQL.
+    - `/wooden/*` and `/metal/*` remain the stable HTTP contract for ERP-style integrations; they use `wooden_*` / `metal_*` tables.
+    - Optional env `FH_SYNC_WOODEN=true` enables a bridge that mirrors hub wood updates into `wooden_work_orders` via a documented field mapping (see `docs/legacy-adapter-factory-hub.md`).
 servers:
   - url: /api
     description: Base API path
@@ -24,6 +30,14 @@ tags:
     description: Dashboard statistics and KPIs
   - name: import-export
     description: Import and export operations
+  - name: employees
+    description: Workforce roster and headcount
+  - name: capacity
+    description: Factory capacity — machines (tasks) and departments
+  - name: factory-hub
+    description: |
+      Grand Line web panel JSON store (LibSQL `fh_*` tables). Canonical for the React dashboard.
+      Legacy `/wooden` and `/metal` remain stable for other clients; see description under Integration notes.
 
 paths:
   /healthz:
@@ -38,6 +52,21 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /capacity/machines:
+    get:
+      operationId: listCapacityMachines
+      tags: [capacity]
+      summary: List all production machines (tasks) with their departments
+      responses:
+        "200":
+          description: Machines tied to departments (from capacity schema)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CapacityMachineRow"
 
   # ---- Metal Work Orders ----
   /metal/orders:
@@ -397,6 +426,21 @@ paths:
               schema:
                 $ref: "#/components/schemas/WoodenProductionStage"
 
+  /wooden/stages/summary:
+    get:
+      operationId: getWoodenStagesSummary
+      tags: [wooden-stages]
+      summary: Get wooden stage bottleneck summary (WIP per stage)
+      responses:
+        "200":
+          description: Wooden stage WIP summary
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/StageSummary"
+
   /wooden/stages/{id}:
     get:
       operationId: getWoodenStage
@@ -678,6 +722,355 @@ paths:
                 type: string
                 format: binary
 
+  # ---- Employees / Workforce ----
+  /employees:
+    get:
+      operationId: listEmployees
+      tags: [employees]
+      summary: List employees with optional filters
+      parameters:
+        - name: department_id
+          in: query
+          schema:
+            type: string
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: factory_id
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: redact
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: List of employees
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Employee"
+
+  /employees/stats:
+    get:
+      operationId: getEmployeeStats
+      tags: [employees]
+      summary: Roster totals and by-department breakdown
+      responses:
+        "200":
+          description: Employee statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EmployeeStats"
+
+  /employees/headcount:
+    get:
+      operationId: getEmployeesHeadcount
+      tags: [employees]
+      summary: Plan vs actual headcount by department
+      responses:
+        "200":
+          description: Headcount comparison
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HeadcountRow"
+
+  /export/employees:
+    get:
+      operationId: exportEmployees
+      tags: [employees]
+      summary: Export employees as CSV
+      parameters:
+        - name: department_id
+          in: query
+          schema:
+            type: string
+        - name: role
+          in: query
+          schema:
+            type: string
+        - name: factory_id
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: redact
+          in: query
+          schema:
+            type: string
+            enum: ["true", "false"]
+      responses:
+        "200":
+          description: CSV file
+          content:
+            text/csv:
+              schema:
+                type: string
+
+  # ---- Factory Hub (Grand Line web JSON) ----
+  /factory-hub/wood-work-orders:
+    get:
+      operationId: listFhWoodWorkOrders
+      tags: [factory-hub]
+      summary: List wood work orders (panel JSON)
+      responses:
+        "200":
+          description: Orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FhWoodWorkOrderEnvelope"
+    post:
+      operationId: createFhWoodWorkOrder
+      tags: [factory-hub]
+      summary: Create or replace a wood work order row
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FhWoodWorkOrderPayload"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhWoodWorkOrderEnvelope"
+
+  /factory-hub/wood-work-orders/{workOrderId}:
+    parameters:
+      - name: workOrderId
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getFhWoodWorkOrder
+      tags: [factory-hub]
+      summary: Get one wood work order
+      responses:
+        "200":
+          description: Order
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhWoodWorkOrderEnvelope"
+        "404":
+          description: Not found
+    put:
+      operationId: updateFhWoodWorkOrder
+      tags: [factory-hub]
+      summary: Replace wood work order JSON
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FhWoodWorkOrderPayload"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhWoodWorkOrderEnvelope"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteFhWoodWorkOrder
+      tags: [factory-hub]
+      summary: Delete wood work order
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /factory-hub/reference/{key}:
+    parameters:
+      - name: key
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getFhReferenceSnapshot
+      tags: [factory-hub]
+      summary: Get reference snapshot by key
+      responses:
+        "200":
+          description: Snapshot
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhReferenceEnvelope"
+        "404":
+          description: Not found
+    put:
+      operationId: putFhReferenceSnapshot
+      tags: [factory-hub]
+      summary: Upsert reference snapshot
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FhReferencePutBody"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhReferenceEnvelope"
+
+  /factory-hub/work-order-analysis-sessions:
+    get:
+      operationId: listFhAnalysisSessions
+      tags: [factory-hub]
+      summary: List analysis sessions
+      responses:
+        "200":
+          description: Sessions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FhAnalysisSessionEnvelope"
+    post:
+      operationId: createFhAnalysisSession
+      tags: [factory-hub]
+      summary: Create analysis session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FhAnalysisSessionPayload"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhAnalysisSessionEnvelope"
+
+  /factory-hub/work-order-analysis-sessions/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getFhAnalysisSession
+      tags: [factory-hub]
+      summary: Get analysis session
+      responses:
+        "200":
+          description: Session
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhAnalysisSessionEnvelope"
+        "404":
+          description: Not found
+    put:
+      operationId: updateFhAnalysisSession
+      tags: [factory-hub]
+      summary: Update analysis session
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FhAnalysisSessionPayload"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhAnalysisSessionEnvelope"
+        "404":
+          description: Not found
+    delete:
+      operationId: deleteFhAnalysisSession
+      tags: [factory-hub]
+      summary: Delete analysis session
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+
+  /factory-hub/new-project-autosave:
+    get:
+      operationId: getFhNewProjectAutosave
+      tags: [factory-hub]
+      summary: Load new-project wizard autosave
+      responses:
+        "200":
+          description: Autosave document
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhNewProjectAutosaveEnvelope"
+        "404":
+          description: No autosave yet
+    put:
+      operationId: putFhNewProjectAutosave
+      tags: [factory-hub]
+      summary: Save new-project wizard autosave
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FhNewProjectAutosavePayload"
+      responses:
+        "200":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhNewProjectAutosaveEnvelope"
+
+  /factory-hub/seed:
+    post:
+      operationId: seedFactoryHub
+      tags: [factory-hub]
+      summary: Seed fh_* tables from fixtures (dev or FH_ALLOW_SEED=true)
+      responses:
+        "200":
+          description: Seed summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FhSeedResult"
+        "403":
+          description: Seeding disabled
+
 components:
   schemas:
     HealthStatus:
@@ -687,6 +1080,90 @@ components:
           type: string
       required:
         - status
+
+    FhJsonValue:
+      type: object
+      additionalProperties: true
+
+    FhWoodWorkOrderPayload:
+      type: object
+      additionalProperties: true
+      description: Grand Line `WoodWorkOrder` object (routing_progress with eight stages).
+
+    FhWoodWorkOrderEnvelope:
+      type: object
+      required: [workOrderId, payload]
+      properties:
+        workOrderId:
+          type: string
+        payload:
+          $ref: "#/components/schemas/FhWoodWorkOrderPayload"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    FhReferencePutBody:
+      type: object
+      required: [payload]
+      properties:
+        payload:
+          $ref: "#/components/schemas/FhJsonValue"
+
+    FhReferenceEnvelope:
+      type: object
+      required: [key, payload]
+      properties:
+        key:
+          type: string
+        payload:
+          $ref: "#/components/schemas/FhJsonValue"
+        updatedAt:
+          type: string
+
+    FhAnalysisSessionPayload:
+      type: object
+      additionalProperties: true
+
+    FhAnalysisSessionEnvelope:
+      type: object
+      required: [id, payload]
+      properties:
+        id:
+          type: string
+        payload:
+          $ref: "#/components/schemas/FhAnalysisSessionPayload"
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+
+    FhNewProjectAutosavePayload:
+      type: object
+      additionalProperties: true
+
+    FhNewProjectAutosaveEnvelope:
+      type: object
+      required: [singletonKey, payload]
+      properties:
+        singletonKey:
+          type: string
+          enum: [default]
+        payload:
+          $ref: "#/components/schemas/FhNewProjectAutosavePayload"
+        updatedAt:
+          type: string
+
+    FhSeedResult:
+      type: object
+      required: [ok, woodOrdersUpserted, referenceKeysWritten]
+      properties:
+        ok:
+          type: boolean
+        woodOrdersUpserted:
+          type: integer
+        referenceKeysWritten:
+          type: integer
 
     MetalWorkOrder:
       type: object
@@ -822,6 +1299,32 @@ components:
         - totalWip
         - totalDone
         - orderCount
+
+    CapacityMachineRow:
+      type: object
+      properties:
+        taskId:
+          type: string
+        taskName:
+          type: string
+        taskType:
+          type: string
+        departmentId:
+          type: string
+        departmentName:
+          type: string
+        processStep:
+          type: integer
+        factoryId:
+          type: string
+      required:
+        - taskId
+        - taskName
+        - taskType
+        - departmentId
+        - departmentName
+        - processStep
+        - factoryId
 
     WoodenWorkOrder:
       type: object
@@ -1042,6 +1545,8 @@ components:
           type: integer
         woodenCompletedOrders:
           type: integer
+        woodenOverdueOrders:
+          type: integer
         woodenAvgCompletionPct:
           type: number
         sharedProjectsCount:
@@ -1212,3 +1717,86 @@ components:
         - rowsImported
         - rowsSkipped
         - duplicates
+
+    Employee:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        jobTitle:
+          type: string
+        standardizedRole:
+          type: string
+        hireDate:
+          type: string
+          nullable: true
+        departmentId:
+          type: string
+          nullable: true
+        factoryId:
+          type: string
+        departmentName:
+          type: string
+          nullable: true
+      required:
+        - id
+        - name
+        - jobTitle
+        - standardizedRole
+        - factoryId
+
+    EmployeeStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        departments:
+          type: array
+          items:
+            type: object
+            properties:
+              departmentId:
+                type: string
+              departmentName:
+                type: string
+              count:
+                type: integer
+            required:
+              - departmentId
+              - departmentName
+              - count
+        roles:
+          type: array
+          items:
+            type: object
+            properties:
+              role:
+                type: string
+              count:
+                type: integer
+            required:
+              - role
+              - count
+      required:
+        - total
+        - departments
+        - roles
+
+    HeadcountRow:
+      type: object
+      properties:
+        departmentId:
+          type: string
+        plannedCount:
+          type: integer
+        actualCount:
+          type: integer
+        delta:
+          type: integer
+      required:
+        - departmentId
+        - plannedCount
+        - actualCount
+        - delta

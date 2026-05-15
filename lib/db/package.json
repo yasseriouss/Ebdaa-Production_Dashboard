@@ -9,18 +9,21 @@
   },
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
-    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts"
+    "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
+    "generate": "drizzle-kit generate --config ./drizzle.config.ts",
+    "migrate": "tsx src/migrate.ts",
+    "apply-fh-ddl": "tsx src/applyFactoryHubDdl.ts",
+    "seed": "tsx src/seed.ts"
   },
   "dependencies": {
+    "@libsql/client": "^0.17.3",
     "drizzle-orm": "catalog:",
     "drizzle-zod": "^0.8.3",
-    "pg": "^8.20.0",
     "xlsx": "^0.18.5",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@types/node": "catalog:",
-    "@types/pg": "^8.18.0",
     "drizzle-kit": "^0.31.9"
   }
 }

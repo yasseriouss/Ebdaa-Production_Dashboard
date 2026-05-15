@@ -1,4 +1,6 @@
 import path from "path";
+import { readFileSync, existsSync } from "fs";
+import { seedCapacity } from "./seedCapacity";
 import { fileURLToPath } from "url";
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
@@ -28,7 +30,12 @@ const WOODEN_STAGES = [
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ASSETS_DIR = path.resolve(__dirname, "../../../attached_assets");
+const REPO_ROOT = path.resolve(__dirname, "../../..");
+const ASSETS_DIR = path.join(REPO_ROOT, "attached_assets");
+const GEM_WOOD_ORDER_JSON_PATHS = [
+  path.join(REPO_ROOT, "Data/gem_Claude/wood_work_orders (2).json"),
+  path.join(REPO_ROOT, "Data/gem_Claude/wood_work_orders (3).json"),
+];
 
 function safeStr(val: unknown): string {
   if (val === null || val === undefined) return "";
@@ -155,7 +162,86 @@ function loadMetalOrders(): MetalOrderRow[] {
   }
 }
 
-function loadWoodenOrders(): WoodenOrderRow[] {
+function gemExportDateToStr(val: unknown): string {
+  const s = safeStr(val).toLowerCase();
+  if (!s || s === "nan" || s === "none" || s === "null") return "";
+  if (!/^\d{4}-\d{2}-\d{2}/.test(s)) return "";
+  return s.slice(0, 10);
+}
+
+/** Derive list status from Gem-style quantities when no explicit status string exists */
+function woodenStatusFromQuantities(qty: number, done: number, rem: number): string {
+  if (qty > 0 && rem <= 0 && done >= qty) return "تم التسليم";
+  if (done <= 0 && rem > 0) return "لم يتم البدء";
+  if (qty <= 0 && rem <= 0 && done <= 0) return "لم يتم البدء";
+  return "تحت التصنيع";
+}
+
+function normalizeWoodenOrderKey(orderNo: string): string {
+  return orderNo.replace(/\bvbc[-\s]*/gi, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+interface GemWoodWorkOrderJson {
+  work_order_id?: string;
+  project_name?: string;
+  product_name?: string;
+  quantities?: { total_required?: unknown; completed?: unknown; remaining?: unknown };
+  dates?: { receive_date?: unknown; delivery_date?: unknown };
+}
+
+/** Real wooden work orders exported under Data/gem_Claude (merged across files by work_order_id) */
+function loadWoodenOrdersFromGemExports(): WoodenOrderRow[] {
+  const byId = new Map<string, WoodenOrderRow>();
+  for (const filePath of GEM_WOOD_ORDER_JSON_PATHS) {
+    if (!existsSync(filePath)) continue;
+    try {
+      const raw = JSON.parse(readFileSync(filePath, "utf8")) as { work_orders?: GemWoodWorkOrderJson[] };
+      const list = raw.work_orders ?? [];
+      for (const wo of list) {
+        const orderId = safeStr(wo.work_order_id);
+        if (!orderId) continue;
+        const project = stripVbc(safeStr(wo.project_name));
+        const productName = stripVbc(safeStr(wo.product_name));
+        if (!productName) continue;
+        const qty = Math.round(safeNum(wo.quantities?.total_required, 0));
+        const done = Math.round(safeNum(wo.quantities?.completed, 0));
+        const rem = Math.round(safeNum(wo.quantities?.remaining, 0));
+        const recv = gemExportDateToStr(wo.dates?.receive_date);
+        const deliv = gemExportDateToStr(wo.dates?.delivery_date);
+        const label = project || productName;
+        byId.set(orderId, {
+          orderNo: orderId,
+          extension: "",
+          client: label,
+          orderDate: recv,
+          subProject: label,
+          product: productName || "منتج خشبي",
+          qty,
+          done,
+          rem,
+          status: woodenStatusFromQuantities(qty, done, rem),
+          notes: "",
+          prodDateEnd: deliv,
+        });
+      }
+      console.log(`  Parsed Gem wooden JSON: ${path.relative(REPO_ROOT, filePath)} (${list.length} work_orders in file)`);
+    } catch (e) {
+      console.warn(`  Could not parse Gem wooden JSON ${filePath}:`, String(e));
+    }
+  }
+  const out = [...byId.values()];
+  if (out.length > 0) console.log(`  Gem wooden JSON total: ${out.length} unique work orders`);
+  return out;
+}
+
+function mergeWoodenOrderRows(excel: WoodenOrderRow[], gem: WoodenOrderRow[]): WoodenOrderRow[] {
+  const map = new Map<string, WoodenOrderRow>();
+  for (const r of excel) map.set(normalizeWoodenOrderKey(r.orderNo), r);
+  for (const r of gem) map.set(normalizeWoodenOrderKey(r.orderNo), r);
+  return [...map.values()];
+}
+
+function loadWoodenOrdersFromExcel(): WoodenOrderRow[] {
   try {
     const wb = XLSX.readFile(path.join(ASSETS_DIR, "wooden_orders_1777969762147.xlsx"));
     // Sheet4 columns: Order, Date, Project(=client), Sub-Project, Product, QTY, Done, Rem, Status, notes, expected_finish, req_finish
@@ -209,6 +295,18 @@ function loadWoodenOrders(): WoodenOrderRow[] {
     console.warn("  Could not parse wooden_orders.xlsx:", String(e));
     return [];
   }
+}
+
+function loadWoodenOrders(): WoodenOrderRow[] {
+  const fromExcel = loadWoodenOrdersFromExcel();
+  const fromGem = loadWoodenOrdersFromGemExports();
+  const merged = mergeWoodenOrderRows(fromExcel, fromGem);
+  if (fromGem.length > 0) {
+    console.log(
+      `  Wooden orders merged: ${fromExcel.length} Excel + ${fromGem.length} Gem JSON -> ${merged.length} unique (Gem wins on duplicate order key)`
+    );
+  }
+  return merged;
 }
 
 interface StageEntry { status: string; qty: number }
@@ -293,11 +391,12 @@ const FALLBACK_WOODEN_ORDERS: WoodenOrderRow[] = [
 ];
 
 async function seed() {
-  console.log("Checking existing data...");
+  await seedCapacity();
+  console.log("Seeding work orders...");
   const existing = await db.select().from(metalWorkOrdersTable);
   if (existing.length > 0) {
     console.log(`Already seeded (${existing.length} metal orders). Skipping.`);
-    process.exit(0);
+    return;
   }
 
   // Load from real Excel files; fallback only when files are absent from attached_assets
@@ -433,7 +532,7 @@ async function seed() {
       });
   }
 
-  console.log(`Done! ${metalOrders.length} metal orders, ${woodenOrders.length} wooden orders seeded from real Excel data.`);
+  console.log(`Done! ${metalOrders.length} metal orders, ${woodenOrders.length} wooden orders seeded (Excel + Gem JSON where present).`);
   process.exit(0);
 }
 

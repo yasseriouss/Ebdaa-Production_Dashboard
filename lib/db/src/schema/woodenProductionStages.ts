@@ -1,21 +1,18 @@
-import { pgTable, serial, text, numeric, integer, timestamp, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { woodenWorkOrdersTable } from "./woodenWorkOrders";
 
-export const woodenProductionStagesTable = pgTable("wooden_production_stages", {
-  id: serial("id").primaryKey(),
-  woodenOrderId: integer("wooden_order_id").references(() => woodenWorkOrdersTable.id, { onDelete: "cascade" }),
+export const woodenProductionStagesTable = sqliteTable("wooden_production_stages", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  woodenOrderId: text("wooden_order_id").notNull().references(() => woodenWorkOrdersTable.id),
   stageName: text("stage_name").notNull(),
   stageOrder: integer("stage_order").notNull(),
-  qtyDone: numeric("qty_done", { precision: 10, scale: 2 }).default("0"),
-  status: text("status").default("لم يتم البدء"),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (t) => [unique("uq_wooden_stage_order_name").on(t.woodenOrderId, t.stageName)]);
+  qtyDone: text("qty_done").notNull().default("0"),
+  status: text("status").notNull().default("لم يتم البدء"),
+  deletedAt: text("deleted_at"),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+}, (table) => ({
+  unq: uniqueIndex("wooden_order_stage_unq").on(table.woodenOrderId, table.stageName),
+}));
 
-export const insertWoodenProductionStageSchema = createInsertSchema(woodenProductionStagesTable).omit({
-  id: true,
-  updatedAt: true,
-});
-export type InsertWoodenProductionStage = z.infer<typeof insertWoodenProductionStageSchema>;
 export type WoodenProductionStage = typeof woodenProductionStagesTable.$inferSelect;
+export type NewWoodenProductionStage = typeof woodenProductionStagesTable.$inferInsert;

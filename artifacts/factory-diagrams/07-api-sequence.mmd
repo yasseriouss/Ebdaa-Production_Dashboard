@@ -1,0 +1,11 @@
+sequenceDiagram
+  participant user as Browser user
+  participant web as React app
+  participant api as Express /api
+  participant db as Drizzle SQLite
+  user->>web: Action example list orders
+  web->>api: GET /api/metal/orders
+  api->>db: Query metal_work_orders
+  db-->>api: Rows
+  api-->>web: JSON response
+  web-->>user: Render UI

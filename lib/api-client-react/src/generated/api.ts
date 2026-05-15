@@ -3,6 +3,12 @@
  * Do not edit manually.
  * Api
  * Ebdaa Furniture Factory Management System API
+
+**Integration (web vs legacy routes):**
+- `factory-hub` paths (`/factory-hub/*`) back the Grand Line React dashboard — JSON-first `fh_*` tables in LibSQL.
+- `/wooden/*` and `/metal/*` remain the stable HTTP contract for ERP-style integrations; they use `wooden_*` / `metal_*` tables.
+- Optional env `FH_SYNC_WOODEN=true` enables a bridge that mirrors hub wood updates into `wooden_work_orders` via a documented field mapping (see `docs/legacy-adapter-factory-hub.md`).
+
  * OpenAPI spec version: 0.1.0
  */
 import { useMutation, useQuery } from "@tanstack/react-query";
@@ -17,6 +23,7 @@ import type {
 } from "@tanstack/react-query";
 
 import type {
+  CapacityMachineRow,
   ClientStat,
   CompletionTrendPoint,
   CreateMetalOrderBody,
@@ -24,16 +31,30 @@ import type {
   CreateWoodenOrderBody,
   CreateWoodenStageBody,
   DashboardStats,
+  Employee,
+  EmployeeStats,
+  ExportEmployeesParams,
   ExportMetalOrdersParams,
   ExportWoodenOrdersParams,
+  FhAnalysisSessionEnvelope,
+  FhAnalysisSessionPayload,
+  FhNewProjectAutosaveEnvelope,
+  FhNewProjectAutosavePayload,
+  FhReferenceEnvelope,
+  FhReferencePutBody,
+  FhSeedResult,
+  FhWoodWorkOrderEnvelope,
+  FhWoodWorkOrderPayload,
   GanttItem,
   GetDashboardGanttParams,
+  HeadcountRow,
   HealthStatus,
   ImportMetalDailyProductionBody,
   ImportMetalOrdersBody,
   ImportResult,
   ImportSheetsTemplateBody,
   ImportWoodenOrdersBody,
+  ListEmployeesParams,
   ListMetalOrdersParams,
   ListMetalStagesParams,
   ListWoodenOrdersParams,
@@ -127,6 +148,81 @@ export function useHealthCheck<
   request?: SecondParameter<typeof customFetch>;
 }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
   const queryOptions = getHealthCheckQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List all production machines (tasks) with their departments
+ */
+export const getListCapacityMachinesUrl = () => {
+  return `/api/capacity/machines`;
+};
+
+export const listCapacityMachines = async (
+  options?: RequestInit,
+): Promise<CapacityMachineRow[]> => {
+  return customFetch<CapacityMachineRow[]>(getListCapacityMachinesUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListCapacityMachinesQueryKey = () => {
+  return [`/api/capacity/machines`] as const;
+};
+
+export const getListCapacityMachinesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listCapacityMachines>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCapacityMachines>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListCapacityMachinesQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listCapacityMachines>>
+  > = ({ signal }) => listCapacityMachines({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listCapacityMachines>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListCapacityMachinesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listCapacityMachines>>
+>;
+export type ListCapacityMachinesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all production machines (tasks) with their departments
+ */
+
+export function useListCapacityMachines<
+  TData = Awaited<ReturnType<typeof listCapacityMachines>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listCapacityMachines>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListCapacityMachinesQueryOptions(options);
 
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
     queryKey: QueryKey;
@@ -1711,6 +1807,82 @@ export const useCreateWoodenStage = <
 };
 
 /**
+ * @summary Get wooden stage bottleneck summary (WIP per stage)
+ */
+export const getGetWoodenStagesSummaryUrl = () => {
+  return `/api/wooden/stages/summary`;
+};
+
+export const getWoodenStagesSummary = async (
+  options?: RequestInit,
+): Promise<StageSummary[]> => {
+  return customFetch<StageSummary[]>(getGetWoodenStagesSummaryUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetWoodenStagesSummaryQueryKey = () => {
+  return [`/api/wooden/stages/summary`] as const;
+};
+
+export const getGetWoodenStagesSummaryQueryOptions = <
+  TData = Awaited<ReturnType<typeof getWoodenStagesSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getWoodenStagesSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetWoodenStagesSummaryQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getWoodenStagesSummary>>
+  > = ({ signal }) => getWoodenStagesSummary({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getWoodenStagesSummary>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetWoodenStagesSummaryQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getWoodenStagesSummary>>
+>;
+export type GetWoodenStagesSummaryQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get wooden stage bottleneck summary (WIP per stage)
+ */
+
+export function useGetWoodenStagesSummary<
+  TData = Awaited<ReturnType<typeof getWoodenStagesSummary>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getWoodenStagesSummary>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetWoodenStagesSummaryQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
  * @summary Get a single wooden production stage record
  */
 export const getGetWoodenStageUrl = (id: number) => {
@@ -2920,3 +3092,1631 @@ export function useExportWoodenOrders<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List employees with optional filters
+ */
+export const getListEmployeesUrl = (params?: ListEmployeesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/employees?${stringifiedParams}`
+    : `/api/employees`;
+};
+
+export const listEmployees = async (
+  params?: ListEmployeesParams,
+  options?: RequestInit,
+): Promise<Employee[]> => {
+  return customFetch<Employee[]>(getListEmployeesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListEmployeesQueryKey = (params?: ListEmployeesParams) => {
+  return [`/api/employees`, ...(params ? [params] : [])] as const;
+};
+
+export const getListEmployeesQueryOptions = <
+  TData = Awaited<ReturnType<typeof listEmployees>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListEmployeesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEmployees>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListEmployeesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof listEmployees>>> = ({
+    signal,
+  }) => listEmployees(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listEmployees>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListEmployeesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listEmployees>>
+>;
+export type ListEmployeesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List employees with optional filters
+ */
+
+export function useListEmployees<
+  TData = Awaited<ReturnType<typeof listEmployees>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ListEmployeesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof listEmployees>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListEmployeesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Roster totals and by-department breakdown
+ */
+export const getGetEmployeeStatsUrl = () => {
+  return `/api/employees/stats`;
+};
+
+export const getEmployeeStats = async (
+  options?: RequestInit,
+): Promise<EmployeeStats> => {
+  return customFetch<EmployeeStats>(getGetEmployeeStatsUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEmployeeStatsQueryKey = () => {
+  return [`/api/employees/stats`] as const;
+};
+
+export const getGetEmployeeStatsQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEmployeeStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployeeStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetEmployeeStatsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEmployeeStats>>
+  > = ({ signal }) => getEmployeeStats({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployeeStats>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEmployeeStatsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEmployeeStats>>
+>;
+export type GetEmployeeStatsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Roster totals and by-department breakdown
+ */
+
+export function useGetEmployeeStats<
+  TData = Awaited<ReturnType<typeof getEmployeeStats>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployeeStats>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEmployeeStatsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Plan vs actual headcount by department
+ */
+export const getGetEmployeesHeadcountUrl = () => {
+  return `/api/employees/headcount`;
+};
+
+export const getEmployeesHeadcount = async (
+  options?: RequestInit,
+): Promise<HeadcountRow[]> => {
+  return customFetch<HeadcountRow[]>(getGetEmployeesHeadcountUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetEmployeesHeadcountQueryKey = () => {
+  return [`/api/employees/headcount`] as const;
+};
+
+export const getGetEmployeesHeadcountQueryOptions = <
+  TData = Awaited<ReturnType<typeof getEmployeesHeadcount>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployeesHeadcount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getGetEmployeesHeadcountQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getEmployeesHeadcount>>
+  > = ({ signal }) => getEmployeesHeadcount({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployeesHeadcount>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetEmployeesHeadcountQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getEmployeesHeadcount>>
+>;
+export type GetEmployeesHeadcountQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Plan vs actual headcount by department
+ */
+
+export function useGetEmployeesHeadcount<
+  TData = Awaited<ReturnType<typeof getEmployeesHeadcount>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getEmployeesHeadcount>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetEmployeesHeadcountQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Export employees as CSV
+ */
+export const getExportEmployeesUrl = (params?: ExportEmployeesParams) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? "null" : value.toString());
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0
+    ? `/api/export/employees?${stringifiedParams}`
+    : `/api/export/employees`;
+};
+
+export const exportEmployees = async (
+  params?: ExportEmployeesParams,
+  options?: RequestInit,
+): Promise<string> => {
+  return customFetch<string>(getExportEmployeesUrl(params), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getExportEmployeesQueryKey = (params?: ExportEmployeesParams) => {
+  return [`/api/export/employees`, ...(params ? [params] : [])] as const;
+};
+
+export const getExportEmployeesQueryOptions = <
+  TData = Awaited<ReturnType<typeof exportEmployees>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ExportEmployeesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportEmployees>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getExportEmployeesQueryKey(params);
+
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof exportEmployees>>> = ({
+    signal,
+  }) => exportEmployees(params, { signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof exportEmployees>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ExportEmployeesQueryResult = NonNullable<
+  Awaited<ReturnType<typeof exportEmployees>>
+>;
+export type ExportEmployeesQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Export employees as CSV
+ */
+
+export function useExportEmployees<
+  TData = Awaited<ReturnType<typeof exportEmployees>>,
+  TError = ErrorType<unknown>,
+>(
+  params?: ExportEmployeesParams,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof exportEmployees>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getExportEmployeesQueryOptions(params, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary List wood work orders (panel JSON)
+ */
+export const getListFhWoodWorkOrdersUrl = () => {
+  return `/api/factory-hub/wood-work-orders`;
+};
+
+export const listFhWoodWorkOrders = async (
+  options?: RequestInit,
+): Promise<FhWoodWorkOrderEnvelope[]> => {
+  return customFetch<FhWoodWorkOrderEnvelope[]>(getListFhWoodWorkOrdersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListFhWoodWorkOrdersQueryKey = () => {
+  return [`/api/factory-hub/wood-work-orders`] as const;
+};
+
+export const getListFhWoodWorkOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFhWoodWorkOrders>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFhWoodWorkOrders>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey = queryOptions?.queryKey ?? getListFhWoodWorkOrdersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFhWoodWorkOrders>>
+  > = ({ signal }) => listFhWoodWorkOrders({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFhWoodWorkOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFhWoodWorkOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFhWoodWorkOrders>>
+>;
+export type ListFhWoodWorkOrdersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List wood work orders (panel JSON)
+ */
+
+export function useListFhWoodWorkOrders<
+  TData = Awaited<ReturnType<typeof listFhWoodWorkOrders>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFhWoodWorkOrders>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFhWoodWorkOrdersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create or replace a wood work order row
+ */
+export const getCreateFhWoodWorkOrderUrl = () => {
+  return `/api/factory-hub/wood-work-orders`;
+};
+
+export const createFhWoodWorkOrder = async (
+  fhWoodWorkOrderPayload: FhWoodWorkOrderPayload,
+  options?: RequestInit,
+): Promise<FhWoodWorkOrderEnvelope> => {
+  return customFetch<FhWoodWorkOrderEnvelope>(getCreateFhWoodWorkOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(fhWoodWorkOrderPayload),
+  });
+};
+
+export const getCreateFhWoodWorkOrderMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFhWoodWorkOrder>>,
+    TError,
+    { data: BodyType<FhWoodWorkOrderPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFhWoodWorkOrder>>,
+  TError,
+  { data: BodyType<FhWoodWorkOrderPayload> },
+  TContext
+> => {
+  const mutationKey = ["createFhWoodWorkOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFhWoodWorkOrder>>,
+    { data: BodyType<FhWoodWorkOrderPayload> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createFhWoodWorkOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFhWoodWorkOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFhWoodWorkOrder>>
+>;
+export type CreateFhWoodWorkOrderMutationBody =
+  BodyType<FhWoodWorkOrderPayload>;
+export type CreateFhWoodWorkOrderMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create or replace a wood work order row
+ */
+export const useCreateFhWoodWorkOrder = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFhWoodWorkOrder>>,
+    TError,
+    { data: BodyType<FhWoodWorkOrderPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createFhWoodWorkOrder>>,
+  TError,
+  { data: BodyType<FhWoodWorkOrderPayload> },
+  TContext
+> => {
+  return useMutation(getCreateFhWoodWorkOrderMutationOptions(options));
+};
+
+/**
+ * @summary Get one wood work order
+ */
+export const getGetFhWoodWorkOrderUrl = (workOrderId: string) => {
+  return `/api/factory-hub/wood-work-orders/${workOrderId}`;
+};
+
+export const getFhWoodWorkOrder = async (
+  workOrderId: string,
+  options?: RequestInit,
+): Promise<FhWoodWorkOrderEnvelope> => {
+  return customFetch<FhWoodWorkOrderEnvelope>(
+    getGetFhWoodWorkOrderUrl(workOrderId),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetFhWoodWorkOrderQueryKey = (workOrderId: string) => {
+  return [`/api/factory-hub/wood-work-orders/${workOrderId}`] as const;
+};
+
+export const getGetFhWoodWorkOrderQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFhWoodWorkOrder>>,
+  TError = ErrorType<void>,
+>(
+  workOrderId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFhWoodWorkOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetFhWoodWorkOrderQueryKey(workOrderId);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFhWoodWorkOrder>>
+  > = ({ signal }) =>
+    getFhWoodWorkOrder(workOrderId, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!workOrderId,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFhWoodWorkOrder>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetFhWoodWorkOrderQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFhWoodWorkOrder>>
+>;
+export type GetFhWoodWorkOrderQueryError = ErrorType<void>;
+
+/**
+ * @summary Get one wood work order
+ */
+
+export function useGetFhWoodWorkOrder<
+  TData = Awaited<ReturnType<typeof getFhWoodWorkOrder>>,
+  TError = ErrorType<void>,
+>(
+  workOrderId: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFhWoodWorkOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFhWoodWorkOrderQueryOptions(workOrderId, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Replace wood work order JSON
+ */
+export const getUpdateFhWoodWorkOrderUrl = (workOrderId: string) => {
+  return `/api/factory-hub/wood-work-orders/${workOrderId}`;
+};
+
+export const updateFhWoodWorkOrder = async (
+  workOrderId: string,
+  fhWoodWorkOrderPayload: FhWoodWorkOrderPayload,
+  options?: RequestInit,
+): Promise<FhWoodWorkOrderEnvelope> => {
+  return customFetch<FhWoodWorkOrderEnvelope>(
+    getUpdateFhWoodWorkOrderUrl(workOrderId),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(fhWoodWorkOrderPayload),
+    },
+  );
+};
+
+export const getUpdateFhWoodWorkOrderMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFhWoodWorkOrder>>,
+    TError,
+    { workOrderId: string; data: BodyType<FhWoodWorkOrderPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateFhWoodWorkOrder>>,
+  TError,
+  { workOrderId: string; data: BodyType<FhWoodWorkOrderPayload> },
+  TContext
+> => {
+  const mutationKey = ["updateFhWoodWorkOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateFhWoodWorkOrder>>,
+    { workOrderId: string; data: BodyType<FhWoodWorkOrderPayload> }
+  > = (props) => {
+    const { workOrderId, data } = props ?? {};
+
+    return updateFhWoodWorkOrder(workOrderId, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateFhWoodWorkOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateFhWoodWorkOrder>>
+>;
+export type UpdateFhWoodWorkOrderMutationBody =
+  BodyType<FhWoodWorkOrderPayload>;
+export type UpdateFhWoodWorkOrderMutationError = ErrorType<void>;
+
+/**
+ * @summary Replace wood work order JSON
+ */
+export const useUpdateFhWoodWorkOrder = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFhWoodWorkOrder>>,
+    TError,
+    { workOrderId: string; data: BodyType<FhWoodWorkOrderPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateFhWoodWorkOrder>>,
+  TError,
+  { workOrderId: string; data: BodyType<FhWoodWorkOrderPayload> },
+  TContext
+> => {
+  return useMutation(getUpdateFhWoodWorkOrderMutationOptions(options));
+};
+
+/**
+ * @summary Delete wood work order
+ */
+export const getDeleteFhWoodWorkOrderUrl = (workOrderId: string) => {
+  return `/api/factory-hub/wood-work-orders/${workOrderId}`;
+};
+
+export const deleteFhWoodWorkOrder = async (
+  workOrderId: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteFhWoodWorkOrderUrl(workOrderId), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteFhWoodWorkOrderMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFhWoodWorkOrder>>,
+    TError,
+    { workOrderId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteFhWoodWorkOrder>>,
+  TError,
+  { workOrderId: string },
+  TContext
+> => {
+  const mutationKey = ["deleteFhWoodWorkOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteFhWoodWorkOrder>>,
+    { workOrderId: string }
+  > = (props) => {
+    const { workOrderId } = props ?? {};
+
+    return deleteFhWoodWorkOrder(workOrderId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteFhWoodWorkOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteFhWoodWorkOrder>>
+>;
+
+export type DeleteFhWoodWorkOrderMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete wood work order
+ */
+export const useDeleteFhWoodWorkOrder = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFhWoodWorkOrder>>,
+    TError,
+    { workOrderId: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteFhWoodWorkOrder>>,
+  TError,
+  { workOrderId: string },
+  TContext
+> => {
+  return useMutation(getDeleteFhWoodWorkOrderMutationOptions(options));
+};
+
+/**
+ * @summary Get reference snapshot by key
+ */
+export const getGetFhReferenceSnapshotUrl = (key: string) => {
+  return `/api/factory-hub/reference/${key}`;
+};
+
+export const getFhReferenceSnapshot = async (
+  key: string,
+  options?: RequestInit,
+): Promise<FhReferenceEnvelope> => {
+  return customFetch<FhReferenceEnvelope>(getGetFhReferenceSnapshotUrl(key), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getGetFhReferenceSnapshotQueryKey = (key: string) => {
+  return [`/api/factory-hub/reference/${key}`] as const;
+};
+
+export const getGetFhReferenceSnapshotQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFhReferenceSnapshot>>,
+  TError = ErrorType<void>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFhReferenceSnapshot>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetFhReferenceSnapshotQueryKey(key);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFhReferenceSnapshot>>
+  > = ({ signal }) =>
+    getFhReferenceSnapshot(key, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!key,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFhReferenceSnapshot>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetFhReferenceSnapshotQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFhReferenceSnapshot>>
+>;
+export type GetFhReferenceSnapshotQueryError = ErrorType<void>;
+
+/**
+ * @summary Get reference snapshot by key
+ */
+
+export function useGetFhReferenceSnapshot<
+  TData = Awaited<ReturnType<typeof getFhReferenceSnapshot>>,
+  TError = ErrorType<void>,
+>(
+  key: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFhReferenceSnapshot>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFhReferenceSnapshotQueryOptions(key, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Upsert reference snapshot
+ */
+export const getPutFhReferenceSnapshotUrl = (key: string) => {
+  return `/api/factory-hub/reference/${key}`;
+};
+
+export const putFhReferenceSnapshot = async (
+  key: string,
+  fhReferencePutBody: FhReferencePutBody,
+  options?: RequestInit,
+): Promise<FhReferenceEnvelope> => {
+  return customFetch<FhReferenceEnvelope>(getPutFhReferenceSnapshotUrl(key), {
+    ...options,
+    method: "PUT",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(fhReferencePutBody),
+  });
+};
+
+export const getPutFhReferenceSnapshotMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putFhReferenceSnapshot>>,
+    TError,
+    { key: string; data: BodyType<FhReferencePutBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof putFhReferenceSnapshot>>,
+  TError,
+  { key: string; data: BodyType<FhReferencePutBody> },
+  TContext
+> => {
+  const mutationKey = ["putFhReferenceSnapshot"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof putFhReferenceSnapshot>>,
+    { key: string; data: BodyType<FhReferencePutBody> }
+  > = (props) => {
+    const { key, data } = props ?? {};
+
+    return putFhReferenceSnapshot(key, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PutFhReferenceSnapshotMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putFhReferenceSnapshot>>
+>;
+export type PutFhReferenceSnapshotMutationBody = BodyType<FhReferencePutBody>;
+export type PutFhReferenceSnapshotMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Upsert reference snapshot
+ */
+export const usePutFhReferenceSnapshot = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putFhReferenceSnapshot>>,
+    TError,
+    { key: string; data: BodyType<FhReferencePutBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof putFhReferenceSnapshot>>,
+  TError,
+  { key: string; data: BodyType<FhReferencePutBody> },
+  TContext
+> => {
+  return useMutation(getPutFhReferenceSnapshotMutationOptions(options));
+};
+
+/**
+ * @summary List analysis sessions
+ */
+export const getListFhAnalysisSessionsUrl = () => {
+  return `/api/factory-hub/work-order-analysis-sessions`;
+};
+
+export const listFhAnalysisSessions = async (
+  options?: RequestInit,
+): Promise<FhAnalysisSessionEnvelope[]> => {
+  return customFetch<FhAnalysisSessionEnvelope[]>(
+    getListFhAnalysisSessionsUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getListFhAnalysisSessionsQueryKey = () => {
+  return [`/api/factory-hub/work-order-analysis-sessions`] as const;
+};
+
+export const getListFhAnalysisSessionsQueryOptions = <
+  TData = Awaited<ReturnType<typeof listFhAnalysisSessions>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFhAnalysisSessions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListFhAnalysisSessionsQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listFhAnalysisSessions>>
+  > = ({ signal }) => listFhAnalysisSessions({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listFhAnalysisSessions>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListFhAnalysisSessionsQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listFhAnalysisSessions>>
+>;
+export type ListFhAnalysisSessionsQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List analysis sessions
+ */
+
+export function useListFhAnalysisSessions<
+  TData = Awaited<ReturnType<typeof listFhAnalysisSessions>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listFhAnalysisSessions>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListFhAnalysisSessionsQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Create analysis session
+ */
+export const getCreateFhAnalysisSessionUrl = () => {
+  return `/api/factory-hub/work-order-analysis-sessions`;
+};
+
+export const createFhAnalysisSession = async (
+  fhAnalysisSessionPayload: FhAnalysisSessionPayload,
+  options?: RequestInit,
+): Promise<FhAnalysisSessionEnvelope> => {
+  return customFetch<FhAnalysisSessionEnvelope>(
+    getCreateFhAnalysisSessionUrl(),
+    {
+      ...options,
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(fhAnalysisSessionPayload),
+    },
+  );
+};
+
+export const getCreateFhAnalysisSessionMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFhAnalysisSession>>,
+    TError,
+    { data: BodyType<FhAnalysisSessionPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createFhAnalysisSession>>,
+  TError,
+  { data: BodyType<FhAnalysisSessionPayload> },
+  TContext
+> => {
+  const mutationKey = ["createFhAnalysisSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createFhAnalysisSession>>,
+    { data: BodyType<FhAnalysisSessionPayload> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createFhAnalysisSession(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateFhAnalysisSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createFhAnalysisSession>>
+>;
+export type CreateFhAnalysisSessionMutationBody =
+  BodyType<FhAnalysisSessionPayload>;
+export type CreateFhAnalysisSessionMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Create analysis session
+ */
+export const useCreateFhAnalysisSession = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createFhAnalysisSession>>,
+    TError,
+    { data: BodyType<FhAnalysisSessionPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createFhAnalysisSession>>,
+  TError,
+  { data: BodyType<FhAnalysisSessionPayload> },
+  TContext
+> => {
+  return useMutation(getCreateFhAnalysisSessionMutationOptions(options));
+};
+
+/**
+ * @summary Get analysis session
+ */
+export const getGetFhAnalysisSessionUrl = (id: string) => {
+  return `/api/factory-hub/work-order-analysis-sessions/${id}`;
+};
+
+export const getFhAnalysisSession = async (
+  id: string,
+  options?: RequestInit,
+): Promise<FhAnalysisSessionEnvelope> => {
+  return customFetch<FhAnalysisSessionEnvelope>(
+    getGetFhAnalysisSessionUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetFhAnalysisSessionQueryKey = (id: string) => {
+  return [`/api/factory-hub/work-order-analysis-sessions/${id}`] as const;
+};
+
+export const getGetFhAnalysisSessionQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFhAnalysisSession>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFhAnalysisSession>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetFhAnalysisSessionQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFhAnalysisSession>>
+  > = ({ signal }) => getFhAnalysisSession(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFhAnalysisSession>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetFhAnalysisSessionQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFhAnalysisSession>>
+>;
+export type GetFhAnalysisSessionQueryError = ErrorType<void>;
+
+/**
+ * @summary Get analysis session
+ */
+
+export function useGetFhAnalysisSession<
+  TData = Awaited<ReturnType<typeof getFhAnalysisSession>>,
+  TError = ErrorType<void>,
+>(
+  id: string,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getFhAnalysisSession>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFhAnalysisSessionQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update analysis session
+ */
+export const getUpdateFhAnalysisSessionUrl = (id: string) => {
+  return `/api/factory-hub/work-order-analysis-sessions/${id}`;
+};
+
+export const updateFhAnalysisSession = async (
+  id: string,
+  fhAnalysisSessionPayload: FhAnalysisSessionPayload,
+  options?: RequestInit,
+): Promise<FhAnalysisSessionEnvelope> => {
+  return customFetch<FhAnalysisSessionEnvelope>(
+    getUpdateFhAnalysisSessionUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(fhAnalysisSessionPayload),
+    },
+  );
+};
+
+export const getUpdateFhAnalysisSessionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFhAnalysisSession>>,
+    TError,
+    { id: string; data: BodyType<FhAnalysisSessionPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateFhAnalysisSession>>,
+  TError,
+  { id: string; data: BodyType<FhAnalysisSessionPayload> },
+  TContext
+> => {
+  const mutationKey = ["updateFhAnalysisSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateFhAnalysisSession>>,
+    { id: string; data: BodyType<FhAnalysisSessionPayload> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateFhAnalysisSession(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateFhAnalysisSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateFhAnalysisSession>>
+>;
+export type UpdateFhAnalysisSessionMutationBody =
+  BodyType<FhAnalysisSessionPayload>;
+export type UpdateFhAnalysisSessionMutationError = ErrorType<void>;
+
+/**
+ * @summary Update analysis session
+ */
+export const useUpdateFhAnalysisSession = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateFhAnalysisSession>>,
+    TError,
+    { id: string; data: BodyType<FhAnalysisSessionPayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateFhAnalysisSession>>,
+  TError,
+  { id: string; data: BodyType<FhAnalysisSessionPayload> },
+  TContext
+> => {
+  return useMutation(getUpdateFhAnalysisSessionMutationOptions(options));
+};
+
+/**
+ * @summary Delete analysis session
+ */
+export const getDeleteFhAnalysisSessionUrl = (id: string) => {
+  return `/api/factory-hub/work-order-analysis-sessions/${id}`;
+};
+
+export const deleteFhAnalysisSession = async (
+  id: string,
+  options?: RequestInit,
+): Promise<void> => {
+  return customFetch<void>(getDeleteFhAnalysisSessionUrl(id), {
+    ...options,
+    method: "DELETE",
+  });
+};
+
+export const getDeleteFhAnalysisSessionMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFhAnalysisSession>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof deleteFhAnalysisSession>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  const mutationKey = ["deleteFhAnalysisSession"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof deleteFhAnalysisSession>>,
+    { id: string }
+  > = (props) => {
+    const { id } = props ?? {};
+
+    return deleteFhAnalysisSession(id, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type DeleteFhAnalysisSessionMutationResult = NonNullable<
+  Awaited<ReturnType<typeof deleteFhAnalysisSession>>
+>;
+
+export type DeleteFhAnalysisSessionMutationError = ErrorType<void>;
+
+/**
+ * @summary Delete analysis session
+ */
+export const useDeleteFhAnalysisSession = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof deleteFhAnalysisSession>>,
+    TError,
+    { id: string },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof deleteFhAnalysisSession>>,
+  TError,
+  { id: string },
+  TContext
+> => {
+  return useMutation(getDeleteFhAnalysisSessionMutationOptions(options));
+};
+
+/**
+ * @summary Load new-project wizard autosave
+ */
+export const getGetFhNewProjectAutosaveUrl = () => {
+  return `/api/factory-hub/new-project-autosave`;
+};
+
+export const getFhNewProjectAutosave = async (
+  options?: RequestInit,
+): Promise<FhNewProjectAutosaveEnvelope> => {
+  return customFetch<FhNewProjectAutosaveEnvelope>(
+    getGetFhNewProjectAutosaveUrl(),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetFhNewProjectAutosaveQueryKey = () => {
+  return [`/api/factory-hub/new-project-autosave`] as const;
+};
+
+export const getGetFhNewProjectAutosaveQueryOptions = <
+  TData = Awaited<ReturnType<typeof getFhNewProjectAutosave>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getFhNewProjectAutosave>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetFhNewProjectAutosaveQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getFhNewProjectAutosave>>
+  > = ({ signal }) => getFhNewProjectAutosave({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof getFhNewProjectAutosave>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetFhNewProjectAutosaveQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getFhNewProjectAutosave>>
+>;
+export type GetFhNewProjectAutosaveQueryError = ErrorType<void>;
+
+/**
+ * @summary Load new-project wizard autosave
+ */
+
+export function useGetFhNewProjectAutosave<
+  TData = Awaited<ReturnType<typeof getFhNewProjectAutosave>>,
+  TError = ErrorType<void>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof getFhNewProjectAutosave>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetFhNewProjectAutosaveQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Save new-project wizard autosave
+ */
+export const getPutFhNewProjectAutosaveUrl = () => {
+  return `/api/factory-hub/new-project-autosave`;
+};
+
+export const putFhNewProjectAutosave = async (
+  fhNewProjectAutosavePayload: FhNewProjectAutosavePayload,
+  options?: RequestInit,
+): Promise<FhNewProjectAutosaveEnvelope> => {
+  return customFetch<FhNewProjectAutosaveEnvelope>(
+    getPutFhNewProjectAutosaveUrl(),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(fhNewProjectAutosavePayload),
+    },
+  );
+};
+
+export const getPutFhNewProjectAutosaveMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putFhNewProjectAutosave>>,
+    TError,
+    { data: BodyType<FhNewProjectAutosavePayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof putFhNewProjectAutosave>>,
+  TError,
+  { data: BodyType<FhNewProjectAutosavePayload> },
+  TContext
+> => {
+  const mutationKey = ["putFhNewProjectAutosave"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof putFhNewProjectAutosave>>,
+    { data: BodyType<FhNewProjectAutosavePayload> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return putFhNewProjectAutosave(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type PutFhNewProjectAutosaveMutationResult = NonNullable<
+  Awaited<ReturnType<typeof putFhNewProjectAutosave>>
+>;
+export type PutFhNewProjectAutosaveMutationBody =
+  BodyType<FhNewProjectAutosavePayload>;
+export type PutFhNewProjectAutosaveMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Save new-project wizard autosave
+ */
+export const usePutFhNewProjectAutosave = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof putFhNewProjectAutosave>>,
+    TError,
+    { data: BodyType<FhNewProjectAutosavePayload> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof putFhNewProjectAutosave>>,
+  TError,
+  { data: BodyType<FhNewProjectAutosavePayload> },
+  TContext
+> => {
+  return useMutation(getPutFhNewProjectAutosaveMutationOptions(options));
+};
+
+/**
+ * @summary Seed fh_* tables from fixtures (dev or FH_ALLOW_SEED=true)
+ */
+export const getSeedFactoryHubUrl = () => {
+  return `/api/factory-hub/seed`;
+};
+
+export const seedFactoryHub = async (
+  options?: RequestInit,
+): Promise<FhSeedResult> => {
+  return customFetch<FhSeedResult>(getSeedFactoryHubUrl(), {
+    ...options,
+    method: "POST",
+  });
+};
+
+export const getSeedFactoryHubMutationOptions = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof seedFactoryHub>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof seedFactoryHub>>,
+  TError,
+  void,
+  TContext
+> => {
+  const mutationKey = ["seedFactoryHub"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof seedFactoryHub>>,
+    void
+  > = () => {
+    return seedFactoryHub(requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SeedFactoryHubMutationResult = NonNullable<
+  Awaited<ReturnType<typeof seedFactoryHub>>
+>;
+
+export type SeedFactoryHubMutationError = ErrorType<void>;
+
+/**
+ * @summary Seed fh_* tables from fixtures (dev or FH_ALLOW_SEED=true)
+ */
+export const useSeedFactoryHub = <
+  TError = ErrorType<void>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof seedFactoryHub>>,
+    TError,
+    void,
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof seedFactoryHub>>,
+  TError,
+  void,
+  TContext
+> => {
+  return useMutation(getSeedFactoryHubMutationOptions(options));
+};

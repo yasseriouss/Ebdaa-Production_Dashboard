@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useListWoodenOrders, useListWoodenStages, useUpdateWoodenStage } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -40,6 +40,11 @@ interface StageCellProps {
 function StageCell({ stageId, qtyDone, status, onSave }: StageCellProps) {
   const [editQty, setEditQty] = useState(String(qtyDone ?? "0"));
   const [editStatus, setEditStatus] = useState(status || "لم يتم البدء");
+
+  useEffect(() => {
+    setEditQty(String(qtyDone ?? "0"));
+    setEditStatus(status || "لم يتم البدء");
+  }, [stageId, qtyDone, status]);
 
   if (!stageId) {
     return <td className="p-1 border border-border text-center text-muted-foreground text-xs">—</td>;

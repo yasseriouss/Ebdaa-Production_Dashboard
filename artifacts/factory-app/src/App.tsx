@@ -7,16 +7,14 @@ import { AppLayout } from "@/components/layout";
 
 // Pages
 import Dashboard from "@/pages/dashboard";
-import MetalOrders from "@/pages/metal-orders";
 import MetalOrderDetail from "@/pages/metal-order-detail";
-import MetalProduction from "@/pages/metal-production";
-import WoodenOrders from "@/pages/wooden-orders";
 import WoodenOrderDetail from "@/pages/wooden-order-detail";
-import WoodenProduction from "@/pages/wooden-production";
-import SharedProjects from "@/pages/shared-projects";
+import Production from "@/pages/production-hub";
+import Projects from "@/pages/projects-hub";
 import Planning from "@/pages/planning";
 import Analytics from "@/pages/analytics";
 import ImportExport from "@/pages/import-export";
+import Workforce from "@/pages/workforce";
 
 const queryClient = new QueryClient();
 
@@ -25,13 +23,11 @@ function Router() {
     <AppLayout>
       <Switch>
         <Route path="/" component={Dashboard} />
-        <Route path="/metal/orders" component={MetalOrders} />
+        <Route path="/production" component={Production} />
         <Route path="/metal/orders/:id" component={MetalOrderDetail} />
-        <Route path="/metal/production" component={MetalProduction} />
-        <Route path="/wooden/orders" component={WoodenOrders} />
         <Route path="/wooden/orders/:id" component={WoodenOrderDetail} />
-        <Route path="/wooden/production" component={WoodenProduction} />
-        <Route path="/shared-projects" component={SharedProjects} />
+        <Route path="/projects" component={Projects} />
+        <Route path="/workforce" component={Workforce} />
         <Route path="/planning" component={Planning} />
         <Route path="/analytics" component={Analytics} />
         <Route path="/import-export" component={ImportExport} />

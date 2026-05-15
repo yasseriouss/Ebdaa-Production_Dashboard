@@ -15,8 +15,9 @@ function StatusBadge({ status }: { status: string }) {
     "في المخزن": "bg-yellow-500/20 text-yellow-400",
     "تم الانتهاء": "bg-green-500/20 text-green-400",
     "تم التسليم": "bg-green-500/20 text-green-400",
-    "متوقف": "bg-destructive/20 text-destructive",
-    Production: "bg-blue-500/20 text-blue-400",
+    "به مشكله": "bg-rose-500/20 text-rose-400",
+    "تحت التعديل": "bg-violet-500/20 text-violet-300",
+    "فى انتظار خامات": "bg-amber-500/20 text-amber-400",
     Delivered: "bg-green-500/20 text-green-400",
   };
   return (

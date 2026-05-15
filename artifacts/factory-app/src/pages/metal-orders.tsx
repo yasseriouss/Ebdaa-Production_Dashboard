@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import {
   useListMetalOrders,
   useCreateMetalOrder,
@@ -17,10 +17,24 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Link } from "wouter";
-import { Plus, Search, Pencil, Trash2, ExternalLink, FileSpreadsheet } from "lucide-react";
+import { Search, Pencil, Trash2, ExternalLink, FileSpreadsheet, FileText } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
+
+export type MetalOrdersHandle = { openNewOrder: () => void };
+
+function buildMetalExportUrl(
+  format: "xlsx" | "pdf",
+  filters: { search: string; statusFilter: string; dateFrom: string; dateTo: string },
+) {
+  const params = new URLSearchParams({ format });
+  if (filters.search.trim()) params.set("search", filters.search.trim());
+  if (filters.statusFilter !== "all") params.set("status", filters.statusFilter);
+  if (filters.dateFrom) params.set("dateFrom", filters.dateFrom);
+  if (filters.dateTo) params.set("dateTo", filters.dateTo);
+  return `${API_BASE}/export/metal-orders?${params.toString()}`;
+}
 
 const STATUS_OPTIONS = ["لم يتم البدء", "تحت التصنيع", "في المخزن", "تم الانتهاء", "متوقف", "تم التسليم"];
 
@@ -54,18 +68,8 @@ const EMPTY_FORM = {
   deliveredQty: 0, completionPct: 0, backlogQty: 0, backlogStatus: "", notes: "", status: "لم يتم البدء",
 };
 
-function OrderDialog({
-  open,
-  onClose,
-  order,
-}: {
-  open: boolean;
-  onClose: () => void;
-  order: MetalOrder | null;
-}) {
-  const { toast } = useToast();
-  const qc = useQueryClient();
-  const [form, setForm] = useState(order ? {
+function metalOrderToForm(order: MetalOrder) {
+  return {
     moNumber: order.moNumber,
     project: order.project || "",
     client: order.client || "",
@@ -78,8 +82,26 @@ function OrderDialog({
     backlogStatus: order.backlogStatus || "",
     notes: order.notes || "",
     status: order.status || "لم يتم البدء",
-  } : EMPTY_FORM);
+  };
+}
 
+function OrderDialog({
+  open,
+  onClose,
+  order,
+}: {
+  open: boolean;
+  onClose: () => void;
+  order: MetalOrder | null;
+}) {
+  const { toast } = useToast();
+  const qc = useQueryClient();
+  const [form, setForm] = useState(() => (order ? metalOrderToForm(order) : { ...EMPTY_FORM }));
+
+  useEffect(() => {
+    if (!open) return;
+    setForm(order ? metalOrderToForm(order) : { ...EMPTY_FORM });
+  }, [open, order]);
   const create = useCreateMetalOrder({
     mutation: {
       onSuccess: () => {
@@ -172,6 +194,15 @@ function OrderDialog({
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1">
+            <Label htmlFor="backlogStatus">حالة المتأخرات</Label>
+            <Input
+              id="backlogStatus"
+              value={form.backlogStatus}
+              onChange={e => f("backlogStatus", e.target.value)}
+              data-testid="input-backlog-status"
+            />
+          </div>
           <div className="col-span-2 space-y-1">
             <Label htmlFor="notes">ملاحظات</Label>
             <Input id="notes" value={form.notes} onChange={e => f("notes", e.target.value)} data-testid="input-notes" />
@@ -188,7 +219,7 @@ function OrderDialog({
   );
 }
 
-export default function MetalOrders() {
+const MetalOrders = forwardRef<MetalOrdersHandle, object>(function MetalOrders(_props, ref) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -199,19 +230,20 @@ export default function MetalOrders() {
   const [editOrder, setEditOrder] = useState<MetalOrder | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
 
+  useImperativeHandle(ref, () => ({
+    openNewOrder: () => {
+      setEditOrder(null);
+      setDialogOpen(true);
+    },
+  }));
+
   const { data: orders, isLoading } = useListMetalOrders({
     search,
     ...(statusFilter !== "all" ? { status: statusFilter } : {}),
   });
 
-  const exportUrl = (() => {
-    const params = new URLSearchParams({ format: "xlsx" });
-    if (search.trim()) params.set("search", search.trim());
-    if (statusFilter !== "all") params.set("status", statusFilter);
-    if (dateFrom) params.set("dateFrom", dateFrom);
-    if (dateTo) params.set("dateTo", dateTo);
-    return `${API_BASE}/export/metal-orders?${params.toString()}`;
-  })();
+  const excelExportUrl = buildMetalExportUrl("xlsx", { search, statusFilter, dateFrom, dateTo });
+  const pdfExportUrl = buildMetalExportUrl("pdf", { search, statusFilter, dateFrom, dateTo });
 
   const del = useDeleteMetalOrder({
     mutation: {
@@ -227,17 +259,24 @@ export default function MetalOrders() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h1 className="text-3xl font-bold tracking-tight">أوامر المصنع المعدني</h1>
-        <div className="flex items-center gap-2">
+        <div className="space-y-1">
+          <h1 className="text-3xl font-bold tracking-tight">أوامر المصنع المعدني</h1>
+          <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
+            كل أمر شغل يتبع مشروعاً (حقل المشروع). العميل قد يملك عدة مشاريع، وكل مشروع عدة أوامر شغل.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" asChild data-testid="btn-export-metal">
-            <a href={exportUrl} download>
+            <a href={excelExportUrl} download>
               <FileSpreadsheet className="ml-2 h-4 w-4" />
               تصدير Excel
             </a>
           </Button>
-          <Button onClick={() => { setEditOrder(null); setDialogOpen(true); }} data-testid="btn-new-order">
-            <Plus className="ml-2 h-4 w-4" />
-            أمر تشغيل جديد
+          <Button variant="outline" asChild data-testid="btn-export-metal-pdf">
+            <a href={pdfExportUrl} download>
+              <FileText className="ml-2 h-4 w-4" />
+              تصدير PDF
+            </a>
           </Button>
         </div>
       </div>
@@ -305,7 +344,7 @@ export default function MetalOrders() {
               <TableRow>
                 <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">جاري التحميل...</TableCell>
               </TableRow>
-            ) : !orders?.length ? (
+            ) : !Array.isArray(orders) || !orders.length ? (
               <TableRow>
                 <TableCell colSpan={10} className="h-24 text-center text-muted-foreground">لا توجد أوامر</TableCell>
               </TableRow>
@@ -378,4 +417,6 @@ export default function MetalOrders() {
       </AlertDialog>
     </div>
   );
-}
+});
+
+export default MetalOrders;

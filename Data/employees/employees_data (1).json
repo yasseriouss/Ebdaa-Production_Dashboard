@@ -1,0 +1,850 @@
+[
+    {
+        "employee_id": "1",
+        "full_name": "احمد حاتم سلمان عبد الرحمن",
+        "department": "الانتاج",
+        "section": "الإنتاج الخشبى",
+        "job_title": "مدير انتاج الخشبي ",
+        "hiring_date": "2022-10-12"
+    },
+    {
+        "employee_id": "2",
+        "full_name": "عزت عبد القادر محمد السيد",
+        "department": "الانتاج",
+        "section": "الانتاج الخشبى",
+        "job_title": "مساعد عام خشبى",
+        "hiring_date": "2024-05-13"
+    },
+    {
+        "employee_id": "3",
+        "full_name": "كريم زكريا عبدالمنعم محمد",
+        "department": "الانتاج",
+        "section": "الانتاج الخشبى",
+        "job_title": "مساعد عام خشبى",
+        "hiring_date": "2026-02-04"
+    },
+    {
+        "employee_id": "4",
+        "full_name": "إبراهيم عبد الفتاح سيد حسن",
+        "department": "الانتاج",
+        "section": "الانتاج الخشبى",
+        "job_title": "مهندس انتاج خشبي صناعي ",
+        "hiring_date": "2026-03-24"
+    },
+    {
+        "employee_id": "5",
+        "full_name": "حسين محمد محمد احمد رمضان",
+        "department": "الانتاج",
+        "section": "الانتاج الخشبى",
+        "job_title": "مسئول متابعة خشبى",
+        "hiring_date": "2026-03-25"
+    },
+    {
+        "employee_id": "6",
+        "full_name": "اشرف عماد صالح عيسوي",
+        "department": "الانتاج",
+        "section": "الانتاج الخشبى",
+        "job_title": "مساعد عام خشبى",
+        "hiring_date": "2026-04-08"
+    },
+    {
+        "employee_id": "7",
+        "full_name": "عمر سعيد صابر احمد ",
+        "department": "الانتاج",
+        "section": "الانتاج الخشبى",
+        "job_title": "مساعد عام خشبى",
+        "hiring_date": ""
+    },
+    {
+        "employee_id": "8",
+        "full_name": "احمد عزب عبدالسلام عزب ",
+        "department": "الانتاج",
+        "section": "الانتاج الخشبى",
+        "job_title": "مساعد عام خشبى",
+        "hiring_date": ""
+    },
+    {
+        "employee_id": "9",
+        "full_name": "طارق عادل السيد عبد الله السيد",
+        "department": "الانتاج",
+        "section": "الانتاج الخشبى",
+        "job_title": "مساعد عام خشبى",
+        "hiring_date": "2026-04-16"
+    },
+    {
+        "employee_id": "10",
+        "full_name": "احمد حسن شعبان جويلى",
+        "department": "الانتاج",
+        "section": "الطبيعي الخشبى",
+        "job_title": "نجار طبيعي ",
+        "hiring_date": "2022-09-20"
+    },
+    {
+        "employee_id": "11",
+        "full_name": "على محمد على عطوة",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "2021-03-13"
+    },
+    {
+        "employee_id": "12",
+        "full_name": "كامل عبدالرحمن كامل عبدالوهاب ",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": ""
+    },
+    {
+        "employee_id": "12",
+        "full_name": "طه عيد امام  الدسوقي  ",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "4\\5\\2026"
+    },
+    {
+        "employee_id": "24",
+        "full_name": "محمد مسعد امام احمد",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "5\\5\\2026"
+    },
+    {
+        "employee_id": "15",
+        "full_name": "محمد قنديل محمد سليمان ",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": ""
+    },
+    {
+        "employee_id": "16",
+        "full_name": "أسامة أبو شهبة محمد ابوحماد ",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": ""
+    },
+    {
+        "employee_id": "17",
+        "full_name": "عادل فتوح عبده السمني ",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": ""
+    },
+    {
+        "employee_id": "18",
+        "full_name": "احمد مشوادى حسين عبد الرحيم",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "2022-09-12"
+    },
+    {
+        "employee_id": "19",
+        "full_name": "ابراهيم صابر ابراهيم",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "2022-07-02"
+    },
+    {
+        "employee_id": "20",
+        "full_name": "ربيع سيد صابر سيد",
+        "department": "الانتاج",
+        "section": "الطبيعي الخشبى",
+        "job_title": "مشرف قسم الطبيعي ",
+        "hiring_date": "2021-08-21"
+    },
+    {
+        "employee_id": "21",
+        "full_name": "كرم حشمت ابو العلا احمد",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "2022-09-19"
+    },
+    {
+        "employee_id": "22",
+        "full_name": "محمد محمد عبد الرحمن ابراهيم ارنوط",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "2022-09-20"
+    },
+    {
+        "employee_id": "23",
+        "full_name": "سامى محمد فوزى عبد الكريم",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "2022-09-27"
+    },
+    {
+        "employee_id": "24",
+        "full_name": "بدر بكر بدر محمد بدر",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "2022-11-01"
+    },
+    {
+        "employee_id": "25",
+        "full_name": "عبد الله ابو الوفا حسن ابو الوفا",
+        "department": "الانتاج",
+        "section": "الطبيعي الخشبى",
+        "job_title": "مساعد عام خشبى",
+        "hiring_date": "2023-08-13"
+    },
+    {
+        "employee_id": "26",
+        "full_name": "عصام عبد الهادى ابراهيم شاهين",
+        "department": "الانتاج",
+        "section": "الطبيعي الخشبى",
+        "job_title": "نجار طبيعي ",
+        "hiring_date": "2024-05-22"
+    },
+    {
+        "employee_id": "27",
+        "full_name": "رضا سليمان على الصيفى",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "2024-07-14"
+    },
+    {
+        "employee_id": "28",
+        "full_name": "عمرو محمد محمود عوض الله",
+        "department": "الانتاج",
+        "section": "الطبيعي الخشبى",
+        "job_title": "فني مكابس",
+        "hiring_date": "2024-06-02"
+    },
+    {
+        "employee_id": "29",
+        "full_name": "مصطفى عوض مصطفى إبراهيم",
+        "department": "الانتاج",
+        "section": "التجميع الخشبى",
+        "job_title": "فنى تجميع خشبى",
+        "hiring_date": "2026-04-06"
+    },
+    {
+        "employee_id": "30",
+        "full_name": "احمد امين عبد العال",
+        "department": "الانتاج",
+        "section": "التخريم والراوتر الخشبى",
+        "job_title": "مساعد فنى CNC",
+        "hiring_date": "2022-08-06"
+    },
+    {
+        "employee_id": "31",
+        "full_name": "احمد محمد شاكر فضل",
+        "department": "الانتاج",
+        "section": "التخريم والراوتر الخشبى",
+        "job_title": "فنى تخريم CNC",
+        "hiring_date": "2025-11-03"
+    },
+    {
+        "employee_id": "32",
+        "full_name": "سيد حماد سيد عبد الغنى",
+        "department": "الانتاج",
+        "section": "التخريم والراوتر الخشبى",
+        "job_title": "فنى تخريم CNC",
+        "hiring_date": "2024-08-06"
+    },
+    {
+        "employee_id": "33",
+        "full_name": "ماهر محمد السيد قاسم",
+        "department": "الانتاج",
+        "section": "التخريم والراوتر الخشبى",
+        "job_title": "فنى تخريم CNC",
+        "hiring_date": "2024-12-26"
+    },
+    {
+        "employee_id": "34",
+        "full_name": "ياسر حسام الإسلام أنور محمد",
+        "department": "الانتاج",
+        "section": "التخريم والراوتر الخشبى",
+        "job_title": "مهندس CNC",
+        "hiring_date": "2025-12-28"
+    },
+    {
+        "employee_id": "35",
+        "full_name": "إبراهيم أبو الفتوح إبراهيم أبو الفتوح",
+        "department": "الانتاج",
+        "section": "التخريم والراوتر الخشبى",
+        "job_title": "فنى تخريم CNC",
+        "hiring_date": "2026-02-22"
+    },
+    {
+        "employee_id": "36",
+        "full_name": "سعد محمد سعد صالح",
+        "department": "الانتاج",
+        "section": "التفصيل الخشبي",
+        "job_title": "فنى مقطع CNC",
+        "hiring_date": "2024-12-23"
+    },
+    {
+        "employee_id": "37",
+        "full_name": "احمد عبد الوهاب متولى محمد",
+        "department": "الانتاج",
+        "section": "التفصيل الخشبي",
+        "job_title": "فنى مقطع CNC",
+        "hiring_date": "2025-08-06"
+    },
+    {
+        "employee_id": "38",
+        "full_name": "السيد مصطفى عبد الفتاح عبد الرحمن ",
+        "department": "الانتاج",
+        "section": "التفصيل الخشبي",
+        "job_title": "فنى مقطع CNC",
+        "hiring_date": "2026-03-31"
+    },
+    {
+        "employee_id": "39",
+        "full_name": "مصطفى أحمد محمد عبد الرازق",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى خياط",
+        "hiring_date": "2024-07-06"
+    },
+    {
+        "employee_id": "40",
+        "full_name": "عماد حمدى رمضان عبد العزيز",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "مشرف تنجيد",
+        "hiring_date": "2023-05-25"
+    },
+    {
+        "employee_id": "41",
+        "full_name": "محمد احمد على عطيه سعيد",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى تنجيد شامل",
+        "hiring_date": "2024-05-14"
+    },
+    {
+        "employee_id": "42",
+        "full_name": "احمد صبحى بيومى رمضان",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى مقص وتلبيس",
+        "hiring_date": "2024-06-22"
+    },
+    {
+        "employee_id": "43",
+        "full_name": "محمد عبد الباسط ابراهيم عبد الخالق",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى تنجيد شامل",
+        "hiring_date": "2025-08-03"
+    },
+    {
+        "employee_id": "44",
+        "full_name": "محمد السيد فتحى السيد شلتوت",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى خياط",
+        "hiring_date": "2023-05-20"
+    },
+    {
+        "employee_id": "45",
+        "full_name": "كريم ايمن السيد السيد ابراهيم",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى تنجيد شامل",
+        "hiring_date": "2023-06-01"
+    },
+    {
+        "employee_id": "46",
+        "full_name": "محمد مجدى رجب عيسوى",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى مقص وتلبيس",
+        "hiring_date": "2024-01-23"
+    },
+    {
+        "employee_id": "47",
+        "full_name": "محمد احمد حسين احمد",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى تنجيد شامل",
+        "hiring_date": "2025-08-10"
+    },
+    {
+        "employee_id": "48",
+        "full_name": "طارق ثابت محمود حسين",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى تنجيد شامل",
+        "hiring_date": "2024-05-02"
+    },
+    {
+        "employee_id": "49",
+        "full_name": "احمد محمد انور محمد حسنين الجندى",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى تنجيد شامل",
+        "hiring_date": "2024-05-08"
+    },
+    {
+        "employee_id": "50",
+        "full_name": "كمال محمد كمال فخرى الشاذلى",
+        "department": "الانتاج",
+        "section": "التنجيد الخشبى",
+        "job_title": "فنى تنجيد شامل",
+        "hiring_date": "2026-02-04"
+    },
+    {
+        "employee_id": "51",
+        "full_name": "مصطفى عبده عبد الصادق عبد المقصود",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فني دهانات ",
+        "hiring_date": "2021-08-21"
+    },
+    {
+        "employee_id": "52",
+        "full_name": "صابر حامد حسانين عبد الغنى",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2022-08-06"
+    },
+    {
+        "employee_id": "53",
+        "full_name": "لطفى عادل لطفى اسماعيل",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2022-11-16"
+    },
+    {
+        "employee_id": "54",
+        "full_name": "احمد محمود محمد حسن",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2022-10-20"
+    },
+    {
+        "employee_id": "55",
+        "full_name": "محمد بيومى عبد الحليم بيومى",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2022-10-27"
+    },
+    {
+        "employee_id": "56",
+        "full_name": "كريم فتحى السيد لاشين",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2025-04-28"
+    },
+    {
+        "employee_id": "57",
+        "full_name": "محمد حمدى عابدين السيد",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2023-09-12"
+    },
+    {
+        "employee_id": "58",
+        "full_name": "جميل محمد مجاهد يونس",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2022-08-06"
+    },
+    {
+        "employee_id": "59",
+        "full_name": "مصطفى محمود رجب حسن الجندى",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2025-04-14"
+    },
+    {
+        "employee_id": "60",
+        "full_name": "محمد كرم عبد الفتاح مرسى",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2022-10-20"
+    },
+    {
+        "employee_id": "61",
+        "full_name": "سعد حسين محمود محمد",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2022-10-26"
+    },
+    {
+        "employee_id": "62",
+        "full_name": "رأفت عبد الهادي تمر عفيفى",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2022-11-21"
+    },
+    {
+        "employee_id": "63",
+        "full_name": "رجب مختار الشافعى",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2023-08-26"
+    },
+    {
+        "employee_id": "64",
+        "full_name": "رمضان محمد رمضان بندارى",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2024-07-15"
+    },
+    {
+        "employee_id": "65",
+        "full_name": "محمد إبراهيم شعراوى حسنين نزيل",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2026-01-20"
+    },
+    {
+        "employee_id": "66",
+        "full_name": "عبد الله عبد الله محمد احمد",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2026-02-02"
+    },
+    {
+        "employee_id": "67",
+        "full_name": "محمد صلاح منصور مونس",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2026-04-08"
+    },
+    {
+        "employee_id": "68",
+        "full_name": "محمد احمد السيد حفناوى",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2026-04-12"
+    },
+    {
+        "employee_id": "69",
+        "full_name": "محمد جمال فيصل عبدالله منصور",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "مشرف دهانات",
+        "hiring_date": "2026-04-12"
+    },
+    {
+        "employee_id": "70",
+        "full_name": "محمد شعبان عتريس عبيد",
+        "department": "الانتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2026-04-12"
+    },
+    {
+        "employee_id": "71",
+        "full_name": "احمد مصطفى حسن سالم",
+        "department": "الإنتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2026-04-20"
+    },
+    {
+        "employee_id": "72",
+        "full_name": "عبد العظيم مصطفى عثمان سليمان",
+        "department": "الإنتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2026-04-20"
+    },
+    {
+        "employee_id": "73",
+        "full_name": "تامر جمال عبد العظيم عثمان",
+        "department": "الإنتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2026-04-20"
+    },
+    {
+        "employee_id": "74",
+        "full_name": "كريم محمد عبد العظيم محمد",
+        "department": "الإنتاج",
+        "section": "الدهانات الخشبى",
+        "job_title": "فنى دهانات",
+        "hiring_date": "2026-04-20"
+    },
+    {
+        "employee_id": "75",
+        "full_name": "مصطفى صلاح سالم سعيد",
+        "department": "الانتاج",
+        "section": "الشريط الخشبى",
+        "job_title": "فنى شريط",
+        "hiring_date": "2022-09-17"
+    },
+    {
+        "employee_id": "76",
+        "full_name": "يوسف كامل زكى مهنى",
+        "department": "الانتاج",
+        "section": "الشريط الخشبى",
+        "job_title": "فنى شريط",
+        "hiring_date": "2022-12-03"
+    },
+    {
+        "employee_id": "77",
+        "full_name": "على ابو الحديد ابراهيم الفقى",
+        "department": "الانتاج",
+        "section": "الشريط الخشبى",
+        "job_title": "مساعد فنى شريط",
+        "hiring_date": "2023-10-04"
+    },
+    {
+        "employee_id": "78",
+        "full_name": "احمد حسن إسماعيل على",
+        "department": "الانتاج",
+        "section": "الشريط الخشبى",
+        "job_title": "فنى شريط",
+        "hiring_date": "2025-08-19"
+    },
+    {
+        "employee_id": "79",
+        "full_name": "سالم السيد احمد سالم معوض",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2023-05-31"
+    },
+    {
+        "employee_id": "80",
+        "full_name": "محمود محمد ابراهيم سيف الدين",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2024-05-26"
+    },
+    {
+        "employee_id": "81",
+        "full_name": "هانى احمد محارب",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى صنفرة",
+        "hiring_date": "2021-08-21"
+    },
+    {
+        "employee_id": "82",
+        "full_name": "مصطفى محمود عبد الحميد",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "مشرف طبيعي",
+        "hiring_date": "2021-08-21"
+    },
+    {
+        "employee_id": "83",
+        "full_name": "حسن رجب عبد المحسن",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2021-03-13"
+    },
+    {
+        "employee_id": "84",
+        "full_name": "صفوت محمد حسنين بديوى",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2022-09-14"
+    },
+    {
+        "employee_id": "85",
+        "full_name": "يسرى سعدى مصطفى حجازى",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2022-10-20"
+    },
+    {
+        "employee_id": "86",
+        "full_name": "عبدالرحمن مصيلحى احمد ابراهيم",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2023-09-02"
+    },
+    {
+        "employee_id": "87",
+        "full_name": "علاء عبده عبادى",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2024-02-28"
+    },
+    {
+        "employee_id": "88",
+        "full_name": "علاء الدين مصطفى احمد على",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2024-06-09"
+    },
+    {
+        "employee_id": "89",
+        "full_name": "محمد السيد محمد خلف الله",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى صنفرة",
+        "hiring_date": "2025-08-27"
+    },
+    {
+        "employee_id": "90",
+        "full_name": "محمد إبراهيم محمد مقرب",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار كرسجى",
+        "hiring_date": "2025-05-06"
+    },
+    {
+        "employee_id": "91",
+        "full_name": "محمد مدحت محمد سيد",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار طبيعى و مكنجى",
+        "hiring_date": "2025-05-12"
+    },
+    {
+        "employee_id": "92",
+        "full_name": "شريف احمد محمد ",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار طبيعى و مكنجى",
+        "hiring_date": ""
+    },
+    {
+        "employee_id": "93",
+        "full_name": "محمد إبراهيم محمد إبراهيم",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى قشره",
+        "hiring_date": "2025-07-01"
+    },
+    {
+        "employee_id": "94",
+        "full_name": "مصطفى أنور عيد حسن",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2025-07-13"
+    },
+    {
+        "employee_id": "95",
+        "full_name": "اسلام محمد دكرورى إسماعيل",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "مهندس أول انتاج خشبى",
+        "hiring_date": "2025-11-24"
+    },
+    {
+        "employee_id": "96",
+        "full_name": "اسلام محمد سليمان موسي",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك",
+        "hiring_date": "2025-12-28"
+    },
+    {
+        "employee_id": "97",
+        "full_name": "نورالدين محمد عيسي احمد الشناوى",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار كرسجى",
+        "hiring_date": "2025-12-28"
+    },
+    {
+        "employee_id": "98",
+        "full_name": "امجد حسن محمد احمد الشرقاوى",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار طبيعى و مكنجى",
+        "hiring_date": "2025-12-30"
+    },
+    {
+        "employee_id": "99",
+        "full_name": "محمد مصطفى محمود حسن",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار طبيعى و مكنجى",
+        "hiring_date": "2025-12-30"
+    },
+    {
+        "employee_id": "100",
+        "full_name": "محمد زكريا صالح رضوان",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار طبيعى و مكنجى",
+        "hiring_date": "2025-12-31"
+    },
+    {
+        "employee_id": "101",
+        "full_name": "سعيد عبد اللطيف عبد العزيز حسن",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى قشره",
+        "hiring_date": "2026-01-14"
+    },
+    {
+        "employee_id": "102",
+        "full_name": "محمد عبد الحليم عبد الهادى غنيم",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار طبيعى و مكنجى",
+        "hiring_date": "2026-04-05"
+    },
+    {
+        "employee_id": "103",
+        "full_name": "محمد ثابت عيد عبد القادر",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار طبيعى و مكنجى",
+        "hiring_date": "2026-04-12"
+    },
+    {
+        "employee_id": "104",
+        "full_name": "سيد عيد سيد ابو العنين",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار كرسجى",
+        "hiring_date": "2026-04-12"
+    },
+    {
+        "employee_id": "105",
+        "full_name": "إبراهيم فتحى على البندارى",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار كرسجى",
+        "hiring_date": "2026-04-13"
+    },
+    {
+        "employee_id": "106",
+        "full_name": "حمدى محمد عبد المحسن محمد عباس",
+        "department": "الانتاج",
+        "section": "الطبيعى الخشبى",
+        "job_title": "فنى نجار بنك و تجميع",
+        "hiring_date": "2026-04-14"
+    }
+]

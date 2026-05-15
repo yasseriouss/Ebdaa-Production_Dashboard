@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-black: #050505;
+  --color-brand-elevated: #101010;
+  --color-brand-border: #1F1F1F;
+  --color-brand-wood: #D97706;
+  --color-brand-metal: #71717A;
+  --color-brand-luxury: #F3F4F6;
+  --color-brand-success: #10B981;
+  --color-brand-warning: #F59E0B;
+  --color-brand-error: #EF4444;
+
+  /* English UI defaults to Comfortaa; Inter is kept as a fallback for any
+     metric edge-cases, and Tajawal stays in the chain for Arabic glyphs. */
+  --font-industrial: "Comfortaa", "Inter", "Tajawal", system-ui, sans-serif;
+  --font-heading: "Comfortaa", "Outfit", "Inter", "Tajawal", sans-serif;
+  --font-arabic: "Tajawal", "Comfortaa", system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    @apply bg-brand-black text-gray-300 font-industrial antialiased;
+    margin: 0;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-brand-luxury font-heading font-semibold tracking-tight;
+  }
+
+  /* Arabic copy always uses Tajawal — covers text wrapped in [lang="ar"]
+     or rendered inside an RTL subtree, even without the font-arabic class. */
+  [lang="ar"],
+  [dir="rtl"] {
+    font-family: var(--font-arabic);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-brand-black;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-brand-border rounded-full hover:bg-brand-metal transition-colors;
+  }
+}
+
+@utility glass-panel {
+  @apply bg-brand-elevated border border-brand-border rounded-none relative overflow-hidden
+         transition-[border-color,box-shadow] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]
+         motion-reduce:transition-none
+         hover:border-brand-metal/30 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)];
+}
+
+@utility industrial-btn {
+  @apply px-4 py-2 bg-brand-elevated border border-brand-border text-brand-luxury 
+         hover:bg-brand-border hover:border-brand-metal transition-all duration-200 ease-out
+         active:scale-[0.98] motion-reduce:active:scale-100
+         uppercase tracking-widest text-xs font-bold flex items-center gap-2;
+}
+
+@utility nav-item-active {
+  @apply bg-brand-border text-brand-luxury border-e-2 border-brand-wood transition-colors duration-200;
+}
+
+@utility stat-card {
+  @apply bg-brand-elevated border border-brand-border rounded-none relative overflow-hidden
+         p-4 sm:p-6 hover:border-brand-metal/50
+         transition-[border-color,box-shadow,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]
+         motion-reduce:transition-none hover:-translate-y-px motion-reduce:hover:translate-y-0
+         hover:shadow-[0_12px_40px_-24px_rgba(0,0,0,0.85)];
+}
+
+/* RTL support is handled via Tailwind logical properties (`ms-`, `me-`,
+   `ps-`, `pe-`, `start-`, `end-`) plus the `dir` attribute on `<html>`.
+   The Arabic font is applied automatically via the base layer above. */

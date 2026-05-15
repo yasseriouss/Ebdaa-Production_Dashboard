@@ -1,0 +1,7 @@
+flowchart LR
+  web["React web app Vite wouter"]
+  api["Express API /api"]
+  drizzle["Drizzle ORM"]
+  db[("SQLite libSQL")]
+  web -->|"HTTP JSON"| api
+  api --> drizzle --> db

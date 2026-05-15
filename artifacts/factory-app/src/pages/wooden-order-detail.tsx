@@ -1,9 +1,10 @@
 import { useParams } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useGetWoodenOrder,
   useUpdateWoodenStage,
   getGetWoodenOrderQueryKey,
+  getListWoodenOrdersQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,9 +15,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Link } from "wouter";
 import { ArrowRight, Boxes } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getWoodenStatusBadgeClass } from "@/data/woodenOrderStatuses";
 
 interface WoodenStage {
-  id: number;
+  id: string | number;
   stageName: string;
   stageOrder: number;
   qtyDone?: number | string | null;
@@ -29,19 +31,35 @@ const STATUS_COLORS: Record<string, string> = {
   "تم الانتهاء": "bg-green-500/20 text-green-400",
 };
 
-function WoodenStageRow({ stage, totalQty, orderId }: { stage: WoodenStage; totalQty: number; orderId: number }) {
+function WoodenStageRow({ stage, totalQty, orderId }: { stage: WoodenStage; totalQty: number; orderId: string }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [qtyDone, setQtyDone] = useState(stage.qtyDone || "0");
+  const [qtyDone, setQtyDone] = useState(() => String(stage.qtyDone ?? "0"));
   const [status, setStatus] = useState(stage.status || "لم يتم البدء");
+
+  useEffect(() => {
+    if (editing) return;
+    setQtyDone(String(stage.qtyDone ?? "0"));
+    setStatus(stage.status || "لم يتم البدء");
+  }, [editing, stage.id, stage.qtyDone, stage.status]);
+
+  const resetFromStage = () => {
+    setQtyDone(String(stage.qtyDone ?? "0"));
+    setStatus(stage.status || "لم يتم البدء");
+  };
 
   const update = useUpdateWoodenStage({
     mutation: {
-      onSuccess: () => {
+      onSuccess: async () => {
         setEditing(false);
-        qc.invalidateQueries({ queryKey: getGetWoodenOrderQueryKey(orderId) });
+        const key = getGetWoodenOrderQueryKey(orderId as unknown as number);
+        await qc.invalidateQueries({ queryKey: key });
+        await qc.invalidateQueries({ queryKey: getListWoodenOrdersQueryKey() });
         toast({ title: "تم تحديث المرحلة" });
+      },
+      onError: () => {
+        toast({ title: "فشل تحديث المرحلة", variant: "destructive" });
       },
     },
   });
@@ -68,13 +86,13 @@ function WoodenStageRow({ stage, totalQty, orderId }: { stage: WoodenStage; tota
           <select value={status} onChange={e => setStatus(e.target.value)} className="h-7 text-xs bg-muted border border-border rounded px-1" data-testid={`select-wooden-stage-status-${stage.id}`}>
             {["لم يتم البدء", "تحت التصنيع", "تم الانتهاء"].map(s => <option key={s} value={s}>{s}</option>)}
           </select>
-          <Button size="sm" className="h-7 text-xs" onClick={() => update.mutate({ id: stage.id, data: { qtyDone: parseFloat(String(qtyDone)), status } })} disabled={update.isPending} data-testid={`btn-save-wooden-stage-${stage.id}`}>حفظ</Button>
-          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>إلغاء</Button>
+          <Button size="sm" className="h-7 text-xs" onClick={() => update.mutate({ id: stage.id as unknown as number, data: { qtyDone: parseFloat(String(qtyDone)), status } })} disabled={update.isPending} data-testid={`btn-save-wooden-stage-${stage.id}`}>حفظ</Button>
+          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { resetFromStage(); setEditing(false); }}>إلغاء</Button>
         </div>
       ) : (
         <div className="flex items-center gap-2">
           <span className={`text-xs px-2 py-0.5 rounded font-medium ${STATUS_COLORS[stage.status || ""] || "bg-muted"}`}>{stage.status || "غير محدد"}</span>
-          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => setEditing(true)} data-testid={`btn-edit-wooden-stage-${stage.id}`}>تعديل</Button>
+          <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => { resetFromStage(); setEditing(true); }} data-testid={`btn-edit-wooden-stage-${stage.id}`}>تعديل</Button>
         </div>
       )}
     </div>
@@ -83,10 +101,11 @@ function WoodenStageRow({ stage, totalQty, orderId }: { stage: WoodenStage; tota
 
 export default function WoodenOrderDetail() {
   const params = useParams<{ id: string }>();
-  const id = parseInt(params.id || "0");
+  const orderId = (params.id ?? "").trim();
+  const idAsHook = orderId as unknown as number;
 
-  const { data: order, isLoading } = useGetWoodenOrder(id, {
-    query: { enabled: !!id, queryKey: getGetWoodenOrderQueryKey(id) },
+  const { data: order, isLoading } = useGetWoodenOrder(idAsHook, {
+    query: { enabled: !!orderId, queryKey: getGetWoodenOrderQueryKey(idAsHook) },
   });
 
   if (isLoading) {
@@ -108,7 +127,7 @@ export default function WoodenOrderDetail() {
   const done = parseFloat(String(order.done ?? 0));
   const rem = parseFloat(String(order.rem ?? 0));
   const completionPct = total > 0 ? Math.round((done / total) * 100) : 0;
-  const statusColor = (order.status === "تم التسليم" || order.status === "Delivered") ? "bg-green-500/20 text-green-400" : "bg-blue-500/20 text-blue-400";
+  const orderStatusClass = getWoodenStatusBadgeClass(order.status);
 
   return (
     <div className="space-y-6">
@@ -118,7 +137,7 @@ export default function WoodenOrderDetail() {
         </Link>
         <h1 className="text-2xl font-bold text-blue-400">{order.orderNo}</h1>
         {order.extension && <span className="text-sm text-muted-foreground bg-muted px-2 py-1 rounded">{order.extension}</span>}
-        <span className={`text-xs px-2 py-1 rounded font-medium ${statusColor}`}>{order.status}</span>
+        <span className={`text-xs px-2 py-1 rounded font-medium border ${orderStatusClass}`}>{order.status}</span>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -163,7 +182,7 @@ export default function WoodenOrderDetail() {
           {stages.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">لا توجد مراحل</p>
           ) : (
-            stages.map(stage => <WoodenStageRow key={stage.id} stage={stage} totalQty={total} orderId={id} />)
+            stages.map(stage => <WoodenStageRow key={stage.id} stage={stage} totalQty={total} orderId={orderId} />)
           )}
         </CardContent>
       </Card>

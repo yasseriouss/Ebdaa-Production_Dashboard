@@ -84,7 +84,12 @@ export default function SharedProjects() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">المشاريع المشتركة</h1>
-        <p className="text-muted-foreground mt-1">عملاء يمتلكون أوامر في المصنع المعدني والخشبي معاً</p>
+        <p className="text-muted-foreground mt-1 max-w-3xl leading-relaxed">
+          عملاء يمتلكون أوامر شغل في المصنع المعدني والخشبي معاً.{" "}
+          <span className="text-foreground/85">
+            للعميل عدة مشاريع، وكل مشروع يضم عدة أوامر؛ هذه البطاقات تلخص الأثر المشترك على مستوى العميل بين المصنعين.
+          </span>
+        </p>
       </div>
 
       {typedProjects.length === 0 && (

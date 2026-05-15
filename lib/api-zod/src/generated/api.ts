@@ -3,6 +3,12 @@
  * Do not edit manually.
  * Api
  * Ebdaa Furniture Factory Management System API
+
+**Integration (web vs legacy routes):**
+- `factory-hub` paths (`/factory-hub/*`) back the Grand Line React dashboard — JSON-first `fh_*` tables in LibSQL.
+- `/wooden/*` and `/metal/*` remain the stable HTTP contract for ERP-style integrations; they use `wooden_*` / `metal_*` tables.
+- Optional env `FH_SYNC_WOODEN=true` enables a bridge that mirrors hub wood updates into `wooden_work_orders` via a documented field mapping (see `docs/legacy-adapter-factory-hub.md`).
+
  * OpenAPI spec version: 0.1.0
  */
 import * as zod from "zod";
@@ -13,6 +19,22 @@ import * as zod from "zod";
 export const HealthCheckResponse = zod.object({
   status: zod.string(),
 });
+
+/**
+ * @summary List all production machines (tasks) with their departments
+ */
+export const ListCapacityMachinesResponseItem = zod.object({
+  taskId: zod.string(),
+  taskName: zod.string(),
+  taskType: zod.string(),
+  departmentId: zod.string(),
+  departmentName: zod.string(),
+  processStep: zod.number(),
+  factoryId: zod.string(),
+});
+export const ListCapacityMachinesResponse = zod.array(
+  ListCapacityMachinesResponseItem,
+);
 
 /**
  * @summary List all metal work orders
@@ -441,6 +463,20 @@ export const CreateWoodenStageBody = zod.object({
 });
 
 /**
+ * @summary Get wooden stage bottleneck summary (WIP per stage)
+ */
+export const GetWoodenStagesSummaryResponseItem = zod.object({
+  stageName: zod.string(),
+  stageOrder: zod.number(),
+  totalWip: zod.number(),
+  totalDone: zod.number(),
+  orderCount: zod.number(),
+});
+export const GetWoodenStagesSummaryResponse = zod.array(
+  GetWoodenStagesSummaryResponseItem,
+);
+
+/**
  * @summary Get a single wooden production stage record
  */
 export const GetWoodenStageParams = zod.object({
@@ -560,6 +596,7 @@ export const GetDashboardStatsResponse = zod.object({
   woodenTotalOrders: zod.number(),
   woodenActiveOrders: zod.number().optional(),
   woodenCompletedOrders: zod.number().optional(),
+  woodenOverdueOrders: zod.number().optional(),
   woodenAvgCompletionPct: zod.number().optional(),
   sharedProjectsCount: zod.number(),
   metalStatusBreakdown: zod
@@ -719,4 +756,269 @@ export const ExportMetalOrdersQueryParams = zod.object({
  */
 export const ExportWoodenOrdersQueryParams = zod.object({
   format: zod.enum(["xlsx", "pdf"]),
+});
+
+/**
+ * @summary List employees with optional filters
+ */
+export const ListEmployeesQueryParams = zod.object({
+  department_id: zod.coerce.string().optional(),
+  role: zod.coerce.string().optional(),
+  factory_id: zod.coerce.string().optional(),
+  search: zod.coerce.string().optional(),
+  redact: zod.enum(["true", "false"]).optional(),
+});
+
+export const ListEmployeesResponseItem = zod.object({
+  id: zod.string(),
+  name: zod.string(),
+  jobTitle: zod.string(),
+  standardizedRole: zod.string(),
+  hireDate: zod.string().nullish(),
+  departmentId: zod.string().nullish(),
+  factoryId: zod.string(),
+  departmentName: zod.string().nullish(),
+});
+export const ListEmployeesResponse = zod.array(ListEmployeesResponseItem);
+
+/**
+ * @summary Roster totals and by-department breakdown
+ */
+export const GetEmployeeStatsResponse = zod.object({
+  total: zod.number(),
+  departments: zod.array(
+    zod.object({
+      departmentId: zod.string(),
+      departmentName: zod.string(),
+      count: zod.number(),
+    }),
+  ),
+  roles: zod.array(
+    zod.object({
+      role: zod.string(),
+      count: zod.number(),
+    }),
+  ),
+});
+
+/**
+ * @summary Plan vs actual headcount by department
+ */
+export const GetEmployeesHeadcountResponseItem = zod.object({
+  departmentId: zod.string(),
+  plannedCount: zod.number(),
+  actualCount: zod.number(),
+  delta: zod.number(),
+});
+export const GetEmployeesHeadcountResponse = zod.array(
+  GetEmployeesHeadcountResponseItem,
+);
+
+/**
+ * @summary Export employees as CSV
+ */
+export const ExportEmployeesQueryParams = zod.object({
+  department_id: zod.coerce.string().optional(),
+  role: zod.coerce.string().optional(),
+  factory_id: zod.coerce.string().optional(),
+  search: zod.coerce.string().optional(),
+  redact: zod.enum(["true", "false"]).optional(),
+});
+
+/**
+ * @summary List wood work orders (panel JSON)
+ */
+export const ListFhWoodWorkOrdersResponseItem = zod.object({
+  workOrderId: zod.string(),
+  payload: zod
+    .record(zod.string(), zod.unknown())
+    .describe(
+      "Grand Line `WoodWorkOrder` object (routing_progress with eight stages).",
+    ),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListFhWoodWorkOrdersResponse = zod.array(
+  ListFhWoodWorkOrdersResponseItem,
+);
+
+/**
+ * @summary Create or replace a wood work order row
+ */
+export const CreateFhWoodWorkOrderBody = zod
+  .record(zod.string(), zod.unknown())
+  .describe(
+    "Grand Line `WoodWorkOrder` object (routing_progress with eight stages).",
+  );
+
+/**
+ * @summary Get one wood work order
+ */
+export const GetFhWoodWorkOrderParams = zod.object({
+  workOrderId: zod.coerce.string(),
+});
+
+export const GetFhWoodWorkOrderResponse = zod.object({
+  workOrderId: zod.string(),
+  payload: zod
+    .record(zod.string(), zod.unknown())
+    .describe(
+      "Grand Line `WoodWorkOrder` object (routing_progress with eight stages).",
+    ),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Replace wood work order JSON
+ */
+export const UpdateFhWoodWorkOrderParams = zod.object({
+  workOrderId: zod.coerce.string(),
+});
+
+export const UpdateFhWoodWorkOrderBody = zod
+  .record(zod.string(), zod.unknown())
+  .describe(
+    "Grand Line `WoodWorkOrder` object (routing_progress with eight stages).",
+  );
+
+export const UpdateFhWoodWorkOrderResponse = zod.object({
+  workOrderId: zod.string(),
+  payload: zod
+    .record(zod.string(), zod.unknown())
+    .describe(
+      "Grand Line `WoodWorkOrder` object (routing_progress with eight stages).",
+    ),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Delete wood work order
+ */
+export const DeleteFhWoodWorkOrderParams = zod.object({
+  workOrderId: zod.coerce.string(),
+});
+
+/**
+ * @summary Get reference snapshot by key
+ */
+export const GetFhReferenceSnapshotParams = zod.object({
+  key: zod.coerce.string(),
+});
+
+export const GetFhReferenceSnapshotResponse = zod.object({
+  key: zod.string(),
+  payload: zod.record(zod.string(), zod.unknown()),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Upsert reference snapshot
+ */
+export const PutFhReferenceSnapshotParams = zod.object({
+  key: zod.coerce.string(),
+});
+
+export const PutFhReferenceSnapshotBody = zod.object({
+  payload: zod.record(zod.string(), zod.unknown()),
+});
+
+export const PutFhReferenceSnapshotResponse = zod.object({
+  key: zod.string(),
+  payload: zod.record(zod.string(), zod.unknown()),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary List analysis sessions
+ */
+export const ListFhAnalysisSessionsResponseItem = zod.object({
+  id: zod.string(),
+  payload: zod.record(zod.string(), zod.unknown()),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+export const ListFhAnalysisSessionsResponse = zod.array(
+  ListFhAnalysisSessionsResponseItem,
+);
+
+/**
+ * @summary Create analysis session
+ */
+export const CreateFhAnalysisSessionBody = zod.record(
+  zod.string(),
+  zod.unknown(),
+);
+
+/**
+ * @summary Get analysis session
+ */
+export const GetFhAnalysisSessionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const GetFhAnalysisSessionResponse = zod.object({
+  id: zod.string(),
+  payload: zod.record(zod.string(), zod.unknown()),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Update analysis session
+ */
+export const UpdateFhAnalysisSessionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+export const UpdateFhAnalysisSessionBody = zod.record(
+  zod.string(),
+  zod.unknown(),
+);
+
+export const UpdateFhAnalysisSessionResponse = zod.object({
+  id: zod.string(),
+  payload: zod.record(zod.string(), zod.unknown()),
+  createdAt: zod.string().optional(),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Delete analysis session
+ */
+export const DeleteFhAnalysisSessionParams = zod.object({
+  id: zod.coerce.string(),
+});
+
+/**
+ * @summary Load new-project wizard autosave
+ */
+export const GetFhNewProjectAutosaveResponse = zod.object({
+  singletonKey: zod.enum(["default"]),
+  payload: zod.record(zod.string(), zod.unknown()),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Save new-project wizard autosave
+ */
+export const PutFhNewProjectAutosaveBody = zod.record(
+  zod.string(),
+  zod.unknown(),
+);
+
+export const PutFhNewProjectAutosaveResponse = zod.object({
+  singletonKey: zod.enum(["default"]),
+  payload: zod.record(zod.string(), zod.unknown()),
+  updatedAt: zod.string().optional(),
+});
+
+/**
+ * @summary Seed fh_* tables from fixtures (dev or FH_ALLOW_SEED=true)
+ */
+export const SeedFactoryHubResponse = zod.object({
+  ok: zod.boolean(),
+  woodOrdersUpserted: zod.number(),
+  referenceKeysWritten: zod.number(),
 });

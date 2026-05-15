@@ -3,10 +3,78 @@
  * Do not edit manually.
  * Api
  * Ebdaa Furniture Factory Management System API
+
+**Integration (web vs legacy routes):**
+- `factory-hub` paths (`/factory-hub/*`) back the Grand Line React dashboard — JSON-first `fh_*` tables in LibSQL.
+- `/wooden/*` and `/metal/*` remain the stable HTTP contract for ERP-style integrations; they use `wooden_*` / `metal_*` tables.
+- Optional env `FH_SYNC_WOODEN=true` enables a bridge that mirrors hub wood updates into `wooden_work_orders` via a documented field mapping (see `docs/legacy-adapter-factory-hub.md`).
+
  * OpenAPI spec version: 0.1.0
  */
 export interface HealthStatus {
   status: string;
+}
+
+export interface FhJsonValue {
+  [key: string]: unknown;
+}
+
+/**
+ * Grand Line `WoodWorkOrder` object (routing_progress with eight stages).
+ */
+export interface FhWoodWorkOrderPayload {
+  [key: string]: unknown;
+}
+
+export interface FhWoodWorkOrderEnvelope {
+  workOrderId: string;
+  payload: FhWoodWorkOrderPayload;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FhReferencePutBody {
+  payload: FhJsonValue;
+}
+
+export interface FhReferenceEnvelope {
+  key: string;
+  payload: FhJsonValue;
+  updatedAt?: string;
+}
+
+export interface FhAnalysisSessionPayload {
+  [key: string]: unknown;
+}
+
+export interface FhAnalysisSessionEnvelope {
+  id: string;
+  payload: FhAnalysisSessionPayload;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface FhNewProjectAutosavePayload {
+  [key: string]: unknown;
+}
+
+export type FhNewProjectAutosaveEnvelopeSingletonKey =
+  (typeof FhNewProjectAutosaveEnvelopeSingletonKey)[keyof typeof FhNewProjectAutosaveEnvelopeSingletonKey];
+
+export const FhNewProjectAutosaveEnvelopeSingletonKey = {
+  default: "default",
+} as const;
+
+export interface FhNewProjectAutosaveEnvelope {
+  singletonKey: FhNewProjectAutosaveEnvelopeSingletonKey;
+  payload: FhNewProjectAutosavePayload;
+  updatedAt?: string;
+}
+
+export interface FhSeedResult {
+  ok: boolean;
+  woodOrdersUpserted: number;
+  referenceKeysWritten: number;
 }
 
 export interface MetalWorkOrder {
@@ -69,6 +137,16 @@ export interface StageSummary {
   totalWip: number;
   totalDone: number;
   orderCount: number;
+}
+
+export interface CapacityMachineRow {
+  taskId: string;
+  taskName: string;
+  taskType: string;
+  departmentId: string;
+  departmentName: string;
+  processStep: number;
+  factoryId: string;
 }
 
 export interface WoodenWorkOrder {
@@ -176,6 +254,7 @@ export interface DashboardStats {
   woodenTotalOrders: number;
   woodenActiveOrders?: number;
   woodenCompletedOrders?: number;
+  woodenOverdueOrders?: number;
   woodenAvgCompletionPct?: number;
   sharedProjectsCount: number;
   metalStatusBreakdown?: StatusCount[];
@@ -239,6 +318,41 @@ export interface SheetsTemplateImportResult {
   wooden: SheetsTemplateSectionResult;
   stageLog: SheetsTemplateStageLogResult;
   errors?: string[];
+}
+
+export interface Employee {
+  id: string;
+  name: string;
+  jobTitle: string;
+  standardizedRole: string;
+  hireDate?: string | null;
+  departmentId?: string | null;
+  factoryId: string;
+  departmentName?: string | null;
+}
+
+export type EmployeeStatsDepartmentsItem = {
+  departmentId: string;
+  departmentName: string;
+  count: number;
+};
+
+export type EmployeeStatsRolesItem = {
+  role: string;
+  count: number;
+};
+
+export interface EmployeeStats {
+  total: number;
+  departments: EmployeeStatsDepartmentsItem[];
+  roles: EmployeeStatsRolesItem[];
+}
+
+export interface HeadcountRow {
+  departmentId: string;
+  plannedCount: number;
+  actualCount: number;
+  delta: number;
 }
 
 export type ListMetalOrdersParams = {
@@ -315,4 +429,36 @@ export type ExportWoodenOrdersFormat =
 export const ExportWoodenOrdersFormat = {
   xlsx: "xlsx",
   pdf: "pdf",
+} as const;
+
+export type ListEmployeesParams = {
+  department_id?: string;
+  role?: string;
+  factory_id?: string;
+  search?: string;
+  redact?: ListEmployeesRedact;
+};
+
+export type ListEmployeesRedact =
+  (typeof ListEmployeesRedact)[keyof typeof ListEmployeesRedact];
+
+export const ListEmployeesRedact = {
+  true: "true",
+  false: "false",
+} as const;
+
+export type ExportEmployeesParams = {
+  department_id?: string;
+  role?: string;
+  factory_id?: string;
+  search?: string;
+  redact?: ExportEmployeesRedact;
+};
+
+export type ExportEmployeesRedact =
+  (typeof ExportEmployeesRedact)[keyof typeof ExportEmployeesRedact];
+
+export const ExportEmployeesRedact = {
+  true: "true",
+  false: "false",
 } as const;

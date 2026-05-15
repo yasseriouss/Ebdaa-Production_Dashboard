@@ -1,5 +1,5 @@
 import { useParams } from "wouter";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   useGetMetalOrder,
   useUpdateMetalStage,
@@ -27,8 +27,8 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 interface Stage {
-  id: number;
-  metalOrderId?: number;
+  id: string | number;
+  metalOrderId?: string | number;
   stageName: string;
   stageOrder: number;
   qtyTarget?: number | string | null;
@@ -36,19 +36,35 @@ interface Stage {
   status?: string | null;
 }
 
-function StageRow({ stage, orderId }: { stage: Stage; orderId: number }) {
+function StageRow({ stage, orderId }: { stage: Stage; orderId: string }) {
   const { toast } = useToast();
   const qc = useQueryClient();
   const [editing, setEditing] = useState(false);
-  const [qtyDone, setQtyDone] = useState(stage.qtyDone || "0");
+  const [qtyDone, setQtyDone] = useState(() => String(stage.qtyDone ?? "0"));
   const [status, setStatus] = useState(stage.status || "لم يتم البدء");
+
+  useEffect(() => {
+    if (editing) return;
+    setQtyDone(String(stage.qtyDone ?? "0"));
+    setStatus(stage.status || "لم يتم البدء");
+  }, [editing, stage.id, stage.qtyDone, stage.status]);
+
+  const resetFromStage = () => {
+    setQtyDone(String(stage.qtyDone ?? "0"));
+    setStatus(stage.status || "لم يتم البدء");
+  };
 
   const update = useUpdateMetalStage({
     mutation: {
-      onSuccess: () => {
+      onSuccess: async () => {
         setEditing(false);
-        qc.invalidateQueries({ queryKey: getGetMetalOrderQueryKey(orderId) });
+        const key = getGetMetalOrderQueryKey(orderId as unknown as number);
+        await qc.invalidateQueries({ queryKey: key });
+        await qc.invalidateQueries({ queryKey: getListMetalOrdersQueryKey() });
         toast({ title: "تم تحديث المرحلة" });
+      },
+      onError: () => {
+        toast({ title: "فشل تحديث المرحلة", variant: "destructive" });
       },
     },
   });
@@ -97,13 +113,13 @@ function StageRow({ stage, orderId }: { stage: Stage; orderId: number }) {
           <Button
             size="sm"
             className="h-7 text-xs"
-            onClick={() => update.mutate({ id: stage.id, data: { qtyDone: parseFloat(String(qtyDone)), status } })}
+            onClick={() => update.mutate({ id: stage.id as unknown as number, data: { qtyDone: parseFloat(String(qtyDone)), status } })}
             disabled={update.isPending}
             data-testid={`btn-save-stage-${stage.id}`}
           >
             حفظ
           </Button>
-          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setEditing(false)}>إلغاء</Button>
+          <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => { resetFromStage(); setEditing(false); }}>إلغاء</Button>
         </div>
       ) : (
         <div className="flex items-center gap-2">
@@ -114,7 +130,7 @@ function StageRow({ stage, orderId }: { stage: Stage; orderId: number }) {
             size="sm"
             variant="outline"
             className="h-7 text-xs"
-            onClick={() => setEditing(true)}
+            onClick={() => { resetFromStage(); setEditing(true); }}
             data-testid={`btn-edit-stage-${stage.id}`}
           >
             تعديل
@@ -127,10 +143,11 @@ function StageRow({ stage, orderId }: { stage: Stage; orderId: number }) {
 
 export default function MetalOrderDetail() {
   const params = useParams<{ id: string }>();
-  const id = parseInt(params.id || "0");
+  const orderId = (params.id ?? "").trim();
+  const idAsHook = orderId as unknown as number;
 
-  const { data: order, isLoading } = useGetMetalOrder(id, {
-    query: { enabled: !!id, queryKey: getGetMetalOrderQueryKey(id) },
+  const { data: order, isLoading } = useGetMetalOrder(idAsHook, {
+    query: { enabled: !!orderId, queryKey: getGetMetalOrderQueryKey(idAsHook) },
   });
 
   if (isLoading) {
@@ -231,7 +248,7 @@ export default function MetalOrderDetail() {
           {stages.length === 0 ? (
             <p className="text-muted-foreground text-sm text-center py-8">لا توجد مراحل</p>
           ) : (
-            stages.map(stage => <StageRow key={stage.id} stage={stage} orderId={id} />)
+            stages.map(stage => <StageRow key={stage.id} stage={stage} orderId={orderId} />)
           )}
         </CardContent>
       </Card>

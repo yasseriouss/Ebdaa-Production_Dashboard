@@ -1,23 +1,21 @@
-import { pgTable, serial, text, numeric, integer, timestamp, unique } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
-import { z } from "zod/v4";
+import { sqliteTable, text, integer, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { metalWorkOrdersTable } from "./metalWorkOrders";
 
-export const metalProductionStagesTable = pgTable("metal_production_stages", {
-  id: serial("id").primaryKey(),
-  metalOrderId: integer("metal_order_id").references(() => metalWorkOrdersTable.id, { onDelete: "cascade" }),
+export const metalProductionStagesTable = sqliteTable("metal_production_stages", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  metalOrderId: text("metal_order_id").notNull().references(() => metalWorkOrdersTable.id),
   moNumber: text("mo_number").notNull(),
   stageName: text("stage_name").notNull(),
   stageOrder: integer("stage_order").notNull(),
-  qtyTarget: numeric("qty_target", { precision: 10, scale: 2 }).default("0"),
-  qtyDone: numeric("qty_done", { precision: 10, scale: 2 }).default("0"),
-  status: text("status").default("لم يتم البدء"),
-  updatedAt: timestamp("updated_at").defaultNow(),
-}, (t) => [unique("uq_metal_stage_order_name").on(t.metalOrderId, t.stageName)]);
+  qtyTarget: text("qty_target").notNull(),
+  qtyDone: text("qty_done").notNull().default("0"),
+  status: text("status").notNull().default("لم يتم البدء"), // 'لم يتم البدء' | 'تحت التصنيع' | 'تم الانتهاء'
+  notes: text("notes"),
+  deletedAt: text("deleted_at"),
+  updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
+}, (table) => ({
+  unq: uniqueIndex("metal_order_stage_unq").on(table.metalOrderId, table.stageName),
+}));
 
-export const insertMetalProductionStageSchema = createInsertSchema(metalProductionStagesTable).omit({
-  id: true,
-  updatedAt: true,
-});
-export type InsertMetalProductionStage = z.infer<typeof insertMetalProductionStageSchema>;
 export type MetalProductionStage = typeof metalProductionStagesTable.$inferSelect;
+export type NewMetalProductionStage = typeof metalProductionStagesTable.$inferInsert;

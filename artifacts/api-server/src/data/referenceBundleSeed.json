@@ -1,0 +1,1842 @@
+{
+  "factory_capacity": {
+    "metal_factory": {
+      "factory_id": "MF-001",
+      "name": "مصنع تشكيل المعادن",
+      "departments": [
+        {
+          "id": "DEPT_PREP",
+          "name": "قسم تجهيز الصاج والقص الأولي",
+          "process_step": 1,
+          "description": "فك اللفائف وتفصيل الألواح والمقاطع لتقليل الهالك",
+          "tasks": [
+            {
+              "id": "TASK_COIL",
+              "name": "الكويل",
+              "type": "Handling",
+              "capacity_metrics": {
+                "unit_of_measure": "Ton",
+                "cycle_time_seconds": 1800,
+                "setup_time_minutes": 30,
+                "batch_size": 1,
+                "efficiency_factor": 0.9,
+                "max_capacity_per_hour": 2
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 200,
+                "labor_required": 2
+              }
+            },
+            {
+              "id": "TASK_SHEAR",
+              "name": "المقص",
+              "type": "Cutting",
+              "capacity_metrics": {
+                "unit_of_measure": "Sheet",
+                "cycle_time_seconds": 60,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 60
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 150,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "TASK_LASER",
+              "name": "الليزر",
+              "type": "Precision Cutting",
+              "capacity_metrics": {
+                "unit_of_measure": "Sheet",
+                "cycle_time_seconds": 300,
+                "setup_time_minutes": 15,
+                "batch_size": 1,
+                "efficiency_factor": 0.95,
+                "max_capacity_per_hour": 12
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 400,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "TASK_PUNCH",
+              "name": "البانش",
+              "type": "Punching",
+              "capacity_metrics": {
+                "unit_of_measure": "Sheet",
+                "cycle_time_seconds": 180,
+                "setup_time_minutes": 20,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 20
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 250,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "TASK_SAW",
+              "name": "الديسك والمنشار",
+              "type": "Section Cutting",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 30,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 120
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 80,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "TASK_NOTCH",
+              "name": "التخليع",
+              "type": "Notching",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 45,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 80
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 100,
+                "labor_required": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_FORMING",
+          "name": "قسم التشكيل الميكانيكي",
+          "process_step": 2,
+          "description": "تحويل القطع إلى 3D وتشكيل المواسير والثقوب",
+          "tasks": [
+            {
+              "id": "TASK_BENDING",
+              "name": "التنايات",
+              "type": "Bending",
+              "capacity_metrics": {
+                "unit_of_measure": "Bend",
+                "cycle_time_seconds": 40,
+                "setup_time_minutes": 15,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 90
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 180,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "TASK_PRESS",
+              "name": "مكابس وتكويع",
+              "type": "Stamping",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 10,
+                "setup_time_minutes": 25,
+                "batch_size": 1,
+                "efficiency_factor": 0.75,
+                "max_capacity_per_hour": 360
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 200,
+                "labor_required": 2
+              }
+            },
+            {
+              "id": "TASK_DRILL",
+              "name": "المثقاب",
+              "type": "Drilling",
+              "capacity_metrics": {
+                "unit_of_measure": "Hole",
+                "cycle_time_seconds": 15,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 240
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 60,
+                "labor_required": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_WELDING",
+          "name": "قسم اللحام",
+          "process_step": 3,
+          "description": "التجميع الإنشائي للمنتج باختلاف الخامات",
+          "tasks": [
+            {
+              "id": "WELD_CO2",
+              "name": "لحام CO2",
+              "type": "Welding",
+              "capacity_metrics": {
+                "unit_of_measure": "Meter",
+                "cycle_time_seconds": 300,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 12
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 120,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "WELD_ARGON",
+              "name": "لحام أرجون ستانلس",
+              "type": "Welding",
+              "capacity_metrics": {
+                "unit_of_measure": "Meter",
+                "cycle_time_seconds": 600,
+                "setup_time_minutes": 15,
+                "batch_size": 1,
+                "efficiency_factor": 0.75,
+                "max_capacity_per_hour": 6
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 180,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "WELD_COPPER",
+              "name": "لحام نحاس",
+              "type": "Brazing",
+              "capacity_metrics": {
+                "unit_of_measure": "Joint",
+                "cycle_time_seconds": 120,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 30
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 150,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "WELD_SPOT",
+              "name": "لحام بنطة",
+              "type": "Spot Welding",
+              "capacity_metrics": {
+                "unit_of_measure": "Spot",
+                "cycle_time_seconds": 5,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.9,
+                "max_capacity_per_hour": 720
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 90,
+                "labor_required": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_FINISHING",
+          "name": "قسم المعالجة وتشطيب الأسطح",
+          "process_step": 4,
+          "description": "إزالة الزوائد والوصول للمظهر النهائي خاصة للستانلس",
+          "tasks": [
+            {
+              "id": "FINISH_GRIND",
+              "name": "تجليخ",
+              "type": "Grinding",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 180,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 20
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 100,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "FINISH_STAINLESS",
+              "name": "تشطيب استالنس",
+              "type": "Polishing",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 900,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.7,
+                "max_capacity_per_hour": 4
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 160,
+                "labor_required": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_COATING_ASSY",
+          "name": "قسم الدهان والتجميع النهائي",
+          "process_step": 5,
+          "description": "التغطية النهائية وتجميع المكونات غير المعدنية",
+          "tasks": [
+            {
+              "id": "COAT_PAINT",
+              "name": "الدهان",
+              "type": "Coating",
+              "capacity_metrics": {
+                "unit_of_measure": "Batch",
+                "cycle_time_seconds": 3600,
+                "setup_time_minutes": 45,
+                "batch_size": 50,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 50
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 500,
+                "labor_required": 3
+              }
+            },
+            {
+              "id": "FINAL_ASSY",
+              "name": "التجميع",
+              "type": "Assembly",
+              "capacity_metrics": {
+                "unit_of_measure": "Product",
+                "cycle_time_seconds": 1200,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 3
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 120,
+                "labor_required": 2
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "woodworking_factory": {
+      "factory_id": "WF-001",
+      "name": "مصنع الأخشاب والأثاث",
+      "departments": [
+        {
+          "id": "DEPT_SOLID_WOOD",
+          "name": "قسم الخشب الطبيعي",
+          "process_step": 1,
+          "description": "تجهيز وتشكيل الأخشاب الطبيعية والقوائم",
+          "tasks": [
+            {
+              "id": "SAW_BAND",
+              "name": "منشار شريط طبيعي",
+              "type": "Cutting",
+              "capacity_metrics": {
+                "unit_of_measure": "Meter",
+                "cycle_time_seconds": 60,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 60
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 120,
+                "labor_required": 2
+              }
+            },
+            {
+              "id": "PLANER",
+              "name": "ماكينة رابوه",
+              "type": "Leveling",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 45,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 80
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 100,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "THICKNESSER",
+              "name": "ماكينة تخانة",
+              "type": "Thicknessing",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 30,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 120
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 110,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "SAW_CIRC",
+              "name": "منشار صينية",
+              "type": "Cutting",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 40,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 90
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 90,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "SAW_DISC_MAN",
+              "name": "دسك يدوي",
+              "type": "Cutting",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 20,
+                "setup_time_minutes": 2,
+                "batch_size": 1,
+                "efficiency_factor": 0.9,
+                "max_capacity_per_hour": 180
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 60,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "SAW_MULTI",
+              "name": "منشار تقطيع متعدد",
+              "type": "Rip Sawing",
+              "capacity_metrics": {
+                "unit_of_measure": "Meter",
+                "cycle_time_seconds": 15,
+                "setup_time_minutes": 15,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 240
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 150,
+                "labor_required": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_PANEL_PROC",
+          "name": "قسم المسطحات والتشغيل الآلي",
+          "process_step": 2,
+          "description": "تقطيع وحفر ولصق حواف الألواح الصناعية",
+          "tasks": [
+            {
+              "id": "PANEL_CUT",
+              "name": "المقطع",
+              "type": "Sizing",
+              "capacity_metrics": {
+                "unit_of_measure": "Sheet",
+                "cycle_time_seconds": 300,
+                "setup_time_minutes": 15,
+                "batch_size": 3,
+                "efficiency_factor": 0.9,
+                "max_capacity_per_hour": 36
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 300,
+                "labor_required": 2
+              }
+            },
+            {
+              "id": "SAW_SLIDE",
+              "name": "مقطع سحاب",
+              "type": "Sizing",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 120,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 30
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 150,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "EDGE_BANDING",
+              "name": "ماكينة لزق شريط",
+              "type": "Edge Banding",
+              "capacity_metrics": {
+                "unit_of_measure": "Meter",
+                "cycle_time_seconds": 10,
+                "setup_time_minutes": 20,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 360
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 250,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "CNC_ROUTER",
+              "name": "الراوتر",
+              "type": "CNC",
+              "capacity_metrics": {
+                "unit_of_measure": "Sheet",
+                "cycle_time_seconds": 600,
+                "setup_time_minutes": 15,
+                "batch_size": 1,
+                "efficiency_factor": 0.95,
+                "max_capacity_per_hour": 6
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 400,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "BORING",
+              "name": "التخريم",
+              "type": "Boring",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 45,
+                "setup_time_minutes": 15,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 80
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 180,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "DOUBLE_END",
+              "name": "ماكينة دبل إيند",
+              "type": "Tenoning",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 20,
+                "setup_time_minutes": 30,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 180
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 300,
+                "labor_required": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_VENEER",
+          "name": "قسم القشرة والمكابس",
+          "process_step": 3,
+          "description": "قص وخياطة وكبس القشرة على المسطحات",
+          "tasks": [
+            {
+              "id": "VEN_CLIP",
+              "name": "ماكينة مقص القشرة",
+              "type": "Cutting",
+              "capacity_metrics": {
+                "unit_of_measure": "Bundle",
+                "cycle_time_seconds": 120,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 30
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 100,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "VEN_STITCH",
+              "name": "ماكينة خياطة قشرة",
+              "type": "Stitching",
+              "capacity_metrics": {
+                "unit_of_measure": "Sheet",
+                "cycle_time_seconds": 180,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 20
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 90,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "GLUER",
+              "name": "غراية",
+              "type": "Gluing",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 30,
+                "setup_time_minutes": 15,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 120
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 150,
+                "labor_required": 2
+              }
+            },
+            {
+              "id": "PRESS_FLAT",
+              "name": "مكبس مسطح",
+              "type": "Pressing",
+              "capacity_metrics": {
+                "unit_of_measure": "Batch",
+                "cycle_time_seconds": 600,
+                "setup_time_minutes": 10,
+                "batch_size": 5,
+                "efficiency_factor": 0.9,
+                "max_capacity_per_hour": 30
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 200,
+                "labor_required": 2
+              }
+            },
+            {
+              "id": "PRESS_LAYER",
+              "name": "مكبس طبقات",
+              "type": "Pressing",
+              "capacity_metrics": {
+                "unit_of_measure": "Batch",
+                "cycle_time_seconds": 900,
+                "setup_time_minutes": 15,
+                "batch_size": 10,
+                "efficiency_factor": 0.9,
+                "max_capacity_per_hour": 40
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 250,
+                "labor_required": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_JOINERY",
+          "name": "قسم الحلايا والنجارة الدقيقة",
+          "process_step": 4,
+          "description": "تشكيل الحلوق والشمابر وأعمال النقر واللسان",
+          "tasks": [
+            {
+              "id": "DOOR_FRAME",
+              "name": "ماكينة تشكيل حلق الباب",
+              "type": "Molding",
+              "capacity_metrics": {
+                "unit_of_measure": "Meter",
+                "cycle_time_seconds": 30,
+                "setup_time_minutes": 20,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 120
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 150,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "ARCHITRAVE",
+              "name": "ماكينة شمبران",
+              "type": "Molding",
+              "capacity_metrics": {
+                "unit_of_measure": "Meter",
+                "cycle_time_seconds": 15,
+                "setup_time_minutes": 15,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 240
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 120,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "MORTISER",
+              "name": "منقار يدوي",
+              "type": "Mortising",
+              "capacity_metrics": {
+                "unit_of_measure": "Hole",
+                "cycle_time_seconds": 45,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 80
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 80,
+                "labor_required": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_SANDING",
+          "name": "قسم الصنفرة",
+          "process_step": 5,
+          "description": "تنعيم الأسطح والحلايا لتهيئتها للدهان",
+          "tasks": [
+            {
+              "id": "SAND_WIDE",
+              "name": "صنفرة",
+              "type": "Sanding",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 60,
+                "setup_time_minutes": 15,
+                "batch_size": 1,
+                "efficiency_factor": 0.9,
+                "max_capacity_per_hour": 60
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 200,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "SAND_DRUM",
+              "name": "ماكينة صنفرة دولاب",
+              "type": "Sanding",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 120,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 30
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 120,
+                "labor_required": 1
+              }
+            },
+            {
+              "id": "SAND_PROF",
+              "name": "ماكينة صنفرة حلايا",
+              "type": "Sanding",
+              "capacity_metrics": {
+                "unit_of_measure": "Meter",
+                "cycle_time_seconds": 10,
+                "setup_time_minutes": 20,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 360
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 150,
+                "labor_required": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_UPHOLSTERY",
+          "name": "قسم التنجيد",
+          "process_step": 6,
+          "description": "تجهيز وخياطة الأقمشة",
+          "tasks": [
+            {
+              "id": "SEW_FABRIC",
+              "name": "ماكينة خياطة قماش",
+              "type": "Sewing",
+              "capacity_metrics": {
+                "unit_of_measure": "Meter",
+                "cycle_time_seconds": 180,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 20
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 80,
+                "labor_required": 1
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_WOOD_PAINT",
+          "name": "قسم الدهانات",
+          "process_step": 7,
+          "description": "عزل وتلوين الأخشاب في بيئة معزولة",
+          "tasks": [
+            {
+              "id": "PAINT_BOOTH",
+              "name": "كابينة دهانات",
+              "type": "Spray Painting",
+              "capacity_metrics": {
+                "unit_of_measure": "Batch",
+                "cycle_time_seconds": 1800,
+                "setup_time_minutes": 30,
+                "batch_size": 20,
+                "efficiency_factor": 0.85,
+                "max_capacity_per_hour": 40
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 350,
+                "labor_required": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_WOOD_ASSY",
+          "name": "قسم التجميع",
+          "process_step": 8,
+          "description": "تجميع الكبائن والتقفيل النهائي",
+          "tasks": [
+            {
+              "id": "PRESS_CARCASS",
+              "name": "ماكينة كبس العلب",
+              "type": "Carcass Pressing",
+              "capacity_metrics": {
+                "unit_of_measure": "Cabinet",
+                "cycle_time_seconds": 300,
+                "setup_time_minutes": 10,
+                "batch_size": 1,
+                "efficiency_factor": 0.9,
+                "max_capacity_per_hour": 12
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 180,
+                "labor_required": 2
+              }
+            },
+            {
+              "id": "WOOD_ASSY_MAN",
+              "name": "التجميع",
+              "type": "Manual Assembly",
+              "capacity_metrics": {
+                "unit_of_measure": "Cabinet",
+                "cycle_time_seconds": 1800,
+                "setup_time_minutes": 0,
+                "batch_size": 1,
+                "efficiency_factor": 0.8,
+                "max_capacity_per_hour": 2
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 150,
+                "labor_required": 2
+              }
+            }
+          ]
+        },
+        {
+          "id": "DEPT_PACKAGING",
+          "name": "قسم التغليف",
+          "process_step": 9,
+          "description": "تغليف المنتج النهائي وتجهيزه للشحن (مرحلة مضافة من تدفق أوامر التشغيل).",
+          "tasks": [
+            {
+              "id": "PACK_MANUAL",
+              "name": "تغليف يدوي",
+              "type": "Packaging",
+              "capacity_metrics": {
+                "unit_of_measure": "Piece",
+                "cycle_time_seconds": 240,
+                "setup_time_minutes": 5,
+                "batch_size": 1,
+                "efficiency_factor": 0.9,
+                "max_capacity_per_hour": 15
+              },
+              "cost_center_info": {
+                "hourly_operating_cost": 70,
+                "labor_required": 1
+              }
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "employee_assignments": {
+    "factory_id": "WF-001",
+    "factory_name": "مصنع الأخشاب والأثاث",
+    "management_layer": [
+      {
+        "employee_id": "EMP-0001",
+        "name": "احمد حاتم سلمان عبد الرحمن",
+        "job_title": "مدير انتاج الخشبي",
+        "standardized_role": "Plant Manager",
+        "hire_date": "2022-10-12"
+      },
+      {
+        "employee_id": "EMP-0004",
+        "name": "إبراهيم عبد الفتاح سيد حسن",
+        "job_title": "مهندس انتاج خشبي صناعي",
+        "standardized_role": "Industrial Engineer",
+        "hire_date": "2026-03-24"
+      },
+      {
+        "employee_id": "EMP-0005",
+        "name": "حسين محمد محمد احمد رمضان",
+        "job_title": "مسئول متابعة خشبى",
+        "standardized_role": "Production Follow-up",
+        "hire_date": "2026-03-25"
+      },
+      {
+        "employee_id": "EMP-0034",
+        "name": "ياسر حسام الإسلام أنور محمد",
+        "job_title": "مهندس CNC",
+        "standardized_role": "CNC Programmer",
+        "hire_date": "2025-12-28"
+      },
+      {
+        "employee_id": "EMP-0095",
+        "name": "اسلام محمد دكرورى إسماعيل",
+        "job_title": "مهندس أول انتاج خشبى",
+        "standardized_role": "Senior Production Engineer",
+        "hire_date": "2025-11-24"
+      }
+    ],
+    "departments": {
+      "DEPT_SOLID_WOOD": [
+        {
+          "employee_id": "EMP-0010",
+          "name": "احمد حسن شعبان جويلى",
+          "job_title": "نجار طبيعي",
+          "standardized_role": "Joiner",
+          "hire_date": "2022-09-20"
+        },
+        {
+          "employee_id": "EMP-0020",
+          "name": "ربيع سيد صابر سيد",
+          "job_title": "مشرف قسم الطبيعي",
+          "standardized_role": "Supervisor",
+          "hire_date": "2021-08-21"
+        },
+        {
+          "employee_id": "EMP-0026",
+          "name": "عصام عبد الهادى ابراهيم شاهين",
+          "job_title": "نجار طبيعي",
+          "standardized_role": "Joiner",
+          "hire_date": "2024-05-22"
+        },
+        {
+          "employee_id": "EMP-0079",
+          "name": "سالم السيد احمد سالم معوض",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2023-05-31"
+        },
+        {
+          "employee_id": "EMP-0080",
+          "name": "محمود محمد ابراهيم سيف الدين",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2024-05-26"
+        },
+        {
+          "employee_id": "EMP-0082",
+          "name": "مصطفى محمود عبد الحميد",
+          "job_title": "مشرف طبيعي",
+          "standardized_role": "Supervisor",
+          "hire_date": "2021-08-21"
+        },
+        {
+          "employee_id": "EMP-0083",
+          "name": "حسن رجب عبد المحسن",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2021-03-13"
+        },
+        {
+          "employee_id": "EMP-0084",
+          "name": "صفوت محمد حسنين بديوى",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2022-09-14"
+        },
+        {
+          "employee_id": "EMP-0085",
+          "name": "يسرى سعدى مصطفى حجازى",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2022-10-20"
+        },
+        {
+          "employee_id": "EMP-0086",
+          "name": "عبدالرحمن مصيلحى احمد ابراهيم",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2023-09-02"
+        },
+        {
+          "employee_id": "EMP-0087",
+          "name": "علاء عبده عبادى",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2024-02-28"
+        },
+        {
+          "employee_id": "EMP-0088",
+          "name": "علاء الدين مصطفى احمد على",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2024-06-09"
+        },
+        {
+          "employee_id": "EMP-0090",
+          "name": "محمد إبراهيم محمد مقرب",
+          "job_title": "فنى نجار كرسجى",
+          "standardized_role": "Specialized Joiner",
+          "hire_date": "2025-05-06"
+        },
+        {
+          "employee_id": "EMP-0091",
+          "name": "محمد مدحت محمد سيد",
+          "job_title": "فنى نجار طبيعى و مكنجى",
+          "standardized_role": "Machine Operator",
+          "hire_date": "2025-05-12"
+        },
+        {
+          "employee_id": "EMP-0092",
+          "name": "شريف احمد محمد",
+          "job_title": "فنى نجار طبيعى و مكنجى",
+          "standardized_role": "Machine Operator",
+          "hire_date": null
+        },
+        {
+          "employee_id": "EMP-0094",
+          "name": "مصطفى أنور عيد حسن",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2025-07-13"
+        },
+        {
+          "employee_id": "EMP-0096",
+          "name": "اسلام محمد سليمان موسي",
+          "job_title": "فنى نجار بنك",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2025-12-28"
+        },
+        {
+          "employee_id": "EMP-0097",
+          "name": "نورالدين محمد عيسي احمد الشناوى",
+          "job_title": "فنى نجار كرسجى",
+          "standardized_role": "Specialized Joiner",
+          "hire_date": "2025-12-28"
+        },
+        {
+          "employee_id": "EMP-0098",
+          "name": "امجد حسن محمد احمد الشرقاوى",
+          "job_title": "فنى نجار طبيعى و مكنجى",
+          "standardized_role": "Machine Operator",
+          "hire_date": "2025-12-30"
+        },
+        {
+          "employee_id": "EMP-0099",
+          "name": "محمد مصطفى محمود حسن",
+          "job_title": "فنى نجار طبيعى و مكنجى",
+          "standardized_role": "Machine Operator",
+          "hire_date": "2025-12-30"
+        },
+        {
+          "employee_id": "EMP-0100",
+          "name": "محمد زكريا صالح رضوان",
+          "job_title": "فنى نجار طبيعى و مكنجى",
+          "standardized_role": "Machine Operator",
+          "hire_date": "2025-12-31"
+        },
+        {
+          "employee_id": "EMP-0102",
+          "name": "محمد عبد الحليم عبد الهادى غنيم",
+          "job_title": "فنى نجار طبيعى و مكنجى",
+          "standardized_role": "Machine Operator",
+          "hire_date": "2026-04-05"
+        },
+        {
+          "employee_id": "EMP-0103",
+          "name": "محمد ثابت عيد عبد القادر",
+          "job_title": "فنى نجار طبيعى و مكنجى",
+          "standardized_role": "Machine Operator",
+          "hire_date": "2026-04-12"
+        },
+        {
+          "employee_id": "EMP-0104",
+          "name": "سيد عيد سيد ابو العنين",
+          "job_title": "فنى نجار كرسجى",
+          "standardized_role": "Specialized Joiner",
+          "hire_date": "2026-04-12"
+        },
+        {
+          "employee_id": "EMP-0105",
+          "name": "إبراهيم فتحى على البندارى",
+          "job_title": "فنى نجار كرسجى",
+          "standardized_role": "Specialized Joiner",
+          "hire_date": "2026-04-13"
+        },
+        {
+          "employee_id": "EMP-0106",
+          "name": "حمدى محمد عبد المحسن محمد عباس",
+          "job_title": "فنى نجار بنك و تجميع",
+          "standardized_role": "Bench Joiner",
+          "hire_date": "2026-04-14"
+        }
+      ],
+      "DEPT_PANEL_PROC": [
+        {
+          "employee_id": "EMP-0030",
+          "name": "احمد امين عبد العال",
+          "job_title": "مساعد فنى CNC",
+          "standardized_role": "Assistant",
+          "hire_date": "2022-08-06"
+        },
+        {
+          "employee_id": "EMP-0031",
+          "name": "احمد محمد شاكر فضل",
+          "job_title": "فنى تخريم CNC",
+          "standardized_role": "CNC Operator",
+          "hire_date": "2025-11-03"
+        },
+        {
+          "employee_id": "EMP-0032",
+          "name": "سيد حماد سيد عبد الغنى",
+          "job_title": "فنى تخريم CNC",
+          "standardized_role": "CNC Operator",
+          "hire_date": "2024-08-06"
+        },
+        {
+          "employee_id": "EMP-0033",
+          "name": "ماهر محمد السيد قاسم",
+          "job_title": "فنى تخريم CNC",
+          "standardized_role": "CNC Operator",
+          "hire_date": "2024-12-26"
+        },
+        {
+          "employee_id": "EMP-0035",
+          "name": "إبراهيم أبو الفتوح إبراهيم أبو الفتوح",
+          "job_title": "فنى تخريم CNC",
+          "standardized_role": "CNC Operator",
+          "hire_date": "2026-02-22"
+        },
+        {
+          "employee_id": "EMP-0036",
+          "name": "سعد محمد سعد صالح",
+          "job_title": "فنى مقطع CNC",
+          "standardized_role": "Panel Saw Operator",
+          "hire_date": "2024-12-23"
+        },
+        {
+          "employee_id": "EMP-0037",
+          "name": "احمد عبد الوهاب متولى محمد",
+          "job_title": "فنى مقطع CNC",
+          "standardized_role": "Panel Saw Operator",
+          "hire_date": "2025-08-06"
+        },
+        {
+          "employee_id": "EMP-0038",
+          "name": "السيد مصطفى عبد الفتاح عبد الرحمن",
+          "job_title": "فنى مقطع CNC",
+          "standardized_role": "Panel Saw Operator",
+          "hire_date": "2026-03-31"
+        },
+        {
+          "employee_id": "EMP-0075",
+          "name": "مصطفى صلاح سالم سعيد",
+          "job_title": "فنى شريط",
+          "standardized_role": "Edge Bander Operator",
+          "hire_date": "2022-09-17"
+        },
+        {
+          "employee_id": "EMP-0076",
+          "name": "يوسف كامل زكى مهنى",
+          "job_title": "فنى شريط",
+          "standardized_role": "Edge Bander Operator",
+          "hire_date": "2022-12-03"
+        },
+        {
+          "employee_id": "EMP-0077",
+          "name": "على ابو الحديد ابراهيم الفقى",
+          "job_title": "مساعد فنى شريط",
+          "standardized_role": "Edge Bander Operator",
+          "hire_date": "2023-10-04"
+        },
+        {
+          "employee_id": "EMP-0078",
+          "name": "احمد حسن إسماعيل على",
+          "job_title": "فنى شريط",
+          "standardized_role": "Edge Bander Operator",
+          "hire_date": "2025-08-19"
+        }
+      ],
+      "DEPT_VENEER": [
+        {
+          "employee_id": "EMP-0028",
+          "name": "عمرو محمد محمود عوض الله",
+          "job_title": "فني مكابس",
+          "standardized_role": "Press Operator",
+          "hire_date": "2024-06-02"
+        },
+        {
+          "employee_id": "EMP-0093",
+          "name": "محمد إبراهيم محمد إبراهيم",
+          "job_title": "فنى قشره",
+          "standardized_role": "Veneer Technician",
+          "hire_date": "2025-07-01"
+        },
+        {
+          "employee_id": "EMP-0101",
+          "name": "سعيد عبد اللطيف عبد العزيز حسن",
+          "job_title": "فنى قشره",
+          "standardized_role": "Veneer Technician",
+          "hire_date": "2026-01-14"
+        }
+      ],
+      "DEPT_SANDING": [
+        {
+          "employee_id": "EMP-0081",
+          "name": "هانى احمد محارب",
+          "job_title": "فنى صنفرة",
+          "standardized_role": "Sanding Technician",
+          "hire_date": "2021-08-21"
+        },
+        {
+          "employee_id": "EMP-0089",
+          "name": "محمد السيد محمد خلف الله",
+          "job_title": "فنى صنفرة",
+          "standardized_role": "Sanding Technician",
+          "hire_date": "2025-08-27"
+        }
+      ],
+      "DEPT_WOOD_PAINT": [
+        {
+          "employee_id": "EMP-0051",
+          "name": "مصطفى عبده عبد الصادق عبد المقصود",
+          "job_title": "فني دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2021-08-21"
+        },
+        {
+          "employee_id": "EMP-0052",
+          "name": "صابر حامد حسانين عبد الغنى",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2022-08-06"
+        },
+        {
+          "employee_id": "EMP-0053",
+          "name": "لطفى عادل لطفى اسماعيل",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2022-11-16"
+        },
+        {
+          "employee_id": "EMP-0054",
+          "name": "احمد محمود محمد حسن",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2022-10-20"
+        },
+        {
+          "employee_id": "EMP-0055",
+          "name": "محمد بيومى عبد الحليم بيومى",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2022-10-27"
+        },
+        {
+          "employee_id": "EMP-0056",
+          "name": "كريم فتحى السيد لاشين",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2025-04-28"
+        },
+        {
+          "employee_id": "EMP-0057",
+          "name": "محمد حمدى عابدين السيد",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2023-09-12"
+        },
+        {
+          "employee_id": "EMP-0058",
+          "name": "جميل محمد مجاهد يونس",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2022-08-06"
+        },
+        {
+          "employee_id": "EMP-0059",
+          "name": "مصطفى محمود رجب حسن الجندى",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2025-04-14"
+        },
+        {
+          "employee_id": "EMP-0060",
+          "name": "محمد كرم عبد الفتاح مرسى",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2022-10-20"
+        },
+        {
+          "employee_id": "EMP-0061",
+          "name": "سعد حسين محمود محمد",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2022-10-26"
+        },
+        {
+          "employee_id": "EMP-0062",
+          "name": "رأفت عبد الهادي تمر عفيفى",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2022-11-21"
+        },
+        {
+          "employee_id": "EMP-0063",
+          "name": "رجب مختار الشافعى",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2023-08-26"
+        },
+        {
+          "employee_id": "EMP-0064",
+          "name": "رمضان محمد رمضان بندارى",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2024-07-15"
+        },
+        {
+          "employee_id": "EMP-0065",
+          "name": "محمد إبراهيم شعراوى حسنين نزيل",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2026-01-20"
+        },
+        {
+          "employee_id": "EMP-0066",
+          "name": "عبد الله عبد الله محمد احمد",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2026-02-02"
+        },
+        {
+          "employee_id": "EMP-0067",
+          "name": "محمد صلاح منصور مونس",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2026-04-08"
+        },
+        {
+          "employee_id": "EMP-0068",
+          "name": "محمد احمد السيد حفناوى",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2026-04-12"
+        },
+        {
+          "employee_id": "EMP-0069",
+          "name": "محمد جمال فيصل عبدالله منصور",
+          "job_title": "مشرف دهانات",
+          "standardized_role": "Supervisor",
+          "hire_date": "2026-04-12"
+        },
+        {
+          "employee_id": "EMP-0070",
+          "name": "محمد شعبان عتريس عبيد",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2026-04-12"
+        },
+        {
+          "employee_id": "EMP-0071",
+          "name": "احمد مصطفى حسن سالم",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2026-04-20"
+        },
+        {
+          "employee_id": "EMP-0072",
+          "name": "عبد العظيم مصطفى عثمان سليمان",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2026-04-20"
+        },
+        {
+          "employee_id": "EMP-0073",
+          "name": "تامر جمال عبد العظيم عثمان",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2026-04-20"
+        },
+        {
+          "employee_id": "EMP-0074",
+          "name": "كريم محمد عبد العظيم محمد",
+          "job_title": "فنى دهانات",
+          "standardized_role": "Painter/Finisher",
+          "hire_date": "2026-04-20"
+        }
+      ],
+      "DEPT_UPHOLSTERY": [
+        {
+          "employee_id": "EMP-0039",
+          "name": "مصطفى أحمد محمد عبد الرازق",
+          "job_title": "فنى خياط",
+          "standardized_role": "Tailor",
+          "hire_date": "2024-07-06"
+        },
+        {
+          "employee_id": "EMP-0040",
+          "name": "عماد حمدى رمضان عبد العزيز",
+          "job_title": "مشرف تنجيد",
+          "standardized_role": "Supervisor",
+          "hire_date": "2023-05-25"
+        },
+        {
+          "employee_id": "EMP-0041",
+          "name": "محمد احمد على عطيه سعيد",
+          "job_title": "فنى تنجيد شامل",
+          "standardized_role": "Upholsterer",
+          "hire_date": "2024-05-14"
+        },
+        {
+          "employee_id": "EMP-0042",
+          "name": "احمد صبحى بيومى رمضان",
+          "job_title": "فنى مقص وتلبيس",
+          "standardized_role": "Cutter/Fitter",
+          "hire_date": "2024-06-22"
+        },
+        {
+          "employee_id": "EMP-0043",
+          "name": "محمد عبد الباسط ابراهيم عبد الخالق",
+          "job_title": "فنى تنجيد شامل",
+          "standardized_role": "Upholsterer",
+          "hire_date": "2025-08-03"
+        },
+        {
+          "employee_id": "EMP-0044",
+          "name": "محمد السيد فتحى السيد شلتوت",
+          "job_title": "فنى خياط",
+          "standardized_role": "Tailor",
+          "hire_date": "2023-05-20"
+        },
+        {
+          "employee_id": "EMP-0045",
+          "name": "كريم ايمن السيد السيد ابراهيم",
+          "job_title": "فنى تنجيد شامل",
+          "standardized_role": "Upholsterer",
+          "hire_date": "2023-06-01"
+        },
+        {
+          "employee_id": "EMP-0046",
+          "name": "محمد مجدى رجب عيسوى",
+          "job_title": "فنى مقص وتلبيس",
+          "standardized_role": "Cutter/Fitter",
+          "hire_date": "2024-01-23"
+        },
+        {
+          "employee_id": "EMP-0047",
+          "name": "محمد احمد حسين احمد",
+          "job_title": "فنى تنجيد شامل",
+          "standardized_role": "Upholsterer",
+          "hire_date": "2025-08-10"
+        },
+        {
+          "employee_id": "EMP-0048",
+          "name": "طارق ثابت محمود حسين",
+          "job_title": "فنى تنجيد شامل",
+          "standardized_role": "Upholsterer",
+          "hire_date": "2024-05-02"
+        },
+        {
+          "employee_id": "EMP-0049",
+          "name": "احمد محمد انور محمد حسنين الجندى",
+          "job_title": "فنى تنجيد شامل",
+          "standardized_role": "Upholsterer",
+          "hire_date": "2024-05-08"
+        },
+        {
+          "employee_id": "EMP-0050",
+          "name": "كمال محمد كمال فخرى الشاذلى",
+          "job_title": "فنى تنجيد شامل",
+          "standardized_role": "Upholsterer",
+          "hire_date": "2026-02-04"
+        }
+      ],
+      "DEPT_WOOD_ASSY": [
+        {
+          "employee_id": "EMP-0011",
+          "name": "على محمد على عطوة",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2021-03-13"
+        },
+        {
+          "employee_id": "EMP-0012",
+          "name": "كامل عبدالرحمن كامل عبدالوهاب",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": null
+        },
+        {
+          "employee_id": "EMP-0013",
+          "name": "طه عيد امام  الدسوقي",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2026-05-04"
+        },
+        {
+          "employee_id": "EMP-0014",
+          "name": "محمد مسعد امام احمد",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2026-05-05"
+        },
+        {
+          "employee_id": "EMP-0015",
+          "name": "محمد قنديل محمد سليمان",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": null
+        },
+        {
+          "employee_id": "EMP-0016",
+          "name": "أسامة أبو شهبة محمد ابوحماد",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": null
+        },
+        {
+          "employee_id": "EMP-0017",
+          "name": "عادل فتوح عبده السمني",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": null
+        },
+        {
+          "employee_id": "EMP-0018",
+          "name": "احمد مشوادى حسين عبد الرحيم",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2022-09-12"
+        },
+        {
+          "employee_id": "EMP-0019",
+          "name": "ابراهيم صابر ابراهيم",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2022-07-02"
+        },
+        {
+          "employee_id": "EMP-0021",
+          "name": "كرم حشمت ابو العلا احمد",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2022-09-19"
+        },
+        {
+          "employee_id": "EMP-0022",
+          "name": "محمد محمد عبد الرحمن ابراهيم ارنوط",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2022-09-20"
+        },
+        {
+          "employee_id": "EMP-0023",
+          "name": "سامى محمد فوزى عبد الكريم",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2022-09-27"
+        },
+        {
+          "employee_id": "EMP-0024",
+          "name": "بدر بكر بدر محمد بدر",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2022-11-01"
+        },
+        {
+          "employee_id": "EMP-0027",
+          "name": "رضا سليمان على الصيفى",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2024-07-14"
+        },
+        {
+          "employee_id": "EMP-0029",
+          "name": "مصطفى عوض مصطفى إبراهيم",
+          "job_title": "فنى تجميع خشبى",
+          "standardized_role": "Assembler",
+          "hire_date": "2026-04-06"
+        }
+      ],
+      "SUPPORT_POOL": [
+        {
+          "employee_id": "EMP-0002",
+          "name": "عزت عبد القادر محمد السيد",
+          "job_title": "مساعد عام خشبى",
+          "standardized_role": "General Helper/Material Handler",
+          "hire_date": "2024-05-13"
+        },
+        {
+          "employee_id": "EMP-0003",
+          "name": "كريم زكريا عبدالمنعم محمد",
+          "job_title": "مساعد عام خشبى",
+          "standardized_role": "General Helper/Material Handler",
+          "hire_date": "2026-02-04"
+        },
+        {
+          "employee_id": "EMP-0006",
+          "name": "اشرف عماد صالح عيسوي",
+          "job_title": "مساعد عام خشبى",
+          "standardized_role": "General Helper/Material Handler",
+          "hire_date": "2026-04-08"
+        },
+        {
+          "employee_id": "EMP-0007",
+          "name": "عمر سعيد صابر احمد",
+          "job_title": "مساعد عام خشبى",
+          "standardized_role": "General Helper/Material Handler",
+          "hire_date": null
+        },
+        {
+          "employee_id": "EMP-0008",
+          "name": "احمد عزب عبدالسلام عزب",
+          "job_title": "مساعد عام خشبى",
+          "standardized_role": "General Helper/Material Handler",
+          "hire_date": null
+        },
+        {
+          "employee_id": "EMP-0009",
+          "name": "طارق عادل السيد عبد الله السيد",
+          "job_title": "مساعد عام خشبى",
+          "standardized_role": "General Helper/Material Handler",
+          "hire_date": "2026-04-16"
+        },
+        {
+          "employee_id": "EMP-0025",
+          "name": "عبد الله ابو الوفا حسن ابو الوفا",
+          "job_title": "مساعد عام خشبى",
+          "standardized_role": "General Helper/Material Handler",
+          "hire_date": "2023-08-13"
+        }
+      ],
+      "UNASSIGNED": []
+    }
+  },
+  "workforce_allocation": {
+    "factory_id": "WF-001",
+    "management_engineering_layer": [
+      {
+        "role_title": "مدير انتاج الخشبي",
+        "count": 1,
+        "type": "Plant Manager"
+      },
+      {
+        "role_title": "مهندس أول انتاج خشبى",
+        "count": 1,
+        "type": "Senior Production Engineer"
+      },
+      {
+        "role_title": "مهندس انتاج خشبي صناعي",
+        "count": 1,
+        "type": "Industrial Engineer"
+      },
+      {
+        "role_title": "مسئول متابعة خشبى",
+        "count": 1,
+        "type": "Production Follow-up"
+      },
+      {
+        "role_title": "مهندس CNC",
+        "count": 1,
+        "type": "CNC Programmer"
+      }
+    ],
+    "departments_workforce": [
+      {
+        "department_id": "DEPT_SOLID_WOOD",
+        "staff": [
+          {
+            "role_title": "مشرف قسم الطبيعي",
+            "count": 2,
+            "type": "Supervisor"
+          },
+          {
+            "role_title": "فنى نجار طبيعى و مكنجى",
+            "count": 7,
+            "type": "Machine Operator"
+          },
+          {
+            "role_title": "فنى نجار كرسجى",
+            "count": 4,
+            "type": "Specialized Joiner"
+          },
+          {
+            "role_title": "فنى نجار بنك",
+            "count": 11,
+            "type": "Bench Joiner"
+          },
+          {
+            "role_title": "نجار طبيعي",
+            "count": 2,
+            "type": "Joiner"
+          }
+        ]
+      },
+      {
+        "department_id": "DEPT_PANEL_PROC",
+        "staff": [
+          {
+            "role_title": "فنى مقطع CNC",
+            "count": 3,
+            "type": "Panel Saw Operator"
+          },
+          {
+            "role_title": "فنى تخريم CNC",
+            "count": 4,
+            "type": "CNC Operator"
+          },
+          {
+            "role_title": "فنى شريط",
+            "count": 3,
+            "type": "Edge Bander Operator"
+          },
+          {
+            "role_title": "مساعد فنى CNC",
+            "count": 1,
+            "type": "Assistant"
+          },
+          {
+            "role_title": "مساعد فنى شريط",
+            "count": 1,
+            "type": "Assistant"
+          }
+        ]
+      },
+      {
+        "department_id": "DEPT_VENEER",
+        "staff": [
+          {
+            "role_title": "فنى قشره",
+            "count": 2,
+            "type": "Veneer Technician"
+          },
+          {
+            "role_title": "فني مكابس",
+            "count": 1,
+            "type": "Press Operator"
+          }
+        ]
+      },
+      {
+        "department_id": "DEPT_SANDING",
+        "staff": [
+          {
+            "role_title": "فنى صنفرة",
+            "count": 2,
+            "type": "Sanding Technician"
+          }
+        ]
+      },
+      {
+        "department_id": "DEPT_WOOD_PAINT",
+        "staff": [
+          {
+            "role_title": "مشرف دهانات",
+            "count": 1,
+            "type": "Supervisor"
+          },
+          {
+            "role_title": "فنى دهانات",
+            "count": 23,
+            "type": "Painter/Finisher"
+          }
+        ]
+      },
+      {
+        "department_id": "DEPT_UPHOLSTERY",
+        "staff": [
+          {
+            "role_title": "مشرف تنجيد",
+            "count": 1,
+            "type": "Supervisor"
+          },
+          {
+            "role_title": "فنى تنجيد شامل",
+            "count": 7,
+            "type": "Upholsterer"
+          },
+          {
+            "role_title": "فنى مقص وتلبيس",
+            "count": 2,
+            "type": "Cutter/Fitter"
+          },
+          {
+            "role_title": "فنى خياط",
+            "count": 2,
+            "type": "Tailor"
+          }
+        ]
+      },
+      {
+        "department_id": "DEPT_WOOD_ASSY",
+        "staff": [
+          {
+            "role_title": "فنى تجميع خشبى",
+            "count": 15,
+            "type": "Assembler"
+          }
+        ]
+      },
+      {
+        "department_id": "SUPPORT_POOL",
+        "staff": [
+          {
+            "role_title": "مساعد عام خشبى",
+            "count": 7,
+            "type": "General Helper/Material Handler"
+          }
+        ]
+      }
+    ]
+  },
+  "wood_orders_dataset_meta": {
+    "factory_id": "WF-001",
+    "factory_name": "مصنع الأخشاب والأثاث",
+    "total_active_orders": 20
+  }
+}

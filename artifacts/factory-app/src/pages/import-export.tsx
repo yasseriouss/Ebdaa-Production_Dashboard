@@ -118,9 +118,9 @@ function ExportCard({ title, endpoint, filename }: { title: string; endpoint: st
           <FileText className="ml-2 h-4 w-4" />
           تصدير Excel (.xlsx)
         </Button>
-        <Button className="w-full" variant="ghost" disabled={busy} onClick={() => doExport("pdf")} data-testid={`btn-export-pdf-${filename}`}>
+        <Button className="w-full" variant="outline" disabled={busy} onClick={() => doExport("pdf")} data-testid={`btn-export-pdf-${filename}`}>
           <FileText className="ml-2 h-4 w-4" />
-          تصدير تقرير
+          تصدير PDF (.pdf)
         </Button>
       </CardContent>
     </Card>

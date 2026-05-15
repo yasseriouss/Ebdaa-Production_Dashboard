@@ -1,0 +1,17 @@
+{
+    "id": "TASK_LASER",
+    "name": "الليزر",
+    "type": "Precision Cutting",
+    "capacity_metrics": {
+        "unit_of_measure": "Meter",          // وحدة القياس (متر، لوح، قطعة)
+        "cycle_time_seconds": 120,           // زمن الدورة المعياري بالثواني
+        "setup_time_minutes": 15,            // وقت التجهيز وضبط الماكينة قبل البدء
+        "batch_size": 1,                     // حجم الدفعة التي يتم إنتاجها في الدورة الواحدة
+        "efficiency_factor": 0.85,           // كفاءة الماكينة المتوقعة (85%)
+        "max_capacity_per_hour": 30          // أقصى طاقة استيعابية في الساعة (نظرياً)
+    },
+    "cost_center_info": {
+        "hourly_operating_cost": 150.00,     // تكلفة التشغيل في الساعة (كهرباء، إهلاك، إلخ)
+        "labor_required": 1                  // عدد العمالة المطلوبة لتشغيل الماكينة
+    }
+}

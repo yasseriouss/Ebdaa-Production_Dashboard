@@ -1,0 +1,2 @@
+CREATE UNIQUE INDEX `metal_order_stage_unq` ON `metal_production_stages` (`metal_order_id`,`stage_name`);--> statement-breakpoint
+CREATE UNIQUE INDEX `wooden_order_stage_unq` ON `wooden_production_stages` (`wooden_order_id`,`stage_name`);

@@ -1,0 +1,17 @@
+flowchart TD
+  subgraph metalDomain["Metal factory"]
+    mwo["metal_work_order"]
+    mps["metal_production_stages"]
+    msl["metal_stage_log"]
+    mwo --> mps --> msl
+  end
+  subgraph woodDomain["Wood factory"]
+    wwo["wooden_work_order"]
+    wps["wooden_production_stages"]
+    wwo --> wps
+  end
+  handlers["Express route handlers"] --> mwo
+  handlers --> wwo
+  handlers --> mps
+  handlers --> wps
+  handlers --> msl

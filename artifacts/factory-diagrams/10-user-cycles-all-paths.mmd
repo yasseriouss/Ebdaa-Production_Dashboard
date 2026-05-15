@@ -1,0 +1,67 @@
+flowchart TB
+  startNode([المستخدم يبدأ / User starts])
+
+  startNode --> surfaceChoice{"أي سطح؟ / Which surface"}
+
+  surfaceChoice -->|"Factory OS web"| osWeb["لوحة القيادة والوحدات / Dashboard modules"]
+  surfaceChoice -->|"RTL factory floor"| rtlApp["أوامر الخشب Kanban أو جدول / Wood WOs"]
+  surfaceChoice -->|"API or import tool"| apiClient["REST import export / Integrations"]
+
+  osWeb --> authOs{"صلاحية؟ / Authorized"}
+  rtlApp --> authRtl{"صلاحية؟ / Authorized"}
+  apiClient --> authApi{"مفتاح أو جلسة؟ / Credential"}
+
+  authOs -->|"نعم yes"| osBrowse["تصفح وحدات جاهزة أو قيد الإنشاء / Browse live or placeholder routes"]
+  authOs -->|"لا no"| denied["رفض أو تسجيل دخول / Denied or login"]
+  authOs -->|"منتهية expired"| relogin["تجديد الجلسة / Renew session"]
+
+  authRtl -->|"نعم yes"| rtlDash["فلاتر مشروع حالة قسم / Filters"]
+  authRtl -->|"لا no"| denied
+  authRtl -->|"منتهية expired"| relogin
+
+  authApi -->|"صالح valid"| apiCall["طلبات معدن خشب لوحات / API calls"]
+  authApi -->|"غير صالح invalid"| denied
+
+  rtlDash --> pickView{"عرض؟ / View"}
+  pickView -->|"Kanban"| kanbanView["لوحة Kanban"]
+  pickView -->|"جدول"| tableView["جدول متقدم"]
+
+  kanbanView --> pickWo["اختيار أمر عمل / Pick WO"]
+  tableView --> pickWo
+
+  pickWo --> idCheck{"المعرّف؟ / ID"}
+  idCheck -->|"موجود valid"| detailPage["تفاصيل المراحل والكميات / Detail"]
+  idCheck -->|"غير موجود"| notFound["404 صفحة غير موجودة"]
+
+  detailPage --> qtyEdit{"تعديل كمية؟ / Qty edit"}
+  qtyEdit -->|"رقم صحيح"| qtyOk["حفظ في localStorage / Persist patch"]
+  qtyEdit -->|"غير رقمي أو سالب"| qtyClamp["تقريب إلى صفر آمن / Clamp to zero"]
+
+  detailPage --> stEdit{"تعديل حالة مرحلة؟ / Stage status"}
+  stEdit -->|"لم يبدأ قيد التنفيذ مكتمل"| stOk["حفظ محلي / Persist"]
+
+  qtyOk --> uiRefresh["واجهة محدثة ومشتقات الحالة / UI refresh"]
+  qtyClamp --> uiRefresh
+  stOk --> uiRefresh
+
+  osBrowse --> osOutcome["إما بيانات تجريبية أو ربط API لاحقا / Mock or future API"]
+
+  apiCall --> ioCheck{"استيراد؟ / Import"}
+  ioCheck -->|"ملف سليم"| ioOk["نجاح جزئي أو كامل / Success"]
+  ioCheck -->|"صيغة أو أعمدة"| ioErr["خطأ تحقق / Validation error"]
+  ioCheck -->|"حجم أو مهلة"| ioTimeout["Timeout or size limit"]
+
+  apiCall --> apiDown{"الشبكة؟ / Network"}
+  apiDown -->|"متاح"| apiOk["200 أو بيانات / OK"]
+  apiDown -->|"غير متاح"| apiFail["إعادة محاولة أو صف خطأ / Retry or error"]
+
+  denied --> exitDenied([نهاية مسار مرفوض])
+  relogin --> startNode
+  notFound --> exit404([نهاية 404])
+  uiRefresh --> exitOk([نهاية ناجحة])
+  osOutcome --> exitOk
+  ioOk --> exitOk
+  ioErr --> exitErr([نهاية بخطأ])
+  ioTimeout --> exitErr
+  apiOk --> exitOk
+  apiFail --> exitErr

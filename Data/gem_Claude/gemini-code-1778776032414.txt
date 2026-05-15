@@ -1,0 +1,59 @@
+Act as an Expert Frontend Developer and UI/UX Designer. Your task is to build the frontend architecture and UI layout for "The Grand Line ERP" - a comprehensive Factory OS managing two main facilities: a Metalworking Factory and a Woodworking Factory.
+
+Please use modern web development technologies (e.g., React/Next.js, Tailwind CSS, and a component library like Shadcn UI or MUI). 
+
+Below is the required layout, routing structure, and functional specifications:
+
+### 1. Global Layout & Sidebar Navigation
+Implement a persistent responsive Sidebar with the following navigation items:
+* **Dashboard** (Main overview)
+* **Production Orders** (Expandable/Accordion or Sub-tabs)
+    * Metal Factory
+    * Wood Factory
+* **Daily Production** (Expandable/Accordion or Sub-tabs)
+    * Metal Factory
+    * Wood Factory
+* **Joint Projects** (Projects requiring both factories)
+* **Planning & Scheduling**
+* **Analytics**
+* **Project Analytics** (Detailed drill-down view)
+
+### 2. Page-Specific Requirements
+
+**A. Dashboard (لوحة التحكم)**
+* This is the master command center.
+* Must display comprehensive metrics for the ENTIRE company.
+* Include dynamic charts (Bar, Line, Pie) showing: Productivity per day, per week, per month.
+* Include tables/charts showing performance breakdown per Department and per specific Machine.
+
+**B. Analytics Page (التحليلات)**
+* Create a single scrolling view (or tabbed view) with clear visual dividers `<hr />`.
+* **Section 1: Overall Analytics** (Aggregated data for both Metal & Wood).
+* *-- Visual Divider --*
+* **Section 2: Woodworking Factory Analytics** (Specific KPIs, machine utilization, labor efficiency).
+* *-- Visual Divider --*
+* **Section 3: Metalworking Factory Analytics** (Specific KPIs, CNC/Laser utilization, material waste).
+
+**C. Project Analytics Page (تحليلات المشاريع)**
+* **Header:** A prominent dropdown menu (Select) to choose an active project.
+* **Dynamic View:** Upon selecting a project, display the following:
+    * **Project Routing/Path:** A visual timeline or flowchart showing the project's journey through departments.
+    * **BOM Breakdown:** A tree-view or table showing Products -> Parts -> Raw Materials.
+    * **Time-Series Productivity:** Charts showing output for this specific project per day, week, and month.
+    * **Resource Utilization:** Granular data showing which machines and departments are actively working on this project and their current productivity rate.
+
+**D. New Project Data Entry Workflow (إدخال مشروع جديد)**
+* Design a multi-step form (Wizard) for project creation.
+* **Crucial Step:** "Routing & Operations Assignment".
+* The user must be able to:
+    1. Add a Product.
+    2. Break down the Product into Parts (Metal parts, Wood parts).
+    3. For EVERY Part, assign a sequential routing path by selecting the Department, then the specific Machine (e.g., Wood Prep -> Panel Saw -> Edge Bander), along with estimated cycle times.
+
+### 3. UI/UX Guidelines
+* **Theme:** Professional, clean, high-contrast (Industrial tech vibe).
+* **Dashboard Components:** Use Card components for key stats (Total Orders, WIP, Bottlenecks).
+* **Interactivity:** Ensure dropdowns, tabs, and accordions have smooth transitions.
+* **Language:** Support RTL (Right-to-Left) layout readiness, as the primary users will operate in Arabic. Use clear placeholder text.
+
+Please generate the foundational code, including the layout wrapper, the sidebar component, and placeholders for the routing structure based on these instructions.

@@ -1,0 +1,9 @@
+flowchart TB
+  apiRoot["/api Express router"]
+  apiRoot --> health["GET /healthz"]
+  apiRoot --> metal["/metal orders and stages"]
+  apiRoot --> wooden["/wooden orders and stages"]
+  apiRoot --> dashboard["/dashboard stats gantt trends"]
+  apiRoot --> shared["/shared-projects"]
+  apiRoot --> import["/import spreadsheets"]
+  apiRoot --> export["/export downloads"]

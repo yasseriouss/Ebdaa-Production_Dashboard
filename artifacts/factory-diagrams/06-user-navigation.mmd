@@ -1,0 +1,23 @@
+flowchart TD
+  subgraph hubWeb["Factory OS apps/web"]
+    hw1["/ Dashboard Command Center"]
+    hw2["/orders/metal wood daily placeholders"]
+    hw3["/projects /planning /analytics placeholders"]
+  end
+
+  subgraph rtlFloor["Data/off/factory-floor-rtl"]
+    rt1["/ أوامر نشطة Kanban أو جدول"]
+    rt2["/work-orders/id تفاصيل مراحل الخشب"]
+    rt3["فلاتر مشروع حالة قسم bottleneck"]
+    rt4["تصحيحات localStorage للكميات والحالات"]
+  end
+
+  subgraph backend["artifacts/api-server"]
+    be1["/api metal wooden dashboard import export"]
+  end
+
+  user["المستخدم"] --> hubWeb
+  user --> rtlFloor
+  integrator["تكامل أو Excel"] --> backend
+  rtlFloor -.->|"مستقبل ربط"| backend
+  hubWeb -.->|"مستقبل ربط"| backend

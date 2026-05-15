@@ -1,0 +1,41 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1778749762547,
+      "tag": "0000_naive_hellfire_club",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1778750168671,
+      "tag": "0001_fuzzy_tigra",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1778750889208,
+      "tag": "0002_normal_the_enforcers",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1778751098153,
+      "tag": "0003_foamy_killmonger",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1778752000000,
+      "tag": "0004_factory_hub_tables",
+      "breakpoints": true
+    }
+  ]
+}
