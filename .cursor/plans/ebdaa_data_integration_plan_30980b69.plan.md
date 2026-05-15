@@ -85,7 +85,7 @@ flowchart TB
 
 ## 4. ربط بالتطبيق الحالي
 
-- التوجيه موجود في [`App.tsx`](c:\Data\Factory-Data-Hub\apps\web\src\App.tsx): لوحة، أوامر خشب، إنتاج يومي، مشاريع، تحليلات؛ **`/planning` لا يزال placeholder**.
+- التوجيه موجود في [`App.tsx`](c:\Data\Factory-Data-Hub\apps\web\src\App.tsx): لوحة، أوامر خشب، إنتاج يومي، مشاريع، تحليلات؛ **`/planning` يعرض [`PlanningKpi`](apps/web/src/pages/PlanningKpi.tsx) (لوحة KPI دورية) بدل placeholder السابق**.
 - التذييل: [`Layout.tsx`](c:\Data\Factory-Data-Hub\apps\web\src\components\layout\Layout.tsx) يعرض بالفعل «Created by **Yasserious.com**» — يمكن توحيد النص ثنائي اللغة أو إضافة سطر عربي تحت المحتوى إذا رغبت بصياغة أخرى دون تكرار في كل صفحة على حدة.
 
 **مسار تكامل مقترح بالمراحل:**

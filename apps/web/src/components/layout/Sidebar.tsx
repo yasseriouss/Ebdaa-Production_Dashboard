@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -18,10 +18,16 @@ import {
   ScanSearch,
   BookOpen,
   Factory,
+  Shield,
+  LineChart,
+  Building2,
+  Users,
 } from "lucide-react";
 import { ArabicText } from "../brand/ArabicText";
 import { BrandLogo } from "../brand/BrandLogo";
 import { cn } from "../../lib/cn";
+import { usePermissions } from "../../context/PermissionContext";
+import { ROUTE_REQUIRED_PERMISSION } from "../../lib/routePermissions";
 
 interface NavItem {
   title: string;
@@ -46,6 +52,12 @@ const navItems: NavItem[] = [
       { title: "Metal Factory", arabicTitle: "مصنع المعادن", href: "/orders/metal", icon: Cpu },
       { title: "Wood Factory", arabicTitle: "مصنع الأخشاب", href: "/orders/wood", icon: Trees },
     ],
+  },
+  {
+    title: "Departments",
+    arabicTitle: "الأقسام",
+    icon: Building2,
+    href: "/departments",
   },
   {
     title: "Daily Production",
@@ -100,25 +112,75 @@ const navItems: NavItem[] = [
     ],
   },
   {
+    title: "Audit & performance",
+    arabicTitle: "التدقيق والأداء",
+    icon: LineChart,
+    subItems: [
+      { title: "Audit log", arabicTitle: "سجل التدقيق", href: "/audit-log", icon: Shield },
+      {
+        title: "Perf · departments",
+        arabicTitle: "أداء الأقسام",
+        href: "/performance/departments",
+        icon: Activity,
+      },
+      {
+        title: "Perf · people",
+        arabicTitle: "أداء الأفراد",
+        href: "/performance/people",
+        icon: Users,
+      },
+    ],
+  },
+  {
     title: "Project Analytics",
     arabicTitle: "تحليلات المشاريع",
     icon: Activity,
     href: "/project-analytics",
   },
+  {
+    title: "Permissions admin",
+    arabicTitle: "توزيع الصلاحيات",
+    icon: Shield,
+    href: "/admin/permissions",
+  },
 ];
 
 export function Sidebar() {
   const [location] = useLocation();
+  const { loading, unrestricted, keys } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<string[]>([
     "Production Orders",
     "Daily Production",
     "Projects",
     "Analytics",
+    "Audit & performance",
   ]);
 
+  const visibleNavItems = useMemo(() => {
+    const gate = (href?: string) => {
+      if (!href) return true;
+      if (loading || unrestricted) return true;
+      const req = ROUTE_REQUIRED_PERMISSION[href];
+      if (!req) return true;
+      return keys.has(req);
+    };
+
+    const out: NavItem[] = [];
+    for (const item of navItems) {
+      if (item.subItems?.length) {
+        const subs = item.subItems.filter((s) => gate(s.href));
+        if (subs.length === 0) continue;
+        out.push({ ...item, subItems: subs });
+      } else if (gate(item.href)) {
+        out.push(item);
+      }
+    }
+    return out;
+  }, [loading, unrestricted, keys]);
+
   const toggleExpand = (title: string) => {
-    setExpandedItems(prev => 
-      prev.includes(title) ? prev.filter(t => t !== title) : [...prev, title]
+    setExpandedItems((prev) =>
+      prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title],
     );
   };
 
@@ -155,7 +217,7 @@ export function Sidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isExpanded = expandedItems.includes(item.title);
           const hasSubItems = item.subItems && item.subItems.length > 0;
           const isActive = location === item.href;
@@ -168,7 +230,7 @@ export function Sidebar() {
                   onClick={() => toggleExpand(item.title)}
                   className={cn(
                     "w-full flex items-center justify-between p-3 text-xs font-bold uppercase tracking-widest rounded-sm transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] motion-reduce:active:scale-100 group",
-                    isExpanded ? "text-brand-luxury" : "text-brand-metal"
+                    isExpanded ? "text-brand-luxury" : "text-brand-metal",
                   )}
                 >
                   <div className="flex items-center gap-3">
@@ -184,10 +246,12 @@ export function Sidebar() {
                 </button>
               ) : (
                 <Link href={item.href || "#"}>
-                  <a className={cn(
-                    "flex items-center gap-3 p-3 text-xs font-bold uppercase tracking-widest rounded-sm transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] motion-reduce:active:scale-100 group",
-                    isActive ? "nav-item-active text-brand-luxury" : "text-brand-metal"
-                  )}>
+                  <a
+                    className={cn(
+                      "flex items-center gap-3 p-3 text-xs font-bold uppercase tracking-widest rounded-sm transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] motion-reduce:active:scale-100 group",
+                      isActive ? "nav-item-active text-brand-luxury" : "text-brand-metal",
+                    )}
+                  >
                     <item.icon className="w-4 h-4" />
                     <div className="flex flex-col items-start">
                       <span>{item.title}</span>
@@ -214,11 +278,18 @@ export function Sidebar() {
                         const isSubActive = location === sub.href;
                         return (
                           <Link key={sub.href} href={sub.href}>
-                            <a className={cn(
-                              "flex items-center gap-3 p-2 text-[11px] font-bold uppercase tracking-wider rounded-sm transition-[color,transform] duration-200 hover:text-brand-luxury active:scale-[0.99] motion-reduce:active:scale-100 group",
-                              isSubActive ? "text-brand-luxury" : "text-brand-metal"
-                            )}>
-                              <sub.icon className={cn("w-3 h-3", isSubActive ? "text-brand-wood" : "text-brand-metal")} />
+                            <a
+                              className={cn(
+                                "flex items-center gap-3 p-2 text-[11px] font-bold uppercase tracking-wider rounded-sm transition-[color,transform] duration-200 hover:text-brand-luxury active:scale-[0.99] motion-reduce:active:scale-100 group",
+                                isSubActive ? "text-brand-luxury" : "text-brand-metal",
+                              )}
+                            >
+                              <sub.icon
+                                className={cn(
+                                  "w-3 h-3",
+                                  isSubActive ? "text-brand-wood" : "text-brand-metal",
+                                )}
+                              />
                               <div className="flex flex-col items-start">
                                 <span>{sub.title}</span>
                                 <ArabicText className="text-[9px] font-medium normal-case opacity-50">

@@ -1,5 +1,26 @@
 const apiBase = "";
 
+export const ACCESS_TOKEN_KEY = "fdh_access_token";
+
+export function readStoredAccessToken(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return localStorage.getItem(ACCESS_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function writeStoredAccessToken(token: string | null): void {
+  if (typeof window === "undefined") return;
+  try {
+    if (token) localStorage.setItem(ACCESS_TOKEN_KEY, token);
+    else localStorage.removeItem(ACCESS_TOKEN_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 export class ApiError extends Error {
   readonly status: number;
   readonly body: unknown;
@@ -14,10 +35,12 @@ export class ApiError extends Error {
 
 export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
   const url = path.startsWith("http") ? path : `${apiBase}${path}`;
+  const token = readStoredAccessToken();
   const res = await fetch(url, {
     ...init,
     headers: {
       Accept: "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(init?.headers as Record<string, string>),
     },
   });

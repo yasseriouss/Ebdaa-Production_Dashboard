@@ -17,3 +17,4 @@ export const db = drizzle(client, { schema });
 
 export { getLibsqlUrl } from "./libsql-url";
 export * from "./schema";
+export * from "./permissionCatalog";

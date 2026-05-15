@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./schema": "./src/schema/index.ts"
+    "./schema": "./src/schema/index.ts",
+    "./permissionCatalog": "./src/permissionCatalog.ts"
   },
   "scripts": {
     "push": "drizzle-kit push --config ./drizzle.config.ts",
@@ -13,6 +14,9 @@
     "generate": "drizzle-kit generate --config ./drizzle.config.ts",
     "migrate": "tsx src/migrate.ts",
     "apply-fh-ddl": "tsx src/applyFactoryHubDdl.ts",
+    "apply-auth-ddl": "tsx src/applyAuthAuditDdl.ts",
+    "seed-permissions": "tsx src/seedPermissions.ts",
+    "export-permission-docs": "tsx src/exportPermissionDocs.ts",
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {

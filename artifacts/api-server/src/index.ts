@@ -1,5 +1,10 @@
 import app from "./app";
 import { logger } from "./lib/logger";
+import { bootstrapAdminFromEnv } from "./bootstrap/authBootstrap";
+
+void bootstrapAdminFromEnv().catch((e) => {
+  logger.error({ err: e }, "bootstrapAdminFromEnv failed");
+});
 
 const rawPort = process.env["PORT"];
 

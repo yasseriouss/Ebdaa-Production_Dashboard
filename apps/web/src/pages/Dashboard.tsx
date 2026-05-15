@@ -8,6 +8,7 @@ import {
   Cpu,
   Factory,
   Package,
+  Shield,
   TrendingUp,
   Trees,
   Users,
@@ -136,11 +137,11 @@ function aggregateStageThroughput(orders: WoodWorkOrder[]) {
 }
 
 export default function Dashboard() {
-  const { data: orders = woodWorkOrdersFixture.work_orders } = useFhWoodOrders(
+  const { data: orders = woodWorkOrdersFixture.work_orders, isSuccess: hubOrdersLive } = useFhWoodOrders(
     woodWorkOrdersFixture.work_orders,
   );
-  const { data: capRef } = useFhReferenceSnapshot("factory_capacity");
-  const { data: empRef } = useFhReferenceSnapshot("employee_assignments");
+  const { data: capRef, isSuccess: capHub } = useFhReferenceSnapshot("factory_capacity");
+  const { data: empRef, isSuccess: empHub } = useFhReferenceSnapshot("employee_assignments");
 
   const factoryCapacityLive: FactoryCapacitySchema =
     (capRef?.payload as unknown as FactoryCapacitySchema | undefined) ?? factoryCapacityFixture;
@@ -190,7 +191,18 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="flex flex-wrap gap-2 items-center">
+        <div className="flex flex-wrap gap-2 items-center">
+        <p className="text-[9px] font-mono text-brand-metal w-full mb-1" dir="ltr">
+          Data: orders {hubOrdersLive ? "hub" : "fixture"} · capacity {capHub ? "hub" : "fixture"} · assignments{" "}
+          {empHub ? "hub" : "fixture"}
+        </p>
+        <Link
+          href="/admin/permissions"
+          className="industrial-btn py-1.5 px-3 text-[10px] gap-1.5 border-brand-success/40 text-brand-success bg-brand-success/5"
+        >
+          <Shield className="w-3 h-3" />
+          <ArabicText className="text-[10px]">توزيع الصلاحيات</ArabicText>
+        </Link>
         <span className="text-[10px] font-bold uppercase tracking-widest text-brand-metal me-1">Ebdaa hub</span>
         <Link href="/about-system" className="industrial-btn py-1.5 px-3 text-[10px] gap-1.5">
           <BookOpen className="w-3 h-3" />

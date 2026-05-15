@@ -1,39 +1,20 @@
 import { Router } from "express";
 import { MetalController } from "../controllers/metal.controller";
+import { requirePermission } from "../middleware/requirePermission";
 
 const router = Router();
 
-// List metal work orders
-router.get("/orders", MetalController.listOrders);
+router.get("/orders", requirePermission("orders:metal:view"), MetalController.listOrders);
+router.post("/orders", requirePermission("orders:metal:write"), MetalController.createOrder);
+router.get("/orders/:id", requirePermission("orders:metal:view"), MetalController.getOrder);
+router.put("/orders/:id", requirePermission("orders:metal:write"), MetalController.updateOrder);
+router.delete("/orders/:id", requirePermission("orders:metal:write"), MetalController.deleteOrder);
 
-// Create metal work order
-router.post("/orders", MetalController.createOrder);
-
-// Get single metal order with stages
-router.get("/orders/:id", MetalController.getOrder);
-
-// Update metal work order
-router.put("/orders/:id", MetalController.updateOrder);
-
-// Delete metal work order
-router.delete("/orders/:id", MetalController.deleteOrder);
-
-// Stage bottleneck summary
-router.get("/stages/summary", MetalController.getStagesSummary);
-
-// List metal stages
-router.get("/stages", MetalController.listStages);
-
-// Create metal stage (manual)
-router.post("/stages", MetalController.createStage);
-
-// Get single metal stage
-router.get("/stages/:id", MetalController.getStage);
-
-// Update metal stage
-router.put("/stages/:id", MetalController.updateStage);
-
-// Delete metal stage
-router.delete("/stages/:id", MetalController.deleteStage);
+router.get("/stages/summary", requirePermission("orders:metal:view"), MetalController.getStagesSummary);
+router.get("/stages", requirePermission("orders:metal:view"), MetalController.listStages);
+router.post("/stages", requirePermission("orders:metal:write"), MetalController.createStage);
+router.get("/stages/:id", requirePermission("orders:metal:view"), MetalController.getStage);
+router.put("/stages/:id", requirePermission("orders:metal:write"), MetalController.updateStage);
+router.delete("/stages/:id", requirePermission("orders:metal:write"), MetalController.deleteStage);
 
 export default router;

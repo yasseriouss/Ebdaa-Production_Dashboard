@@ -1,25 +1,82 @@
 import { Router } from "express";
 import { FactoryHubController } from "../controllers/factoryHub.controller";
+import { requirePermission } from "../middleware/requirePermission";
 
 const router = Router();
 
-router.get("/wood-work-orders", FactoryHubController.listWoodWorkOrders);
-router.post("/wood-work-orders", FactoryHubController.createWoodWorkOrder);
-router.get("/wood-work-orders/:workOrderId", FactoryHubController.getWoodWorkOrder);
-router.put("/wood-work-orders/:workOrderId", FactoryHubController.updateWoodWorkOrder);
-router.delete("/wood-work-orders/:workOrderId", FactoryHubController.deleteWoodWorkOrder);
+router.get(
+  "/wood-work-orders",
+  requirePermission("factory_hub:wood:read"),
+  FactoryHubController.listWoodWorkOrders,
+);
+router.post(
+  "/wood-work-orders",
+  requirePermission("factory_hub:wood:write"),
+  FactoryHubController.createWoodWorkOrder,
+);
+router.get(
+  "/wood-work-orders/:workOrderId",
+  requirePermission("factory_hub:wood:read"),
+  FactoryHubController.getWoodWorkOrder,
+);
+router.put(
+  "/wood-work-orders/:workOrderId",
+  requirePermission("factory_hub:wood:write"),
+  FactoryHubController.updateWoodWorkOrder,
+);
+router.delete(
+  "/wood-work-orders/:workOrderId",
+  requirePermission("factory_hub:wood:write"),
+  FactoryHubController.deleteWoodWorkOrder,
+);
 
-router.get("/reference/:key", FactoryHubController.getReference);
-router.put("/reference/:key", FactoryHubController.putReference);
+router.get(
+  "/reference/:key",
+  requirePermission("factory_hub:reference:read"),
+  FactoryHubController.getReference,
+);
+router.put(
+  "/reference/:key",
+  requirePermission("factory_hub:reference:write"),
+  FactoryHubController.putReference,
+);
 
-router.get("/work-order-analysis-sessions", FactoryHubController.listAnalysisSessions);
-router.post("/work-order-analysis-sessions", FactoryHubController.createAnalysisSession);
-router.get("/work-order-analysis-sessions/:id", FactoryHubController.getAnalysisSession);
-router.put("/work-order-analysis-sessions/:id", FactoryHubController.updateAnalysisSession);
-router.delete("/work-order-analysis-sessions/:id", FactoryHubController.deleteAnalysisSession);
+router.get(
+  "/work-order-analysis-sessions",
+  requirePermission("factory_hub:analysis:read"),
+  FactoryHubController.listAnalysisSessions,
+);
+router.post(
+  "/work-order-analysis-sessions",
+  requirePermission("factory_hub:analysis:write"),
+  FactoryHubController.createAnalysisSession,
+);
+router.get(
+  "/work-order-analysis-sessions/:id",
+  requirePermission("factory_hub:analysis:read"),
+  FactoryHubController.getAnalysisSession,
+);
+router.put(
+  "/work-order-analysis-sessions/:id",
+  requirePermission("factory_hub:analysis:write"),
+  FactoryHubController.updateAnalysisSession,
+);
+router.delete(
+  "/work-order-analysis-sessions/:id",
+  requirePermission("factory_hub:analysis:write"),
+  FactoryHubController.deleteAnalysisSession,
+);
 
-router.get("/new-project-autosave", FactoryHubController.getNewProjectAutosave);
-router.put("/new-project-autosave", FactoryHubController.putNewProjectAutosave);
+router.get(
+  "/new-project-autosave",
+  requirePermission("factory_hub:project_autosave:read"),
+  FactoryHubController.getNewProjectAutosave,
+);
+router.put(
+  "/new-project-autosave",
+  requirePermission("factory_hub:project_autosave:write"),
+  FactoryHubController.putNewProjectAutosave,
+);
 
 router.post("/seed", FactoryHubController.seed);
 

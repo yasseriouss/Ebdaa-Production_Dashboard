@@ -36,6 +36,13 @@
       "when": 1778752000000,
       "tag": "0004_factory_hub_tables",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1778753000000,
+      "tag": "0005_auth_audit_tables",
+      "breakpoints": true
     }
   ]
 }

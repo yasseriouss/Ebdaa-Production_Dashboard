@@ -35,3 +35,7 @@ This document maps the **web panel JSON** (eight-stage `routing_progress`, numer
 |----------|--------|
 | `FH_SYNC_WOODEN=true` | After each successful `PUT /api/factory-hub/wood-work-orders/:id`, mirror fields into `wooden_work_orders` (create or update by `order_no`). |
 | `FH_ALLOW_SEED=true` | Allow `POST /api/factory-hub/seed` in production (normally dev-only). |
+
+## Routing translator (follow-up, not blocking web delivery)
+
+A **full** bidirectional mapping between the web panel’s eight `routing_progress` stages and the four Arabic `wooden_production_stages` rows is **not** implemented in the optional bridge. That translator belongs in a dedicated module (or issue) once you pick a single source of truth for stage completion. The hub bridge today maps quantities and metadata only; stage-level sync stays legacy-side until this work lands.

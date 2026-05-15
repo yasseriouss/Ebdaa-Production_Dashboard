@@ -1,4 +1,7 @@
 import type { IRouter } from "express";
+import { existsSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import multer from "multer";
 import * as XLSX from "xlsx";
 import PDFDocument from "pdfkit";
@@ -801,12 +804,56 @@ router.post("/sheets-template", upload.single("file"), async (req, res) => {
   }
 });
 
-// ---- Helper: Build PDF buffer using pdfkit with DejaVu font (Unicode-capable) ----
+/** Arabic / Hebrew scripts (and Presentation Forms-B used in Arabic typography). */
+function hasRtlOrArabicPresentation(text: string): boolean {
+  return /[\u0590-\u08FF\uFB50-\uFDFF\uFE70-\uFEFF]/.test(text);
+}
+
+const NOTO_AR_VARIABLE = "NotoSansArabic-Variable.ttf";
+
+/** Walk up from `import.meta.url` to find `<api-server-root>/fonts/NotoSansArabic-Variable.ttf` (tsx + bundled dist). */
+function resolveBundledNotoArabicPath(): string | undefined {
+  let dir = path.dirname(fileURLToPath(import.meta.url));
+  for (let i = 0; i < 10; i++) {
+    const candidate = path.join(dir, "fonts", NOTO_AR_VARIABLE);
+    if (existsSync(candidate)) return candidate;
+    const parent = path.dirname(dir);
+    if (parent === dir) break;
+    dir = parent;
+  }
+  return undefined;
+}
+
+/**
+ * PDFKit embedded fonts — **must include Arabic glyphs** (Windows/Linux paths below are fragile;
+ * bundled Noto beside `artifacts/api-server/fonts/` is authoritative).
+ */
+function resolvePdfKitFontPaths(): { regular: string; bold: string } {
+  const noto = resolveBundledNotoArabicPath();
+  if (noto) {
+    return { regular: noto, bold: noto };
+  }
+  const dejavu = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
+  const dejavuBold = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf";
+  if (existsSync(dejavu) && existsSync(dejavuBold)) {
+    return { regular: dejavu, bold: dejavuBold };
+  }
+  const winRoot = process.env.WINDIR || process.env.SystemRoot || "C:\\Windows";
+  const arial = path.join(winRoot, "Fonts", "arial.ttf");
+  const arialBd = path.join(winRoot, "Fonts", "arialbd.ttf");
+  if (existsSync(arial) && existsSync(arialBd)) return { regular: arial, bold: arialBd };
+  if (existsSync(arial)) return { regular: arial, bold: arial };
+  throw new Error(
+    "PDF fonts: missing Arabic-capable fonts. Place NotoSansArabic-Variable.ttf in artifacts/api-server/fonts/ " +
+      "(OFL license; see fonts/README.txt) or install DejaVu (Linux) / ensure Arial exists (Windows).",
+  );
+}
+
+// ---- Helper: Build PDF buffer using pdfkit + embedded Arabic-capable font ----
 function buildPdf(title: string, headers: string[], rows: string[][]): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
-      const DEJAVU = "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf";
-      const DEJAVU_BOLD = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf";
+      const { regular: FONT_REG, bold: FONT_BOLD } = resolvePdfKitFontPaths();
 
       const doc = new PDFDocument({ size: "A4", layout: "landscape", margin: 40 });
       const chunks: Buffer[] = [];
@@ -820,11 +867,11 @@ function buildPdf(title: string, headers: string[], rows: string[][]): Promise<B
       const lineH = 18;
 
       // Title
-      doc.font(DEJAVU_BOLD).fontSize(13).fillColor("#000000")
+      doc.font(FONT_BOLD).fontSize(13).fillColor("#000000")
         .text(title, margin, 40, { width: pageWidth - margin * 2, lineBreak: false });
 
       // Date
-      doc.font(DEJAVU).fontSize(8).fillColor("#666666")
+      doc.font(FONT_REG).fontSize(8).fillColor("#666666")
         .text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, margin, 58);
 
       let y = 76;
@@ -832,14 +879,19 @@ function buildPdf(title: string, headers: string[], rows: string[][]): Promise<B
       // Header row background
       doc.rect(margin, y - 2, pageWidth - margin * 2, lineH).fill("#222222");
 
-      // Header cells (English labels)
+      // Header cells
       headers.forEach((h, i) => {
-        doc.font(DEJAVU_BOLD).fontSize(8).fillColor("#FFD700")
-          .text(h.substring(0, 14), margin + i * colWidth + 3, y, { width: colWidth - 4, lineBreak: false });
+        const hText = h.substring(0, 14);
+        doc.font(FONT_BOLD).fontSize(8).fillColor("#FFD700")
+          .text(hText, margin + i * colWidth + 3, y, {
+            width: colWidth - 4,
+            lineBreak: false,
+            ...(hasRtlOrArabicPresentation(hText) ? { features: ["rtla"] as const } : {}),
+          });
       });
       y += lineH + 4;
 
-      // Data rows — Arabic text preserved using DejaVu (partial coverage)
+      // Data rows
       for (const [rowIdx, row] of rows.entries()) {
         if (y > doc.page.height - margin - lineH) {
           doc.addPage({ size: "A4", layout: "landscape", margin: 40 });
@@ -850,8 +902,12 @@ function buildPdf(title: string, headers: string[], rows: string[][]): Promise<B
         }
         row.forEach((cell, i) => {
           const text = (cell || "-").substring(0, 30);
-          doc.font(DEJAVU).fontSize(7).fillColor("#111111")
-            .text(text, margin + i * colWidth + 3, y, { width: colWidth - 4, lineBreak: false });
+          doc.font(FONT_REG).fontSize(7).fillColor("#111111")
+            .text(text, margin + i * colWidth + 3, y, {
+              width: colWidth - 4,
+              lineBreak: false,
+              ...(hasRtlOrArabicPresentation(text) ? { features: ["rtla"] as const } : {}),
+            });
         });
         y += lineH;
       }

@@ -9,6 +9,8 @@ import { AppLayout } from "@/components/layout";
 import Dashboard from "@/pages/dashboard";
 import MetalOrderDetail from "@/pages/metal-order-detail";
 import WoodenOrderDetail from "@/pages/wooden-order-detail";
+import MetalOrders from "@/pages/metal-orders";
+import WoodenOrders from "@/pages/wooden-orders";
 import Production from "@/pages/production-hub";
 import Projects from "@/pages/projects-hub";
 import Planning from "@/pages/planning";
@@ -25,7 +27,9 @@ function Router() {
         <Route path="/" component={Dashboard} />
         <Route path="/production" component={Production} />
         <Route path="/metal/orders/:id" component={MetalOrderDetail} />
+        <Route path="/metal/orders" component={MetalOrders} />
         <Route path="/wooden/orders/:id" component={WoodenOrderDetail} />
+        <Route path="/wooden/orders" component={WoodenOrders} />
         <Route path="/projects" component={Projects} />
         <Route path="/workforce" component={Workforce} />
         <Route path="/planning" component={Planning} />

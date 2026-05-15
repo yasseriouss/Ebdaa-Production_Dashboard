@@ -3,6 +3,8 @@ import { employeesTable, departmentsTable, factoriesTable } from "@workspace/db"
 import { eq, like, sql, and } from "drizzle-orm";
 import * as fs from "fs";
 import * as path from "path";
+import type { RequestAuth } from "../lib/requestAuth";
+import { combineWhere, employeesScopeWhere } from "../lib/dataScopeFilter";
 
 function redactName(name: string): string {
   if (!name) return "";
@@ -20,7 +22,7 @@ interface ListFilters {
 }
 
 export class EmployeesService {
-  static async listEmployees(filters: ListFilters) {
+  static async listEmployees(filters: ListFilters, auth?: RequestAuth) {
     const conditions = [];
 
     if (filters.departmentId) {
@@ -36,7 +38,9 @@ export class EmployeesService {
       conditions.push(like(employeesTable.name, `%${filters.search}%`));
     }
 
-    const where = conditions.length > 0 ? and(...conditions) : undefined;
+    const filterWhere = conditions.length > 0 ? and(...conditions) : undefined;
+    const scope = auth ? employeesScopeWhere(auth) : undefined;
+    const where = combineWhere(filterWhere, scope);
 
     const rows = await db
       .select({
@@ -60,10 +64,13 @@ export class EmployeesService {
     return rows;
   }
 
-  static async getRosterStats() {
+  static async getRosterStats(auth?: RequestAuth) {
+    const scope = auth ? employeesScopeWhere(auth) : undefined;
+
     const totalResult = await db
       .select({ count: sql<number>`count(*)` })
-      .from(employeesTable);
+      .from(employeesTable)
+      .where(scope);
     const total = totalResult[0]?.count ?? 0;
 
     const byDepartment = await db
@@ -74,6 +81,7 @@ export class EmployeesService {
       })
       .from(employeesTable)
       .leftJoin(departmentsTable, eq(employeesTable.departmentId, departmentsTable.id))
+      .where(scope)
       .groupBy(employeesTable.departmentId)
       .orderBy(sql`count(*) desc`);
 
@@ -83,6 +91,7 @@ export class EmployeesService {
         count: sql<number>`count(*)`,
       })
       .from(employeesTable)
+      .where(scope)
       .groupBy(employeesTable.standardizedRole)
       .orderBy(sql`count(*) desc`);
 
@@ -95,7 +104,7 @@ export class EmployeesService {
     return { total, departments, roles };
   }
 
-  static async getHeadcount() {
+  static async getHeadcount(auth?: RequestAuth) {
     const deptsPath = path.join(process.cwd(), "employees", "Departments.json");
     let planned: Record<string, number> = {};
 
@@ -120,12 +129,15 @@ export class EmployeesService {
       // Departments.json not found — return actual-only
     }
 
+    const scope = auth ? employeesScopeWhere(auth) : undefined;
+
     const actual = await db
       .select({
         departmentId: employeesTable.departmentId,
         count: sql<number>`count(*)`,
       })
       .from(employeesTable)
+      .where(scope)
       .groupBy(employeesTable.departmentId);
 
     const actualMap: Record<string, number> = {};
@@ -145,8 +157,8 @@ export class EmployeesService {
     return result;
   }
 
-  static async exportCsv(filters: ListFilters): Promise<string> {
-    const rows = await this.listEmployees(filters);
+  static async exportCsv(filters: ListFilters, auth?: RequestAuth): Promise<string> {
+    const rows = await this.listEmployees(filters, auth);
     const headers = ["id", "name", "jobTitle", "standardizedRole", "hireDate", "departmentId", "factoryId", "departmentName"];
 
     function csvEscape(v: unknown): string {

@@ -10,6 +10,7 @@ import { BrandLogo } from "../brand/BrandLogo";
 import { ArabicText } from "../brand/ArabicText";
 import { RouteCoach } from "../coaching/RouteCoach";
 import { Sidebar } from "./Sidebar";
+import { AuthHeaderLinks } from "./AuthHeaderLinks";
 import { useDirection } from "../../lib/useDirection";
 
 const pageEase = [0.22, 1, 0.36, 1] as const;
@@ -72,6 +73,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <Languages className="w-3.5 h-3.5" />
               <span>{direction === "ltr" ? "RTL · عربي" : "LTR · English"}</span>
             </motion.button>
+            <AuthHeaderLinks />
           </motion.header>
           <main
             className="flex-1 min-h-0 w-full px-4 pt-4 pb-8 sm:px-6 sm:pt-6 sm:pb-10 md:px-8 md:pt-8 md:pb-12 lg:px-10 lg:pb-14 max-w-[1680px] mx-auto"

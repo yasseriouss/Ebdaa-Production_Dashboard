@@ -4,34 +4,34 @@ overview: تشغيل `artifacts/api-server` على LibSQL محلي (`local.db`) 
 todos:
   - id: schema-fh-core
     content: Drizzle؛ جداول factory-hub؛ fh_wood_work_orders (payload JSON)، fh_reference_snapshots؛ جلسات تحليل + مسودة مشروع
-    status: pending
+    status: completed
   - id: api-routes-hub
     content: REST تحت factory-hub؛ CRUD أوامر خشب؛ مراجع؛ تحليل؛ مسودة مشروع؛ POST seed؛ Zod في api-zod
-    status: pending
+    status: completed
   - id: legacy-adapter-doc
     content: مستند حقول فقط يصف اختلاف WoodWorkOrder (لوحة الويب) ↔ woodenWorkOrdersTable + المراحل الأربعة؛ ومعدّن ↔ metal_work_orders؛ يحدّد نقاط المحوّل
-    status: pending
+    status: completed
   - id: bridge-layer-optional
     content: مرحلة B اختيارية؛ وحدة تحويل دوال أو routes شفافة (مزدوج الكتابة أو قراءة من جدول وتجميع لو dashboard) وفق المحوّل
-    status: pending
+    status: completed
   - id: openapi-backcompat
     content: openapi.yaml؛ إضافة factory-hub + تعليق إهلاك وتوجيه عميل واحد؛ عدم إزالة wooden/metal دوال موجودة من اللوحة حتى الاندماج ينضج
-    status: pending
+    status: completed
   - id: seed-all-fixtures
     content: تهيئة مراجع وأوامر خشب من fixtures؛ نقطة مهاجرة لمعدّن إن أمكن من مصدر seed الحالي أو صف فارغ
-    status: pending
+    status: completed
   - id: vite-proxy-scripts
     content: vite proxy `/api`; .env؛ تشغيل موازٍ
-    status: pending
+    status: completed
   - id: web-shared-api-layer
     content: QueryClientProvider؛ apps/web/src/lib/api؛ hooks لجميع الموارد
-    status: pending
+    status: completed
   - id: wire-pages
     content: توصيل جميع الشاشات + placeholder المعدّن مستقبلاً إلى استراتيجية واضحة؛ خشب عبر hub أولاً ثم وحدة واحدة للمراجع
-    status: pending
+    status: completed
   - id: sidebar-departments-hub
     content: إدراج عنصر قائمة جانبية «الأقسام» بحسب المصنع؛ عرض قائمة الموظفيين المعيّنيين بالقسم وأعداد ماكينات/مهام السعة؛ صفحة أو لوحة جانبية للقوائم الطويلة مع ربط لاحق بـ hub reference أو /employees
-    status: pending
+    status: completed
 isProject: false
 ---
 

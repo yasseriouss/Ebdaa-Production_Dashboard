@@ -1,6 +1,8 @@
 import { db } from "@workspace/db";
 import { tasksTable, departmentsTable } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
+import type { RequestAuth } from "../lib/requestAuth";
+import { departmentsScopeWhere } from "../lib/dataScopeFilter";
 
 export type MachineDepartmentRow = {
   taskId: string;
@@ -13,8 +15,13 @@ export type MachineDepartmentRow = {
 };
 
 export class CapacityService {
-  /** كل ماكينة (مهمة إنتاج) مع القسم الفعلي المخزّن في قاعدة البيانات — مصدره مخطط gem_Claude */
-  static async listMachinesWithDepartments(): Promise<MachineDepartmentRow[]> {
+  /** كل ماكينة (مهمة إنتاج) مع القسم الفعلي — مع تصفية نطاق عند تمرير مستخدم JWT. */
+  static async listMachinesWithDepartments(auth?: RequestAuth): Promise<MachineDepartmentRow[]> {
+    const scope = auth ? departmentsScopeWhere(auth) : undefined;
+    const joinOn = scope
+      ? and(eq(tasksTable.departmentId, departmentsTable.id), scope)
+      : eq(tasksTable.departmentId, departmentsTable.id);
+
     const rows = await db
       .select({
         taskId: tasksTable.id,
@@ -26,7 +33,7 @@ export class CapacityService {
         factoryId: departmentsTable.factoryId,
       })
       .from(tasksTable)
-      .innerJoin(departmentsTable, eq(tasksTable.departmentId, departmentsTable.id))
+      .innerJoin(departmentsTable, joinOn)
       .orderBy(departmentsTable.factoryId, departmentsTable.processStep, tasksTable.name);
 
     return rows;

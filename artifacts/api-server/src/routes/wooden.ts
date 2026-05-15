@@ -1,39 +1,20 @@
 import { Router } from "express";
 import { WoodenController } from "../controllers/wooden.controller";
+import { requirePermission } from "../middleware/requirePermission";
 
 const router = Router();
 
-// List wooden work orders
-router.get("/orders", WoodenController.listOrders);
+router.get("/orders", requirePermission("orders:wood:view"), WoodenController.listOrders);
+router.post("/orders", requirePermission("orders:wood:write"), WoodenController.createOrder);
+router.get("/orders/:id", requirePermission("orders:wood:view"), WoodenController.getOrder);
+router.put("/orders/:id", requirePermission("orders:wood:write"), WoodenController.updateOrder);
+router.delete("/orders/:id", requirePermission("orders:wood:write"), WoodenController.deleteOrder);
 
-// Create wooden work order
-router.post("/orders", WoodenController.createOrder);
-
-// Get single wooden order with stages
-router.get("/orders/:id", WoodenController.getOrder);
-
-// Update wooden work order
-router.put("/orders/:id", WoodenController.updateOrder);
-
-// Delete wooden work order
-router.delete("/orders/:id", WoodenController.deleteOrder);
-
-// Create wooden stage (manual)
-router.post("/stages", WoodenController.createStage);
-
-// List wooden stages
-router.get("/stages", WoodenController.listStages);
-
-// Stage bottleneck summary (before /stages/:id)
-router.get("/stages/summary", WoodenController.getStagesSummary);
-
-// Get single wooden stage
-router.get("/stages/:id", WoodenController.getStage);
-
-// Update wooden stage
-router.put("/stages/:id", WoodenController.updateStage);
-
-// Delete wooden stage
-router.delete("/stages/:id", WoodenController.deleteStage);
+router.post("/stages", requirePermission("orders:wood:write"), WoodenController.createStage);
+router.get("/stages", requirePermission("orders:wood:view"), WoodenController.listStages);
+router.get("/stages/summary", requirePermission("orders:wood:view"), WoodenController.getStagesSummary);
+router.get("/stages/:id", requirePermission("orders:wood:view"), WoodenController.getStage);
+router.put("/stages/:id", requirePermission("orders:wood:write"), WoodenController.updateStage);
+router.delete("/stages/:id", requirePermission("orders:wood:write"), WoodenController.deleteStage);
 
 export default router;

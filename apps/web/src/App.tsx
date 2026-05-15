@@ -13,6 +13,13 @@ import DailyProduction from "./pages/DailyProduction";
 import AboutSystem from "./pages/AboutSystem";
 import EquipmentRegistry from "./pages/EquipmentRegistry";
 import PlanningKpi from "./pages/PlanningKpi";
+import PermissionsAdmin from "./pages/PermissionsAdmin";
+import Login from "./pages/Login";
+import Departments from "./pages/Departments";
+import AuditLog from "./pages/AuditLog";
+import PerformanceDepartments from "./pages/PerformanceDepartments";
+import PerformancePeople from "./pages/PerformancePeople";
+import MetalOrders from "./pages/MetalOrders";
 
 const Placeholder = ({ title, arabicTitle, hint }: { title: string; arabicTitle: string; hint?: string }) => (
   <div className="flex flex-col items-center justify-center min-h-[60vh] glass-panel p-12 border-dashed">
@@ -39,14 +46,14 @@ function App() {
         <Switch>
           <Route path="/" component={Dashboard} />
 
+          <Route path="/login" component={Login} />
+          <Route path="/departments" component={Departments} />
+          <Route path="/audit-log" component={AuditLog} />
+          <Route path="/performance/departments" component={PerformanceDepartments} />
+          <Route path="/performance/people" component={PerformancePeople} />
+
           {/* Production Orders */}
-          <Route path="/orders/metal">
-            <Placeholder
-              title="Metal Factory Orders"
-              arabicTitle="أوامر مصنع المعادن"
-              hint="العقد الحالي: واجهة GET /api/metal/orders على خادم ERP. شاشة لوحة الويب الموحّدة ستتصل بـ factory-hub عند توفر نموذج JSON للمعدّن."
-            />
-          </Route>
+          <Route path="/orders/metal" component={MetalOrders} />
           <Route path="/orders/wood" component={WoodOrders} />
 
           {/* Daily Production */}
@@ -74,6 +81,8 @@ function App() {
           <Route path="/analytics/wood" component={AnalyticsWood} />
           <Route path="/analytics/metal" component={AnalyticsMetal} />
           <Route path="/project-analytics" component={ProjectAnalytics} />
+
+          <Route path="/admin/permissions" component={PermissionsAdmin} />
 
           {/* 404 */}
           <Route>
