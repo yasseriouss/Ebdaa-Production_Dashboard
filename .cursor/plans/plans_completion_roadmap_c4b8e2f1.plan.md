@@ -31,7 +31,7 @@ todos:
     status: completed
   - id: perm-scope-queries
     content: تمرير سياق المصادقة إلى خدمات wooden/metal/factoryHub وبناء where حسب مصنع/قسم مسموح (scope-queries)
-    status: completed
+    status: pending
   - id: perm-audit-coverage-ui
     content: توسيع التسجيل عبر [audit.service.ts](artifacts/api-server/src/services/audit.service.ts)؛ GET /api/audit-events؛ صفحة `/audit-log` بصلاحية مراجعة (audit-table-hook)
     status: completed
@@ -94,6 +94,8 @@ flowchart TB
   end
 ```
 
+
+
 **لماذا هذا الترتيب؟**
 
 1. **مرحلة أ** لا تعتمد على المستخدمين؛ تكمل تجربة الويب والـ hub للجميع (بما فيها زوار التطوير).
@@ -104,28 +106,32 @@ flowchart TB
 
 ## مرحلة أ — تفاصيل سريعة
 
-| Todo | مرجع تقني |
-|------|------------|
-| `local-departments-ui` | [Sidebar.tsx](apps/web/src/components/layout/Sidebar.tsx)، [App.tsx](apps/web/src/App.tsx)، [factoryCapacity.ts](apps/web/src/data/fixtures/factoryCapacity.ts)، [employeeAssignments.ts](apps/web/src/data/fixtures/employeeAssignments.ts) |
-| `local-dashboard-reference` | [Dashboard.tsx](apps/web/src/pages/Dashboard.tsx)، hooks [useFactoryHub.ts](apps/web/src/lib/api/hooks/useFactoryHub.ts) |
-| `local-metal-web` | [routes/metal.ts](artifacts/api-server/src/routes/metal.ts)، placeholder الويب تحت أوامر المعدّن |
-| `local-seed-env` | [factoryHub routes](artifacts/api-server/src/routes/factoryHub.ts)، `.env.example` |
+
+| Todo                        | مرجع تقني                                                                                                                                                                                                                                    |
+| --------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `local-departments-ui`      | [Sidebar.tsx](apps/web/src/components/layout/Sidebar.tsx)، [App.tsx](apps/web/src/App.tsx)، [factoryCapacity.ts](apps/web/src/data/fixtures/factoryCapacity.ts)، [employeeAssignments.ts](apps/web/src/data/fixtures/employeeAssignments.ts) |
+| `local-dashboard-reference` | [Dashboard.tsx](apps/web/src/pages/Dashboard.tsx)، hooks [useFactoryHub.ts](apps/web/src/lib/api/hooks/useFactoryHub.ts)                                                                                                                     |
+| `local-metal-web`           | [routes/metal.ts](artifacts/api-server/src/routes/metal.ts)، placeholder الويب تحت أوامر المعدّن                                                                                                                                             |
+| `local-seed-env`            | [factoryHub routes](artifacts/api-server/src/routes/factoryHub.ts)، `.env.example`                                                                                                                                                           |
+
 
 ## مرحلة ب–هـ — مواءمة مع خطة الصلاحيات
 
-| هذه الخطة | يقابله في [permissions-audit-performance](permissions-audit-performance_77343595.plan.md) |
-|-----------|----------------------------------------------------------------------------------------------|
-| `perm-db-auth-seed` | `schema-auth-rbac` |
-| `perm-api-jwt-middleware` | `api-auth-middleware` |
-| `perm-web-guard-client` | `web-guard-routes` |
-| `perm-scope-queries` | `scope-queries` |
-| `perm-audit-coverage-ui` | `audit-table-hook` |
-| `perm-performance-metrics` | `performance-metrics` |
+
+| هذه الخطة                  | يقابله في [permissions-audit-performance](permissions-audit-performance_77343595.plan.md) |
+| -------------------------- | ----------------------------------------------------------------------------------------- |
+| `perm-db-auth-seed`        | `schema-auth-rbac`                                                                        |
+| `perm-api-jwt-middleware`  | `api-auth-middleware`                                                                     |
+| `perm-web-guard-client`    | `web-guard-routes`                                                                        |
+| `perm-scope-queries`       | `scope-queries`                                                                           |
+| `perm-audit-coverage-ui`   | `audit-table-hook`                                                                        |
+| `perm-performance-metrics` | `performance-metrics`                                                                     |
+
 
 ## مهام مستقبلية لا تعوق التسليم
 
-- **`local-routing-translator-followup`:** محوّل كامل بين `routing_progress` ومراحل `wooden_production_stages` — مذكور في [legacy-adapter-factory-hub.md](docs/legacy-adapter-factory-hub.md) كعمل لاحق.
-- **`meta-ebdaa-doc-nit`:** تحديث فقرات قديمة داخل ملف Ebdaa إن لزم.
+- `**local-routing-translator-followup`:** محوّل كامل بين `routing_progress` ومراحل `wooden_production_stages` — مذكور في [legacy-adapter-factory-hub.md](docs/legacy-adapter-factory-hub.md) كعمل لاحق.
+- `**meta-ebdaa-doc-nit`:** تحديث فقرات قديمة داخل ملف Ebdaa إن لزم.
 
 ## تعريف الجاهزية
 
