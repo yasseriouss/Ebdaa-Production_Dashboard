@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { employeesTable, departmentsTable, factoriesTable } from "@workspace/db";
-import { eq, like, sql, and } from "drizzle-orm";
+import { eq, like, sql, and } from "@workspace/db";
 import * as fs from "fs";
 import * as path from "path";
 import type { RequestAuth } from "../lib/requestAuth";

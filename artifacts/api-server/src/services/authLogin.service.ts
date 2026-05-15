@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq } from "@workspace/db";
 import { db, authUsersTable } from "@workspace/db";
 import { verifyPassword } from "../lib/passwordCrypto";
 import { signAccessToken, hasJwtSecret } from "../lib/authToken";

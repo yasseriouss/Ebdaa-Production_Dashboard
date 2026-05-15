@@ -2,7 +2,7 @@
  * يضمن وجود مستخدم إداري أولي عند تعيين `BOOTSTRAP_ADMIN_PASSWORD` (≥8 أحرف).
  */
 import { randomUUID } from "node:crypto";
-import { eq } from "drizzle-orm";
+import { eq } from "@workspace/db";
 import { db, authUsersTable, authUserRolesTable } from "@workspace/db";
 import { hashPassword } from "../lib/passwordCrypto";
 

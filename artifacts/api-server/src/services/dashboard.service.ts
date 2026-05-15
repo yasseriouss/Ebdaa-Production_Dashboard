@@ -3,7 +3,7 @@ import {
   metalWorkOrdersTable,
   woodenWorkOrdersTable,
 } from "@workspace/db";
-import { isNull, and } from "drizzle-orm";
+import { isNull, and } from "@workspace/db";
 
 export class DashboardService {
   static async getStats() {

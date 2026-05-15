@@ -1,4 +1,5 @@
-import { and, inArray, or, sql, type SQL } from "drizzle-orm";
+import { and, inArray, or, sql } from "@workspace/db";
+import type { SQL } from "@workspace/db";
 import { departmentsTable, employeesTable } from "@workspace/db";
 import type { RequestAuth } from "./requestAuth";
 

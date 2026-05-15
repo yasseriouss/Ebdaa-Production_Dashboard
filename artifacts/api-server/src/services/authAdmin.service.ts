@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray } from "@workspace/db";
 import {
   db,
   authRolesTable,

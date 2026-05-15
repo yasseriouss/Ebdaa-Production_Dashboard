@@ -1,6 +1,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { useGetDashboardStats, useGetDashboardClients, useGetEmployeeStats, useGetMetalStagesSummary, useGetWoodenStagesSummary, useListCapacityMachines } from "@workspace/api-client-react";
 import type { StageSummary, CapacityMachineRow } from "@workspace/api-client-react";
+import { PieBulletLegend } from "@/components/PieBulletLegend";
 import { LoadPressureCard } from "@/components/LoadPressureCard";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Factory, Boxes, AlertTriangle, CheckCircle2, Users } from "lucide-react";
@@ -278,7 +279,9 @@ export default function Dashboard() {
   if (isLoading) return <div className="p-12"><Skeleton className="h-12 w-48 mb-8" /><div className="grid gap-8 grid-cols-4"><Skeleton className="h-64 rounded-4xl" /><Skeleton className="h-64 rounded-4xl" /><Skeleton className="h-64 rounded-4xl" /><Skeleton className="h-64 rounded-4xl" /></div></div>;
 
   return (
-    <motion.div 
+    <motion.div
+      dir="rtl"
+      lang="ar"
       className="p-4 sm:p-8 lg:p-12 space-y-8 sm:space-y-12 max-w-(--breakpoint-2xl) mx-auto w-full min-w-0"
       initial="hidden"
       animate="visible"
@@ -369,6 +372,7 @@ export default function Dashboard() {
                         </div>
                         <div
                           className="h-3 sm:h-3.5 w-full rounded-full bg-muted/45 ring-1 ring-border/35 overflow-hidden"
+                          dir="rtl"
                           aria-hidden
                         >
                           <div
@@ -421,6 +425,11 @@ export default function Dashboard() {
                 <span className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-widest">إجمالي</span>
               </div>
             </div>
+            {metalStatusData.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-foreground/10">
+                <PieBulletLegend items={metalStatusData.map(({ name, fill, value }) => ({ name, fill, value }))} />
+              </div>
+            )}
           </div>
         </motion.div>
 
@@ -456,6 +465,11 @@ export default function Dashboard() {
                 <span className="text-[10px] sm:text-xs text-muted-foreground font-bold uppercase tracking-widest">إجمالي</span>
               </div>
             </div>
+            {woodenStatusData.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-foreground/10">
+                <PieBulletLegend items={woodenStatusData.map(({ name, fill, value }) => ({ name, fill, value }))} />
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
@@ -579,6 +593,17 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
+              {(empStats.departments || []).length > 0 && (
+                <div className="mt-4 pt-3 border-t border-foreground/10">
+                  <PieBulletLegend
+                    items={(empStats.departments || []).map((d: { departmentName?: string; departmentId?: string; count?: number }, i: number) => ({
+                      name: String(d.departmentName || d.departmentId || "—"),
+                      fill: PIE_COLORS[i % PIE_COLORS.length],
+                      value: d.count ?? 0,
+                    }))}
+                  />
+                </div>
+              )}
               <p className="text-[10px] text-muted-foreground mt-2">بيانات شخصية — للاستخدام المحلي فقط</p>
             </div>
           </motion.div>

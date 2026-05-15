@@ -21,6 +21,10 @@
   color-scheme: dark;
 }
 
+html {
+  direction: rtl;
+}
+
 html,
 body,
 #root {
@@ -30,8 +34,13 @@ body,
 }
 
 body {
+  direction: rtl;
   background: var(--slide-bg);
   color: var(--slide-text);
+}
+
+#root {
+  direction: rtl;
 }
 
 .slide {

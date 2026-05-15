@@ -2,7 +2,7 @@ import type { Request, Response } from "express";
 import { CapacityService } from "../services/capacity.service";
 
 export class CapacityController {
-  static async listMachines(_req: Request, res: Response) {
+  static async listMachines(req: Request, res: Response) {
     try {
       const rows = await CapacityService.listMachinesWithDepartments(req.auth);
       res.json(rows);

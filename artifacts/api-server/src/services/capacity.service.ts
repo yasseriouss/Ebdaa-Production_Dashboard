@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { tasksTable, departmentsTable } from "@workspace/db";
-import { and, eq } from "drizzle-orm";
+import { and, eq } from "@workspace/db";
 import type { RequestAuth } from "../lib/requestAuth";
 import { departmentsScopeWhere } from "../lib/dataScopeFilter";
 

@@ -1,5 +1,6 @@
 import { useMemo, useSyncExternalStore } from "react";
 import { useGetCompletionTrend, useGetDashboardClients, useGetDashboardStats, useGetMetalStagesSummary } from "@workspace/api-client-react";
+import { PieBulletLegend } from "@/components/PieBulletLegend";
 import { LoadPressureCard } from "@/components/LoadPressureCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -105,8 +106,12 @@ export default function Analytics() {
   );
 
   return (
-    <div className="space-y-6 max-w-(--breakpoint-2xl) mx-auto w-full min-w-0">
-      <h1 className="text-3xl font-bold tracking-tight">الإحصائيات والتحليلات</h1>
+    <div
+      className="space-y-6 max-w-(--breakpoint-2xl) mx-auto w-full min-w-0"
+      dir="rtl"
+      lang="ar"
+    >
+      <h1 className="text-3xl font-bold tracking-tight text-start">الإحصائيات والتحليلات</h1>
 
       {/* KPI summary row */}
       <div className="grid gap-4 md:grid-cols-4">
@@ -159,7 +164,7 @@ export default function Analytics() {
           ) : (
             <div className="h-[260px] w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={trendData || []} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                <AreaChart data={trendData || []} margin={{ top: 10, right: 16, left: 16, bottom: 0 }}>
                   <defs>
                     <linearGradient id="colorMetal" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.8} />
@@ -170,18 +175,20 @@ export default function Analytics() {
                       <stop offset="95%" stopColor="#3b82f6" stopOpacity={0} />
                     </linearGradient>
                   </defs>
-                  <XAxis dataKey="period" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
-                  <YAxis domain={[0, 100]} unit="%" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <XAxis dataKey="period" reversed tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+                  <YAxis orientation="right" domain={[0, 100]} unit="%" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
                   <Tooltip
                     contentStyle={{
                       background: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
+                      direction: "rtl",
+                      textAlign: "right",
                     }}
                     formatter={(v: number, name: string) => [`${v}%`, name]}
                   />
-                  <Legend />
+                  <Legend wrapperStyle={{ direction: "rtl" }} layout="horizontal" align="center" />
                   <Area
                     type="monotone"
                     dataKey="metalCompletionPct"
@@ -235,7 +242,7 @@ export default function Analytics() {
                           <Cell key={i} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v: number) => [v, "عدد الأوامر"]} contentStyle={PIE_TOOLTIP_STYLE} />
+                      <Tooltip formatter={(v: number) => [v, "عدد الأوامر"]} contentStyle={{ ...PIE_TOOLTIP_STYLE, direction: "rtl", textAlign: "right" }} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -253,6 +260,11 @@ export default function Analytics() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+            {!loadingStats && metalOnTimeLate.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-border">
+                <PieBulletLegend items={metalOnTimeLate.map(({ name, fill, value }) => ({ name, fill, value }))} />
               </div>
             )}
           </CardContent>
@@ -286,7 +298,7 @@ export default function Analytics() {
                           <Cell key={i} fill={entry.fill} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(v: number) => [v, "عدد الأوامر"]} contentStyle={PIE_TOOLTIP_STYLE} />
+                      <Tooltip formatter={(v: number) => [v, "عدد الأوامر"]} contentStyle={{ ...PIE_TOOLTIP_STYLE, direction: "rtl", textAlign: "right" }} />
                     </PieChart>
                   </ResponsiveContainer>
                   <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -310,6 +322,11 @@ export default function Analytics() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+            {!loadingStats && woodenOnTimeLate.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-border">
+                <PieBulletLegend items={woodenOnTimeLate.map(({ name, fill, value }) => ({ name, fill, value }))} />
               </div>
             )}
           </CardContent>
@@ -363,6 +380,7 @@ export default function Analytics() {
                       </div>
                       <div
                         className="h-3 sm:h-3.5 w-full rounded-full bg-muted/45 ring-1 ring-border/35 overflow-hidden"
+                        dir="rtl"
                         aria-hidden
                       >
                         <div

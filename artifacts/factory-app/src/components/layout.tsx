@@ -57,9 +57,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           </SidebarContent>
         </Sidebar>
         <div className="flex-1 flex flex-col overflow-hidden relative">
-          <header className="h-20 border-b border-foreground/5 bg-surface/50 backdrop-blur-md flex items-center px-12 shrink-0 z-10">
+          <header className="h-20 border-b border-foreground/5 bg-surface/50 backdrop-blur-md flex items-center gap-8 px-12 shrink-0 z-10">
             <SidebarTrigger className="hover:bg-foreground/5 rounded-xl h-10 w-10" />
-            <div className="mr-8 font-bold text-xl tracking-tight text-foreground/80 font-editorial">
+            <div className="font-bold text-xl tracking-tight text-foreground/80 font-editorial">
               {navigation.find(n => location === n.href || (n.href !== "/" && location.startsWith(n.href)))?.name || "نظام إبداع"}
             </div>
           </header>

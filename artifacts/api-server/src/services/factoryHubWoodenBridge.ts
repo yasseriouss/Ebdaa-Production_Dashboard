@@ -1,6 +1,6 @@
 import { db } from "@workspace/db";
 import { woodenWorkOrdersTable } from "@workspace/db";
-import { and, eq, isNull } from "drizzle-orm";
+import { and, eq, isNull } from "@workspace/db";
 import { WoodenService } from "./wooden.service";
 
 function isBridgeEnabled(): boolean {

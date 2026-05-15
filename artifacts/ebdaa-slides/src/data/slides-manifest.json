@@ -110,5 +110,101 @@
     "title": "شكراً — Thank You",
     "description": "Closing slide — bilingual sign-off with key system stats",
     "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0015-4000-8000-000000000015",
+    "position": 15,
+    "filepath": "src/pages/slides/Slide15TechStack.tsx",
+    "title": "التقنية ومكدس التنفيذ",
+    "description": "Interactive stack — UI, API, data layers + guidance-only timelines",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0016-4000-8000-000000000016",
+    "position": 16,
+    "filepath": "src/pages/slides/Slide16Monorepo.tsx",
+    "title": "هيكل المستودع (Monorepo)",
+    "description": "Expand/collapse tree — artifacts vs lib packages",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0017-4000-8000-000000000017",
+    "position": 17,
+    "filepath": "src/pages/slides/Slide17DataContracts.tsx",
+    "title": "مسار البيانات والعقود",
+    "description": "Step-through from React to SQLite + OpenAPI codegen loop",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0018-4000-8000-000000000018",
+    "position": 18,
+    "filepath": "src/pages/slides/Slide18Rbac.tsx",
+    "title": "الأدوار والصلاحيات (RBAC)",
+    "description": "Role filters + integrity notes on production hardening",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0019-4000-8000-000000000019",
+    "position": 19,
+    "filepath": "src/pages/slides/Slide19JourneyAdmin.tsx",
+    "title": "رحلة المستخدم — الإدارة",
+    "description": "Toggle tiles — dashboard, planning, analytics, import/export",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0020-4000-8000-000000000020",
+    "position": 20,
+    "filepath": "src/pages/slides/Slide20JourneyLead.tsx",
+    "title": "رحلة المهندس / رئيس القسم",
+    "description": "Cyclable focus — planning, shared projects, scoped analytics",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0021-4000-8000-000000000021",
+    "position": 21,
+    "filepath": "src/pages/slides/Slide21JourneyOperator.tsx",
+    "title": "رحلة الفني / المشغّل",
+    "description": "Mode switcher — orders, production screens, daily rhythm",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0022-4000-8000-000000000022",
+    "position": 22,
+    "filepath": "src/pages/slides/Slide22DatabaseEr.tsx",
+    "title": "قاعدة البيانات — لمحة ER والتحسين",
+    "description": "Declared FKs today + selective cards for schema evolution",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0023-4000-8000-000000000023",
+    "position": 23,
+    "filepath": "src/pages/slides/Slide23Feasibility.tsx",
+    "title": "الجدوى وتأثير بيئة العمل",
+    "description": "KPI framework toggle — before/after without fabricated numbers",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0024-4000-8000-000000000024",
+    "position": 24,
+    "filepath": "src/pages/slides/Slide24RoadmapExecution.tsx",
+    "title": "المراحل الزمنية للتنفيذ",
+    "description": "Execution roadmap — hardening, production security, LibSQL readiness",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0025-4000-8000-000000000025",
+    "position": 25,
+    "filepath": "src/pages/slides/Slide25Risks.tsx",
+    "title": "المخاطر والاعتمادية",
+    "description": "Interactive mitigation checklist — backups, secrets, perf, adoption",
+    "speakerNotes": ""
+  },
+  {
+    "id": "a1b2c3d4-0026-4000-8000-000000000026",
+    "position": 26,
+    "filepath": "src/pages/slides/Slide26Credits.tsx",
+    "title": "الاعتمادات — البرمجة والتصميم",
+    "description": "Credits — programming and design excluding AI by yasserious.com",
+    "speakerNotes": ""
   }
 ]

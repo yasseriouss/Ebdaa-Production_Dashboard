@@ -8,7 +8,7 @@ import {
   metalProductionStagesTable,
   metalWorkOrdersTable,
 } from "@workspace/db";
-import { sql, eq, and, gte, isNull } from "drizzle-orm";
+import { sql, eq, and, gte, isNull } from "@workspace/db";
 import type { RequestAuth } from "../lib/requestAuth";
 import { employeesScopeWhere } from "../lib/dataScopeFilter";
 import { CapacityService } from "./capacity.service";

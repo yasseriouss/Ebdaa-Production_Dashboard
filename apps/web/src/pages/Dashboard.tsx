@@ -306,9 +306,27 @@ export default function Dashboard() {
 
         <article className="glass-panel p-4 sm:p-6 md:p-8 flex flex-col">
           <h3 className="text-sm font-bold uppercase tracking-widest mb-2">Wood Orders Mix</h3>
-          <p className="text-[10px] text-brand-metal uppercase tracking-wider mb-6">
+          <p className="text-[10px] text-brand-metal uppercase tracking-wider mb-4">
             <ArabicText>توزيع أوامر التشغيل</ArabicText>
           </p>
+          <ul
+            className="m-0 mb-6 flex list-none flex-wrap items-center gap-x-4 gap-y-2 p-0"
+            aria-label="مرجع ألوان المخطط الدائري"
+          >
+            {statusData.map((entry) => (
+              <li key={entry.name} className="flex items-center gap-2">
+                <span
+                  className="size-2.5 shrink-0 rounded-full ring-2 ring-brand-border shadow-sm"
+                  style={{ backgroundColor: STATUS_TONE[entry.name as WorkOrderStatus] }}
+                  aria-hidden
+                />
+                <span className="text-[10px] font-bold uppercase tracking-wider text-brand-luxury">
+                  {entry.name}
+                  <span className="ms-1 tabular-nums text-brand-metal">{entry.value}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
           <div className="flex flex-col gap-8 md:gap-10 lg:flex-row lg:items-center lg:justify-between flex-1 min-h-0">
             <div className="flex justify-center lg:justify-start shrink-0 w-full lg:w-[42%]">
               <div className="w-full max-w-[260px] aspect-square mx-auto lg:mx-0">

@@ -101,23 +101,31 @@
     @apply border-border;
   }
 
+  html {
+    direction: rtl;
+  }
+
   body {
     @apply font-sans antialiased bg-background text-foreground;
     position: relative;
     text-align: start;
+    direction: rtl;
   }
 
-  /* فقرات / خلايا: اتجاه النص حسب أول حرف قوي (عربي ← يمين، لاتيني ← يسار) */
-  [dir="rtl"] p {
-    unicode-bidi: plaintext;
-  }
-
-  /* App shell above decorative grain so modals/sheets stack predictably */
   #root {
+    direction: rtl;
     position: relative;
     z-index: 10;
     min-height: 100svh;
     isolation: isolate;
+  }
+
+  /* فقرات / قوائم / جداول: اتجاه النص حسب أول حرف قوي (عربي يمين، لاتيني يسار داخل السطر) */
+  [dir="rtl"] p,
+  [dir="rtl"] li,
+  [dir="rtl"] td,
+  [dir="rtl"] th {
+    unicode-bidi: plaintext;
   }
 
   /* Film Grain Overlay — keep below UI (was 9999 and drew over sheets/dialogs) */

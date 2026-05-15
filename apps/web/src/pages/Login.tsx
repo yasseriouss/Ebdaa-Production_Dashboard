@@ -3,6 +3,12 @@ import { ArabicText } from "../components/brand/ArabicText";
 import { BrandLogo } from "../components/brand/BrandLogo";
 import { writeStoredAccessToken } from "../lib/api/client";
 
+export default function Login() {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
   const onSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();

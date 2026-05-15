@@ -13,7 +13,7 @@ import {
   woodenWorkOrdersTable,
   woodenProductionStagesTable,
 } from "@workspace/db";
-import { eq } from "drizzle-orm";
+import { eq } from "@workspace/db";
 
 export function registerImportExportRoutes(
   router: IRouter,

@@ -50,6 +50,7 @@ export function LoadPressureCard({
                   </div>
                   <div
                     className="h-2.5 sm:h-3 w-full rounded-full bg-muted/45 ring-1 ring-border/35 overflow-hidden"
+                    dir="rtl"
                     aria-hidden
                   >
                     <div

@@ -3,7 +3,7 @@ import {
   metalWorkOrdersTable,
   metalProductionStagesTable,
 } from "@workspace/db";
-import { eq, isNull, and, or, ilike } from "drizzle-orm";
+import { eq, isNull, and, or, ilike } from "@workspace/db";
 
 export const METAL_STAGES = [
   { name: "الليزر", order: 1 },

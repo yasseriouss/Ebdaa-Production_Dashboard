@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useListEmployees, useGetEmployeeStats, useGetEmployeesHeadcount } from "@workspace/api-client-react";
+import { PieBulletLegend } from "@/components/PieBulletLegend";
 import { Skeleton } from "@/components/ui/skeleton";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -151,15 +152,21 @@ export default function Workforce() {
                     fontSize: "clamp(11px, 2.5vw, 12px)",
                   }}
                 />
-                <Legend
-                  wrapperStyle={{
-                    fontSize: "clamp(9px, 2.2vw, 11px)",
-                    paddingTop: "8px",
-                  }}
-                />
               </PieChart>
             </ResponsiveContainer>
           </div>
+          {deptPieData.length > 0 && (
+            <div className="border-t border-foreground/10 pt-3">
+              <PieBulletLegend
+                className="text-[clamp(10px,2.2vw,11px)]"
+                items={deptPieData.map((d: { name: string; fill: string; value: number }) => ({
+                  name: d.name,
+                  fill: d.fill,
+                  value: d.value,
+                }))}
+              />
+            </div>
+          )}
         </div>
       </motion.section>
 

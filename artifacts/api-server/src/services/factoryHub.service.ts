@@ -15,7 +15,7 @@ import {
   UpdateFhAnalysisSessionBody,
   PutFhNewProjectAutosaveBody,
 } from "@workspace/api-zod";
-import { eq } from "drizzle-orm";
+import { eq } from "@workspace/db";
 import { maybeSyncHubWoodOrderToWooden } from "./factoryHubWoodenBridge";
 
 const dataDir = path.join(process.cwd(), "src", "data");

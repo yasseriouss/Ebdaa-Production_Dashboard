@@ -1,5 +1,5 @@
 import { db, auditEventsTable } from "@workspace/db";
-import { desc } from "drizzle-orm";
+import { desc } from "@workspace/db";
 import { randomUUID } from "node:crypto";
 import { logger } from "../lib/logger";
 

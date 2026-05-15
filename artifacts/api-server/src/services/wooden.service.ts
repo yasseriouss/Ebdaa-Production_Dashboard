@@ -3,7 +3,7 @@ import {
   woodenWorkOrdersTable,
   woodenProductionStagesTable,
 } from "@workspace/db";
-import { eq, isNull, and, or, ilike } from "drizzle-orm";
+import { eq, isNull, and, or, ilike } from "@workspace/db";
 
 export const WOODEN_STAGES = [
   { name: "القطع", order: 1 },

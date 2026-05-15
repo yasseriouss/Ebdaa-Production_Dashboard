@@ -129,7 +129,7 @@ function SlideEditor() {
   }, [currentIndex, navigate]);
 
   return (
-    <div className="select-none">
+    <div className="select-none" dir="rtl" lang="ar">
       {slides.map((slide, index) => (
         <div
           key={slide.id}
@@ -157,7 +157,7 @@ function AllSlides() {
           className="slide relative aspect-video overflow-hidden"
           style={{ width: "1920px", height: "1080px" }}
         >
-          <div className="h-full w-full [&_.h-screen]:!h-full [&_.w-screen]:!w-full">
+          <div className="h-full w-full [&_.h-screen]:!h-full [&_.w-screen]:!w-full" dir="rtl" lang="ar">
             <slide.Component />
           </div>
         </div>

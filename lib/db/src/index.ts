@@ -18,3 +18,5 @@ export const db = drizzle(client, { schema });
 export { getLibsqlUrl } from "./libsql-url";
 export * from "./schema";
 export * from "./permissionCatalog";
+export { eq, and, or, inArray, sql, desc, gte, isNull, like, ilike } from "drizzle-orm";
+export type { SQL } from "drizzle-orm";

@@ -133,7 +133,25 @@ function OverallSection() {
         />
       </div>
       <div className="glass-panel p-4 sm:p-6 md:p-8">
-        <h4 className="text-xs font-bold uppercase tracking-widest mb-6">Factory Order Mix</h4>
+        <h4 className="text-xs font-bold uppercase tracking-widest mb-3">Factory Order Mix</h4>
+        <ul
+          className="m-0 mb-6 flex list-none flex-wrap items-center gap-x-4 gap-y-2 p-0"
+          aria-label="مرجع ألوان المخطط الدائري"
+        >
+          {data.map((row) => (
+            <li key={row.name} className="flex items-center gap-2">
+              <span
+                className="size-2.5 shrink-0 rounded-full ring-2 ring-brand-border shadow-sm"
+                style={{ backgroundColor: row.name === "Wood" ? "#D97706" : "#71717A" }}
+                aria-hidden
+              />
+              <span className="text-[10px] font-bold uppercase tracking-wider text-brand-luxury">
+                {row.name}
+                <span className="ms-1 tabular-nums text-brand-metal">{row.value}</span>
+              </span>
+            </li>
+          ))}
+        </ul>
         <div className="flex flex-col gap-8 sm:gap-10 md:flex-row md:items-center md:justify-between">
           <div className="w-full max-w-[240px] aspect-square mx-auto md:mx-0 shrink-0">
             <ResponsiveContainer width="100%" height="100%">

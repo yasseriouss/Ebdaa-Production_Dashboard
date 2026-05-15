@@ -1,9 +1,10 @@
-import { Switch, Route, Router as WouterRouter } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import { AppLayout } from "@/components/layout";
+import ProjectAtlas from "@/pages/internal/project-atlas";
 
 // Pages
 import Dashboard from "@/pages/dashboard";
@@ -20,7 +21,16 @@ import Workforce from "@/pages/workforce";
 
 const queryClient = new QueryClient();
 
+const showProjectAtlas =
+  import.meta.env.DEV || import.meta.env.VITE_SHOW_PROJECT_ATLAS === "1";
+
 function Router() {
+  const [location] = useLocation();
+
+  if (showProjectAtlas && location === "/__internal/project-atlas") {
+    return <ProjectAtlas />;
+  }
+
   return (
     <AppLayout>
       <Switch>
@@ -43,14 +53,16 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
-        <Toaster />
-      </TooltipProvider>
-    </QueryClientProvider>
+    <div dir="rtl" lang="ar" className="min-h-svh">
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+          <Toaster />
+        </TooltipProvider>
+      </QueryClientProvider>
+    </div>
   );
 }
 
