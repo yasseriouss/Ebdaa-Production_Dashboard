@@ -61,6 +61,8 @@ export const ListMetalOrdersResponseItem = zod.object({
   status: zod.string().optional(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
+  factoryId: zod.string().nullish(),
+  departmentId: zod.string().nullish(),
 });
 export const ListMetalOrdersResponse = zod.array(ListMetalOrdersResponseItem);
 
@@ -80,6 +82,8 @@ export const CreateMetalOrderBody = zod.object({
   backlogStatus: zod.string().optional(),
   notes: zod.string().optional(),
   status: zod.string().optional(),
+  factoryId: zod.string().optional(),
+  departmentId: zod.string().optional(),
 });
 
 /**
@@ -106,6 +110,8 @@ export const GetMetalOrderResponse = zod
     status: zod.string().optional(),
     createdAt: zod.string().optional(),
     updatedAt: zod.string().optional(),
+    factoryId: zod.string().nullish(),
+    departmentId: zod.string().nullish(),
   })
   .and(
     zod.object({
@@ -147,6 +153,8 @@ export const UpdateMetalOrderBody = zod.object({
   backlogStatus: zod.string().optional(),
   notes: zod.string().optional(),
   status: zod.string().optional(),
+  factoryId: zod.string().optional(),
+  departmentId: zod.string().optional(),
 });
 
 export const UpdateMetalOrderResponse = zod.object({
@@ -165,6 +173,8 @@ export const UpdateMetalOrderResponse = zod.object({
   status: zod.string().optional(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
+  factoryId: zod.string().nullish(),
+  departmentId: zod.string().nullish(),
 });
 
 /**
@@ -302,6 +312,8 @@ export const ListWoodenOrdersResponseItem = zod.object({
   prodDateFinished: zod.string().optional(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
+  factoryId: zod.string().nullish(),
+  departmentId: zod.string().nullish(),
 });
 export const ListWoodenOrdersResponse = zod.array(ListWoodenOrdersResponseItem);
 
@@ -326,6 +338,8 @@ export const CreateWoodenOrderBody = zod.object({
   prodDateStart: zod.string().optional(),
   prodDateEnd: zod.string().optional(),
   prodDateFinished: zod.string().optional(),
+  factoryId: zod.string().optional(),
+  departmentId: zod.string().optional(),
 });
 
 /**
@@ -357,6 +371,8 @@ export const GetWoodenOrderResponse = zod
     prodDateFinished: zod.string().optional(),
     createdAt: zod.string().optional(),
     updatedAt: zod.string().optional(),
+    factoryId: zod.string().nullish(),
+    departmentId: zod.string().nullish(),
   })
   .and(
     zod.object({
@@ -401,6 +417,8 @@ export const UpdateWoodenOrderBody = zod.object({
   prodDateStart: zod.string().optional(),
   prodDateEnd: zod.string().optional(),
   prodDateFinished: zod.string().optional(),
+  factoryId: zod.string().optional(),
+  departmentId: zod.string().optional(),
 });
 
 export const UpdateWoodenOrderResponse = zod.object({
@@ -424,6 +442,8 @@ export const UpdateWoodenOrderResponse = zod.object({
   prodDateFinished: zod.string().optional(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
+  factoryId: zod.string().nullish(),
+  departmentId: zod.string().nullish(),
 });
 
 /**
@@ -547,6 +567,8 @@ export const ListSharedProjectsResponseItem = zod.object({
         status: zod.string().optional(),
         createdAt: zod.string().optional(),
         updatedAt: zod.string().optional(),
+        factoryId: zod.string().nullish(),
+        departmentId: zod.string().nullish(),
       }),
     )
     .optional(),
@@ -573,6 +595,8 @@ export const ListSharedProjectsResponseItem = zod.object({
         prodDateFinished: zod.string().optional(),
         createdAt: zod.string().optional(),
         updatedAt: zod.string().optional(),
+        factoryId: zod.string().nullish(),
+        departmentId: zod.string().nullish(),
       }),
     )
     .optional(),
@@ -835,6 +859,8 @@ export const ListFhWoodWorkOrdersResponseItem = zod.object({
     .describe(
       "Grand Line `WoodWorkOrder` object (routing_progress with eight stages).",
     ),
+  factoryId: zod.string().nullish(),
+  departmentId: zod.string().nullish(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
 });
@@ -865,6 +891,8 @@ export const GetFhWoodWorkOrderResponse = zod.object({
     .describe(
       "Grand Line `WoodWorkOrder` object (routing_progress with eight stages).",
     ),
+  factoryId: zod.string().nullish(),
+  departmentId: zod.string().nullish(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
 });
@@ -889,6 +917,8 @@ export const UpdateFhWoodWorkOrderResponse = zod.object({
     .describe(
       "Grand Line `WoodWorkOrder` object (routing_progress with eight stages).",
     ),
+  factoryId: zod.string().nullish(),
+  departmentId: zod.string().nullish(),
   createdAt: zod.string().optional(),
   updatedAt: zod.string().optional(),
 });

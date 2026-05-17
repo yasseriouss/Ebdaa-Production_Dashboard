@@ -1,0 +1,6 @@
+flowchart LR
+  req[Incoming_HTTP]
+  OA[optionalAuthMiddleware]
+  MA[mutationAuditMiddleware]
+  tree[route_handlers]
+  req --> OA --> MA --> tree

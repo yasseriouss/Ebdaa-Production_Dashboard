@@ -5,6 +5,16 @@ import { DEFAULT_ANONYMOUS_AUTH, restrictedAnonymousAuth } from "../lib/requestA
 import { logger } from "../lib/logger";
 
 function resolveAnonymous() {
+  const offlineOpen =
+    process.env["FDH_OFFLINE_UNRESTRICTED"] === "true" ||
+    process.env["FDH_OFFLINE_UNRESTRICTED"] === "1";
+
+  const devOpen =
+    process.env["NODE_ENV"] === "development" ||
+    process.env["NODE_ENV"] === "test";
+
+  if (offlineOpen || devOpen) return DEFAULT_ANONYMOUS_AUTH;
+
   const strict = process.env["AUTH_ANONYMOUS_UNRESTRICTED"] === "false";
   if (strict) return restrictedAnonymousAuth();
   return DEFAULT_ANONYMOUS_AUTH;

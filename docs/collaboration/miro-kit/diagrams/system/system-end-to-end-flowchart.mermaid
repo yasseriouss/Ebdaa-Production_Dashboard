@@ -1,0 +1,141 @@
+flowchart TB
+  subgraph L1_users [المستخدمون_والأدوار]
+    U1[مشغّل_خشب_أو_معدن]
+    U2[قائد_قسم_بنطاق]
+    U3[مراجع_تدقيق]
+    U4[مسؤول_صلاحيات]
+    U5[مهندس_تطوير]
+  end
+
+  subgraph L2_spa [تطبيق_SPA_apps_web]
+    R0["/ — لوحة"]
+    R1["/orders/wood | /orders/metal"]
+    R2["/daily/wood | /daily/metal"]
+    R3["/production"]
+    R4["/import-export"]
+    R5["/planning | /analytics"]
+    R6["/audit-log | /admin/permissions"]
+    R7["/projects/* | /workforce"]
+    Rlogin["/login"]
+  end
+
+  subgraph L3_edge [حافة_الطلب]
+    Vite["Vite_proxy_/api_dev"]
+    Bearer["Authorization_Bearer_اختياري"]
+  end
+
+  subgraph L4_api [Express_api-server]
+    MW1[optionalAuthMiddleware]
+    MW2[mutationAuditMiddleware]
+    MW3[requirePermission_على_الكتابة]
+    subgraph routes [موجّهات_/api]
+      RTwood["/wooden"]
+      RTmetal["/metal"]
+      RTfh["/factory-hub"]
+      RTcap["/capacity | /employees"]
+      RTimp["/import | /export"]
+      RTauth["/auth"]
+      RTaudit["/audit-events"]
+      RTperf["/performance"]
+      RTdash["/dashboard"]
+      RTnotes[entity_notes]
+    end
+  end
+
+  subgraph L5_services [طبقة_الخدمات]
+    Swood[wooden.service]
+    Smetal[metal.service]
+    Shub[factoryHub.service]
+    Sscope[dataScopeFilter_دليل_وموظفين]
+    Simp[importExport.service]
+  end
+
+  subgraph L6_db [SQLite_LibSQL_Drizzle]
+    subgraph D_cap [دليل_وسعة]
+      Tfac[(factories)]
+      Tdept[(departments)]
+      Ttask[(tasks)]
+      Temp[(employees)]
+    end
+    subgraph D_wood [خشب_معياري]
+      Twwo[(wooden_work_orders)]
+      Twps[(wooden_production_stages)]
+    end
+    subgraph D_metal [معدن_معياري]
+      Tmwo[(metal_work_orders)]
+      Tmps[(metal_production_stages)]
+      Tmsl[(metal_stage_log)]
+    end
+    subgraph D_hub [Hub_JSON]
+      Tfhw[(fh_wood_work_orders)]
+      Tfhref[(fh_reference_snapshots)]
+    end
+    subgraph D_auth [مصادقة_وتدقيق]
+      Tusers[(auth_users)]
+      Troles[(auth_user_roles)]
+      Taudit[(audit_events)]
+    end
+  end
+
+  subgraph L7_flags [متغيرات_بيئة]
+    Fsync["FH_SYNC_WOODEN"]
+    Fseed["FH_ALLOW_SEED"]
+  end
+
+  U1 --> R1
+  U1 --> R2
+  U1 --> R3
+  U2 --> R5
+  U2 --> R7
+  U3 --> R6
+  U4 --> R6
+  U5 --> R4
+  U5 --> R0
+
+  R0 --> Vite
+  R1 --> Vite
+  R2 --> Vite
+  R3 --> Vite
+  R4 --> Vite
+  R5 --> Vite
+  R6 --> Vite
+  R7 --> Vite
+  Rlogin --> Vite
+
+  Vite --> Bearer --> MW1 --> MW2
+  MW2 --> routes
+  routes --> MW3
+  MW3 --> Swood
+  MW3 --> Smetal
+  MW3 --> Shub
+  MW3 --> Sscope
+  MW3 --> Simp
+
+  Swood --> Twwo
+  Swood --> Twps
+  Smetal --> Tmwo
+  Smetal --> Tmps
+  Smetal --> Tmsl
+  Shub --> Tfhw
+  Shub --> Tfhref
+  Sscope --> Tfac
+  Sscope --> Tdept
+  Sscope --> Temp
+  Simp --> Twwo
+  Simp --> Tmwo
+  Simp --> Tmsl
+
+  MW1 --> Tusers
+  MW2 --> Taudit
+  routes --> Troles
+
+  Shub -.->|"mirror_اختياري"| Fsync
+  Fsync -.-> Twwo
+  routes -.-> Fseed
+
+  Tfac --> Tdept --> Ttask
+  Tfac --> Temp
+  Twwo --> Twps
+  Tmwo --> Tmps --> Tmsl
+  Tfhw -.->|"حقول_مصنع_قسم"| Tfac
+  Tfhw -.->|"حقول_مصنع_قسم"| Tdept

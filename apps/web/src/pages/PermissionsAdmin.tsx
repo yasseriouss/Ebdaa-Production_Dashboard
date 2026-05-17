@@ -2,9 +2,9 @@ import React, { useMemo, useState } from "react";
 import { Link } from "wouter";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, Download, Save, Shield } from "lucide-react";
-import { ArabicText } from "../components/brand/ArabicText";
 import { apiJson } from "../lib/api/client";
 import { cn } from "../lib/cn";
+import { useTranslation } from "../context/I18nContext";
 
 type CatalogEntry = {
   key: string;
@@ -42,6 +42,7 @@ function downloadJson(filename: string, data: unknown) {
 }
 
 export default function PermissionsAdmin() {
+  const { t, locale } = useTranslation();
   const qc = useQueryClient();
   const [draft, setDraft] = useState<Record<string, Set<string>> | null>(null);
 
@@ -137,9 +138,7 @@ export default function PermissionsAdmin() {
   if (catalogQuery.isError || matrixQuery.isError) {
     return (
       <div className="glass-panel p-8 border border-brand-error/40 text-brand-error">
-        <ArabicText block className="font-arabic">
-          تعذّر تحميل بيانات الصلاحيات. تأكد من تشغيل خادم API على المنفذ 8787 وأن مسار /api/auth متاحاً.
-        </ArabicText>
+        <p className="leading-relaxed">{t("pages.permissions.loadError")}</p>
       </div>
     );
   }
@@ -153,19 +152,15 @@ export default function PermissionsAdmin() {
           </div>
           <div>
             <h1 className="text-2xl font-bold uppercase tracking-tighter text-brand-luxury">
-              Permissions matrix
+              {t("pages.permissions.title")}
             </h1>
-            <ArabicText block className="text-brand-metal mt-1">
-              توزيع الصلاحيات على الأدوار والمستخدمين — جميع وحدات النظام قابلة للتخصيص من الكتالوج أدناه.
-            </ArabicText>
+            <p className="text-brand-metal mt-1 leading-relaxed">{t("pages.permissions.subtitle")}</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Link href="/">
-            <a className="industrial-btn py-2 gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              لوحة التحكم
-            </a>
+          <Link href="/" className="industrial-btn py-2 gap-2">
+            <ArrowLeft className="w-4 h-4" />
+            {t("pages.permissions.dashboard")}
           </Link>
           <a
             href="/permissions-reference.json"
@@ -173,7 +168,7 @@ export default function PermissionsAdmin() {
             className="industrial-btn py-2 gap-2 border-brand-metal/40"
           >
             <Download className="w-4 h-4" />
-            JSON مرجعي
+            {t("pages.permissions.refJson")}
           </a>
           <button
             type="button"
@@ -181,7 +176,7 @@ export default function PermissionsAdmin() {
             onClick={exportBundle}
           >
             <Download className="w-4 h-4" />
-            تصدير الحالة الحالية
+            {t("pages.permissions.exportBundle")}
           </button>
           <button
             type="button"
@@ -190,32 +185,32 @@ export default function PermissionsAdmin() {
             onClick={handleSaveMatrix}
           >
             <Save className="w-4 h-4" />
-            حفظ مصفوفة الأدوار
+            {t("pages.permissions.saveMatrix")}
           </button>
         </div>
       </header>
 
       <section className="glass-panel p-4 sm:p-6 md:p-8 space-y-4">
         <h2 className="text-sm font-bold uppercase tracking-widest text-brand-luxury">
-          مصفوفة الأدوار × الصلاحيات
+          {t("pages.permissions.matrixTitle")}
         </h2>
-        <p className="text-[11px] text-brand-metal font-arabic leading-relaxed">
-          الصفوف مجمّعة حسب وحدة النظام. الأعمدة هي الأدوار في قاعدة البيانات. عدّل الخانات ثم اضغط «حفظ مصفوفة الأدوار».
+        <p className="text-[11px] text-brand-metal leading-relaxed">
+          {t("pages.permissions.matrixHint")}
         </p>
         <div className="overflow-x-auto border border-brand-border">
-          <table className="w-full text-left text-[10px] uppercase tracking-wider min-w-[960px]">
+          <table className="w-full text-start text-[10px] uppercase tracking-wider min-w-[960px]">
             <thead className="bg-brand-elevated border-b border-brand-border sticky top-0 z-10">
               <tr>
-                <th className="p-3 text-brand-metal w-[220px] font-arabic normal-case">
-                  الصلاحية
+                <th className="p-3 text-brand-metal w-[220px] normal-case">
+                  {t("pages.permissions.colPermission")}
                 </th>
-                <th className="p-3 text-brand-metal w-[140px] font-arabic normal-case">
-                  المفتاح
+                <th className="p-3 text-brand-metal w-[140px] normal-case">
+                  {t("pages.permissions.colKey")}
                 </th>
                 {roles.map((r) => (
                   <th key={r.slug} className="p-2 text-center text-brand-luxury align-bottom">
-                    <span className="block font-arabic normal-case text-[9px] leading-tight">
-                      {r.labelAr ?? r.slug}
+                    <span className="block normal-case text-[9px] leading-tight">
+                      {(locale === "en" ? r.labelEn ?? r.slug : r.labelAr ?? r.slug) as string}
                     </span>
                     <span className="block text-[8px] text-brand-metal mt-1">{r.slug}</span>
                   </th>
@@ -228,15 +223,18 @@ export default function PermissionsAdmin() {
                   <tr className="bg-brand-black/80 border-t border-brand-border">
                     <td
                       colSpan={2 + roles.length}
-                      className="p-2 ps-3 font-bold text-brand-wood font-arabic normal-case text-[11px]"
+                      className={cn(
+                        "p-2 ps-3 font-bold text-brand-wood normal-case text-[11px]",
+                        locale === "ar" && "font-arabic",
+                      )}
                     >
-                      {entries[0]?.moduleLabelAr ?? module}
+                      {locale === "en" ? module : (entries[0]?.moduleLabelAr ?? module)}
                     </td>
                   </tr>
                   {entries.map((e) => (
                     <tr key={e.key} className="border-t border-brand-border/80 hover:bg-brand-elevated/40">
-                      <td className="p-2 ps-3 font-arabic normal-case text-brand-luxury text-[11px]">
-                        {e.labelAr}
+                      <td className="p-2 ps-3 normal-case text-brand-luxury text-[11px]">
+                        {locale === "en" ? e.labelEn : e.labelAr}
                       </td>
                       <td className="p-2 font-mono text-[9px] text-brand-metal">{e.key}</td>
                       {roles.map((r) => {
@@ -265,11 +263,8 @@ export default function PermissionsAdmin() {
 
       <UsersRolesSection roles={roles} users={usersQuery.data} />
 
-      <footer className="text-[10px] text-brand-metal font-arabic border-t border-brand-border pt-6">
-        مستند عربي تفصيلي:{" "}
-        <code className="text-brand-luxury">docs/PERMISSIONS_REFERENCE_AR.md</code> — يُحدَّث عبر{" "}
-        <code className="text-brand-luxury">npm run export-permission-docs</code> في حزمة{" "}
-        <code className="text-brand-luxury">lib/db</code>.
+      <footer className="text-[10px] text-brand-metal border-t border-brand-border pt-6">
+        {t("pages.permissions.footerDoc")}
       </footer>
     </div>
   );
@@ -282,6 +277,7 @@ function UsersRolesSection({
   roles: RoleRow[];
   users: UserRow[] | undefined;
 }) {
+  const { t, locale } = useTranslation();
   const qc = useQueryClient();
   const [newEmail, setNewEmail] = useState("");
 
@@ -313,17 +309,15 @@ function UsersRolesSection({
   return (
     <section className="glass-panel p-4 sm:p-6 md:p-8 space-y-4">
       <h2 className="text-sm font-bold uppercase tracking-widest text-brand-luxury">
-        المستخدمون وأدوارهم
+        {t("pages.permissions.usersTitle")}
       </h2>
-      <ArabicText className="text-[11px] text-brand-metal block mb-2">
-        كل مستخدم يجمع صلاحيات جميع أدواره. بعد المصادقة لاحقاً يُقيَّد الوصول حسب هذه الجداول.
-      </ArabicText>
+      <p className="text-[11px] text-brand-metal block mb-2 leading-relaxed">{t("pages.permissions.usersHint")}</p>
 
       <div className="flex flex-wrap gap-2 items-center">
         <input
           type="email"
           dir="ltr"
-          placeholder="email@factory.local"
+          placeholder={t("pages.permissions.emailPlaceholder")}
           value={newEmail}
           onChange={(e) => setNewEmail(e.target.value)}
           className="flex-1 min-w-[200px] px-3 py-2 bg-brand-black border border-brand-border text-brand-luxury text-xs font-mono"
@@ -334,7 +328,7 @@ function UsersRolesSection({
           disabled={!newEmail.includes("@") || createMutation.isPending}
           onClick={() => createMutation.mutate(newEmail.trim())}
         >
-          إضافة مستخدم (بدون كلمة مرور بعد)
+          {t("pages.permissions.addUser")}
         </button>
       </div>
 
@@ -342,10 +336,10 @@ function UsersRolesSection({
         <table className="w-full text-[11px] min-w-[640px]">
           <thead className="bg-brand-elevated border-b border-brand-border">
             <tr>
-              <th className="p-2 text-start font-arabic text-brand-metal">البريد</th>
+              <th className="p-2 text-start text-brand-metal">{t("pages.permissions.colEmail")}</th>
               {roles.map((r) => (
-                <th key={r.id} className="p-2 text-center font-arabic text-brand-luxury">
-                  {r.labelAr ?? r.slug}
+                <th key={r.id} className="p-2 text-center text-brand-luxury">
+                  {(locale === "en" ? r.labelEn ?? r.slug : r.labelAr ?? r.slug) as string}
                 </th>
               ))}
               <th className="p-2 w-[100px]" />
@@ -379,6 +373,7 @@ function UserRoleRow({
   onSave: (roleIds: string[]) => void;
   saving: boolean;
 }) {
+  const { t } = useTranslation();
   const assigned = useMemo(() => new Set(user.roles.map((r) => r.roleId)), [user.roles]);
   const [local, setLocal] = useState<Set<string>>(() => assigned);
 
@@ -421,7 +416,7 @@ function UserRoleRow({
           )}
           onClick={() => onSave([...local])}
         >
-          حفظ
+          {t("pages.permissions.saveRow")}
         </button>
       </td>
     </tr>

@@ -2,12 +2,15 @@ import { useEffect, useRef, useState } from "react";
 import type { Column, Table } from "@tanstack/react-table";
 import { Check, Filter, Search, Settings2, X } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useTranslation } from "../../context/I18nContext";
 
 export interface FacetedFilterOption {
   value: string;
   label: string;
   /** Optional secondary label (e.g. Arabic). */
   secondary?: string;
+  /** Extra line (e.g. factory · org hierarchy). */
+  detail?: string;
 }
 
 export interface FacetedFilterDef {
@@ -35,6 +38,7 @@ export function DataTableToolbar<T>({
   rightSlot,
   leftSlot,
 }: DataTableToolbarProps<T>) {
+  const { t } = useTranslation();
   const activeFilterCount = filters.reduce((acc, def) => {
     const value = table.getColumn(def.columnId)?.getFilterValue() as
       | string[]
@@ -64,8 +68,8 @@ export function DataTableToolbar<T>({
             type="search"
             value={globalFilter}
             onChange={(event) => onGlobalFilterChange(event.target.value)}
-            placeholder="Search..."
-            aria-label="Global search"
+            placeholder={t("dataTable.searchPlaceholder")}
+            aria-label={t("dataTable.globalSearchAria")}
             className="flex-1 bg-transparent text-xs text-brand-luxury placeholder:text-brand-metal/70 outline-none"
           />
         </label>
@@ -81,7 +85,7 @@ export function DataTableToolbar<T>({
             className="industrial-btn text-brand-metal hover:text-brand-luxury"
           >
             <X className="w-3.5 h-3.5" />
-            <span>Clear</span>
+            <span>{t("dataTable.clear")}</span>
           </button>
         )}
       </div>
@@ -101,6 +105,7 @@ function FacetedFilter<T>({
   table: Table<T>;
   def: FacetedFilterDef;
 }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const column = table.getColumn(def.columnId);
@@ -140,7 +145,7 @@ function FacetedFilter<T>({
         <Filter className="w-3.5 h-3.5" />
         <span>{def.title}</span>
         {selectedSet.size > 0 && (
-          <span className="ml-1 px-1.5 py-0.5 bg-brand-wood/20 text-brand-wood text-[9px] font-bold">
+          <span className="ms-1 px-1.5 py-0.5 bg-brand-wood/20 text-brand-wood text-[9px] font-bold">
             {selectedSet.size}
           </span>
         )}
@@ -160,14 +165,14 @@ function FacetedFilter<T>({
                   key={option.value}
                   onClick={() => toggle(option.value)}
                   className={cn(
-                    "w-full flex items-center gap-2 px-2 py-1.5 text-xs text-left",
+                    "w-full flex items-start gap-2 px-2 py-1.5 text-xs text-start",
                     "hover:bg-brand-border transition-colors",
                     active && "text-brand-luxury",
                   )}
                 >
                   <span
                     className={cn(
-                      "flex items-center justify-center w-4 h-4 border",
+                      "flex shrink-0 items-center justify-center w-4 h-4 border mt-0.5",
                       active
                         ? "bg-brand-wood/20 border-brand-wood text-brand-wood"
                         : "border-brand-border",
@@ -176,12 +181,21 @@ function FacetedFilter<T>({
                   >
                     {active && <Check className="w-3 h-3" />}
                   </span>
-                  <span className="flex-1 truncate">{option.label}</span>
-                  {option.secondary && (
-                    <span className="text-[10px] text-brand-metal" lang="ar" dir="rtl">
-                      {option.secondary}
+                  <span className="flex-1 flex flex-col items-start min-w-0 gap-0.5">
+                    <span className="flex w-full min-w-0 items-start gap-2">
+                      <span className="flex-1 truncate">{option.label}</span>
+                      {option.secondary ? (
+                        <span className="text-[10px] text-brand-metal shrink-0" dir="auto">
+                          {option.secondary}
+                        </span>
+                      ) : null}
                     </span>
-                  )}
+                    {option.detail ? (
+                      <span className="text-[9px] text-brand-metal/85 leading-snug w-full" dir="auto">
+                        {option.detail}
+                      </span>
+                    ) : null}
+                  </span>
                 </button>
               );
             })}
@@ -193,7 +207,7 @@ function FacetedFilter<T>({
                 onClick={() => column.setFilterValue(undefined)}
                 className="w-full px-2 py-1 text-[10px] uppercase tracking-widest text-brand-metal hover:text-brand-luxury"
               >
-                Clear filter
+                {t("dataTable.clearFilter")}
               </button>
             </div>
           )}
@@ -204,6 +218,7 @@ function FacetedFilter<T>({
 }
 
 function ColumnVisibilityMenu<T>({ table }: { table: Table<T> }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -230,7 +245,7 @@ function ColumnVisibilityMenu<T>({ table }: { table: Table<T> }) {
         aria-expanded={open}
       >
         <Settings2 className="w-3.5 h-3.5" />
-        <span>Columns</span>
+        <span>{t("dataTable.columns")}</span>
       </button>
       {open && (
         <div

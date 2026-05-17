@@ -1,0 +1,28 @@
+flowchart TD
+  P[Browser_calls_/api]
+  Q{Authorization_Bearer_present}
+  R[Guest_or_empty_token]
+  S[optionalAuthMiddleware]
+  T[req_auth_kind]
+  U[mutationAuditMiddleware_on_mutations]
+  V[Route_handler]
+  W{Write_route_protected}
+  X[requirePermission]
+  Y{Permission_OK}
+  Z[Service_layer_Drizzle]
+  AA[403_policy]
+  AB{Directory_scoped_service}
+  AC[dataScopeFilter_SQL]
+  AD[Prod_orders_no_row_scope_yet]
+  P --> Q
+  Q -->|no| R
+  Q -->|yes| S
+  R --> S
+  S --> T --> U --> V
+  V --> W
+  W -->|yes| X --> Y
+  Y -->|no| AA
+  Y -->|yes| AB
+  W -->|read_focus| AB
+  AB -->|capacity_employees_performance| AC --> Z
+  AB -->|wood_metal_factoryHub| AD --> Z

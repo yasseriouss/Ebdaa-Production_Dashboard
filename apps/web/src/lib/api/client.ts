@@ -33,9 +33,15 @@ export class ApiError extends Error {
   }
 }
 
+function shouldAttachBearerToken(): boolean {
+  const v = import.meta.env.VITE_OFFLINE_UNRESTRICTED;
+  if (v === "1" || (typeof v === "string" && v.toLowerCase() === "true")) return false;
+  return true;
+}
+
 export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
   const url = path.startsWith("http") ? path : `${apiBase}${path}`;
-  const token = readStoredAccessToken();
+  const token = shouldAttachBearerToken() ? readStoredAccessToken() : null;
   const res = await fetch(url, {
     ...init,
     headers: {

@@ -1,0 +1,15 @@
+todo_id,phase,status_plan_yaml,technical_ref
+meta-reconcile-local-plan,A_reflection_local_sync,completed,.cursor/plans/local_api_sync_a2e2ca16.plan.md
+local-departments-ui,A_Local_API_sync_UI,completed,apps/web/src/App.tsx Sidebar Departments
+local-dashboard-reference,A_reference_source,completed,apps/web/pages/Dashboard.tsx useFactoryHub
+local-metal-web,A_metal_placeholder,completed,artifacts/api-server/src/routes/metal.ts
+local-seed-env,A_seed_env,completed,artifacts/api-server/src/routes/factoryHub.ts .env.example FH_*
+local-routing-translator-followup,Z_parallel_followup_anytime,completed,docs/legacy-adapter-factory-hub.md
+perm-db-auth-seed,B_auth_seed,completed,lib/db/src/schema/authAudit.ts
+perm-api-jwt-middleware,B_JWT_RB_API,completed,artifacts/api-server routes auth middleware requirePermission
+perm-web-guard-client,B_web_guard,completed,apps/web PermissionContext Login api client Bearer
+perm-scope-queries-directory,C_scope_partial_done,completed,artifacts/api-server/src/lib/dataScopeFilter.ts capacity employees performance
+perm-scope-queries-production-hub,C_scope_row_filter_pending,pending,policy_need_factory_department_on_row wooden metal factory-hub services
+perm-audit-coverage-ui,D_audit,completed,artifacts/api-server/src/services/audit.service.ts audit routes AuditLog.tsx
+perm-performance-metrics,E_performance,completed,performance routes PerformanceDepartments People
+meta-ebdaa-doc-nit,Z_parallel_doc_optional_anytime,completed,.cursor/plans/ebdaa_data_integration_plan_30980b69.plan.md

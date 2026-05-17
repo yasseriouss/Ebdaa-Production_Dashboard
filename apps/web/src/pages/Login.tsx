@@ -1,9 +1,10 @@
 import React, { useCallback, useState } from "react";
-import { ArabicText } from "../components/brand/ArabicText";
 import { BrandLogo } from "../components/brand/BrandLogo";
 import { writeStoredAccessToken } from "../lib/api/client";
+import { useTranslation } from "../context/I18nContext";
 
 export default function Login() {
+  const { t, locale } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -27,30 +28,29 @@ export default function Login() {
           return;
         }
         if (!data.accessToken) {
-          setError("Missing token");
+          setError(t("login.missingToken"));
           setPending(false);
           return;
         }
         writeStoredAccessToken(data.accessToken);
         window.location.assign("/");
       } catch {
-        setError("Network error");
+        setError(t("login.networkError"));
         setPending(false);
       }
     },
-    [email, password],
+    [email, password, t],
   );
 
   return (
     <div className="max-w-md mx-auto glass-panel p-10 border border-brand-border space-y-8">
       <div className="text-center space-y-2">
         <BrandLogo className="h-14 w-auto mx-auto object-contain" />
-        <h1 className="text-xl font-bold tracking-tight uppercase">Sign in</h1>
-        <ArabicText className="text-sm text-brand-metal">تسجيل الدخول</ArabicText>
+        <h1 className="text-xl font-bold tracking-tight text-brand-luxury">{t("login.title")}</h1>
       </div>
       <form onSubmit={onSubmit} className="space-y-4">
         <label className="block space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-brand-metal">Email</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-brand-metal">{t("login.email")}</span>
           <input
             type="email"
             autoComplete="username"
@@ -61,7 +61,7 @@ export default function Login() {
           />
         </label>
         <label className="block space-y-1">
-          <span className="text-[10px] font-bold uppercase tracking-widest text-brand-metal">Password</span>
+          <span className="text-[10px] font-bold uppercase tracking-widest text-brand-metal">{t("login.password")}</span>
           <input
             type="password"
             autoComplete="current-password"
@@ -77,12 +77,18 @@ export default function Login() {
           </p>
         ) : null}
         <button type="submit" disabled={pending} className="industrial-btn w-full justify-center">
-          {pending ? "…" : "Continue"}
+          {pending ? "…" : t("login.continue")}
         </button>
       </form>
-      <p className="text-[10px] text-brand-metal text-center leading-relaxed" dir="ltr">
-        Requires <code className="text-brand-luxury">JWT_SECRET</code> and bootstrap password on the API. See{" "}
-        <code className="text-brand-luxury">artifacts/api-server/.env.example</code>.
+      <p
+        className="text-[10px] text-brand-metal text-center leading-relaxed"
+        dir={locale === "ar" ? "rtl" : "ltr"}
+        lang={locale === "ar" ? "ar" : "en"}
+      >
+        {t("login.devHintAr")}
+      </p>
+      <p className="text-[10px] text-brand-metal text-center leading-relaxed" dir="ltr" lang="en">
+        {t("login.devHintEn")}
       </p>
     </div>
   );

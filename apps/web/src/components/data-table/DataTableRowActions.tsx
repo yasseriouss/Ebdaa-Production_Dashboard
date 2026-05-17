@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { MoreHorizontal } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useTranslation } from "../../context/I18nContext";
 
 export interface RowAction {
   label: string;
@@ -16,6 +17,7 @@ export interface RowAction {
  * caller wires the actions (e.g. opens an edit drawer or delete confirm).
  */
 export function DataTableRowActions({ actions }: { actions: RowAction[] }) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -38,7 +40,7 @@ export function DataTableRowActions({ actions }: { actions: RowAction[] }) {
         }}
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label="Row actions"
+        aria-label={t("dataTable.rowActionsAria")}
         className="p-1.5 text-brand-metal hover:text-brand-luxury hover:bg-brand-border transition-colors"
       >
         <MoreHorizontal className="w-4 h-4" />
@@ -62,7 +64,7 @@ export function DataTableRowActions({ actions }: { actions: RowAction[] }) {
                   action.onSelect();
                 }}
                 className={cn(
-                  "w-full flex items-center gap-2 px-3 py-2 text-xs text-left transition-colors",
+                  "w-full flex items-center gap-2 px-3 py-2 text-xs text-start transition-colors",
                   action.disabled
                     ? "text-brand-metal/50 cursor-not-allowed"
                     : action.destructive

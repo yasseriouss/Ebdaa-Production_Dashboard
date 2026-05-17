@@ -29,9 +29,12 @@ todos:
   - id: perm-web-guard-client
     content: صفحة تسجيل دخول وسياق مستخدم؛ تمرير Bearer في [apps/web/src/lib/api](apps/web/src/lib/api)؛ إخفاء/تعطيل إجراءات الكتابة حسب /api/auth/me (web-guard-routes)
     status: completed
-  - id: perm-scope-queries
-    content: تمرير سياق المصادقة إلى خدمات wooden/metal/factoryHub وبناء where حسب مصنع/قسم مسموح (scope-queries)
-    status: pending
+  - id: perm-scope-queries-directory
+    content: نطاق صفّي — السعة والموظفين ولوحات الأداء المشتقة (scope-queries-directory في خطة الصلاحيات؛ dataScopeFilter + req.auth)
+    status: completed
+  - id: perm-scope-queries-production-hub
+    content: نطاق صفّي — أوامر خشب/معدن ومصنع البيانات JSON (حقول factory/department + خدمات wooden/metal/factoryHub)
+    status: completed
   - id: perm-audit-coverage-ui
     content: توسيع التسجيل عبر [audit.service.ts](artifacts/api-server/src/services/audit.service.ts)؛ GET /api/audit-events؛ صفحة `/audit-log` بصلاحية مراجعة (audit-table-hook)
     status: completed
@@ -41,6 +44,9 @@ todos:
   - id: meta-ebdaa-doc-nit
     content: (اختياري) مزامنة نص [ebdaa_data_integration_plan_30980b69.plan.md](ebdaa_data_integration_plan_30980b69.plan.md) مع الواقع إن تغيّر وضع `/planning` بعد اكتمال todos
     status: completed
+  - id: ops-drizzle-migrate-scope-columns
+    content: (تم) ترحيل [0006](lib/db/drizzle/0006_production_row_scope.sql) و[0007](lib/db/drizzle/0007_metal_stage_log_sheet_shape.sql) + إصلاح تلقائي لـ `__drizzle_migrations` الفارغ عبر [migrationRepair.ts](lib/db/src/migrationRepair.ts)
+    status: completed
 isProject: false
 ---
 
@@ -48,8 +54,8 @@ isProject: false
 
 تجمع هذه الخطة البنود المتبقية من:
 
-- [Local API sync](local_api_sync_a2e2ca16.plan.md) (كثير منها منفَّذ في الكود لكن الملف ما زال يعرض `pending` بالكامل).
-- [permissions-audit-performance](permissions-audit-performance_77343595.plan.md) (المخطط موجود في `lib/db`؛ الربط بالمصادقة والسياسات والواجهة متبقٍ).
+- [Local API sync](local_api_sync_a2e2ca16.plan.md) (الـ YAML في ذلك الملف يعكس الآن تنفيذ المسارات والواجهة والـ todos المكتملة).
+- [permissions-audit-performance](permissions-audit-performance_77343595.plan.md) — نطاق الصفوف على أوامر الإنتاج وصفوف hub منفَّذ عبر `factory_id` / `department_id`.
 
 خطة [Ebdaa](ebdaa_data_integration_plan_30980b69.plan.md) مكتملة بحسب الـ todos؛ يبقى فقط ضبط توثيقي اختياري.
 
@@ -76,7 +82,9 @@ flowchart TB
     API --> WEB
   end
   subgraph phaseC [المرحلة ج — نطاق البيانات]
-    SC[perm-scope-queries]
+    SCdir[perm-scope-queries-directory]
+    SCph[perm-scope-queries-production-hub]
+    SCdir -.-> SCph
   end
   subgraph phaseD [المرحلة د — تدقيق]
     AU[perm-audit-coverage-ui]
@@ -85,8 +93,8 @@ flowchart TB
     PF[perm-performance-metrics]
   end
   S --> DB
-  WEB --> SC
-  SC --> AU
+  WEB --> SCdir
+  SCdir --> AU
   AU --> PF
   subgraph parallel [متوازٍ / مستقبلي]
     RT[local-routing-translator-followup]
@@ -100,7 +108,7 @@ flowchart TB
 
 1. **مرحلة أ** لا تعتمد على المستخدمين؛ تكمل تجربة الويب والـ hub للجميع (بما فيها زوار التطوير).
 2. **مرحلة ب** تضيف هوية حقيقية؛ بدونها لا معنى لعزل النطاق أو لتقارير «من فعل ماذا» بشكل موثوق.
-3. **مرحلة ج** تبني على `req.auth` بعد ثبات مسارات الدخول.
+3. **مرحلة ج** تبني على `req.auth`: الجزء الدليلي منجز؛ عزل أوامر الإنتاج وصفوف hub يفرض أعمدة مصنع/قسم وتصفية في الخدمات.
 4. **مرحلة د** تستفيد من وجود مستخدم ومسمى فاعل في السجلات؛ يمكن بدء تسجيل جزئي أبكر لكن الواجهة والفلترة تكتمل بعد تثبيت الصلاحيات.
 5. **مرحلة هـ** تحتاج تعريفات مقاييس وربما حقول إسناد؛ تُؤجَّل حتى لا تُعاد كتابة الاستعلامات بعد تغيير نطاق العرض.
 
@@ -118,14 +126,15 @@ flowchart TB
 ## مرحلة ب–هـ — مواءمة مع خطة الصلاحيات
 
 
-| هذه الخطة                  | يقابله في [permissions-audit-performance](permissions-audit-performance_77343595.plan.md) |
-| -------------------------- | ----------------------------------------------------------------------------------------- |
-| `perm-db-auth-seed`        | `schema-auth-rbac`                                                                        |
-| `perm-api-jwt-middleware`  | `api-auth-middleware`                                                                     |
-| `perm-web-guard-client`    | `web-guard-routes`                                                                        |
-| `perm-scope-queries`       | `scope-queries`                                                                           |
-| `perm-audit-coverage-ui`   | `audit-table-hook`                                                                        |
-| `perm-performance-metrics` | `performance-metrics`                                                                     |
+| هذه الخطة                            | يقابله في [permissions-audit-performance](permissions-audit-performance_77343595.plan.md) |
+| ------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `perm-db-auth-seed`                   | `schema-auth-rbac`                                                                        |
+| `perm-api-jwt-middleware`             | `api-auth-middleware`                                                                     |
+| `perm-web-guard-client`               | `web-guard-routes`                                                                        |
+| `perm-scope-queries-directory`       | `scope-queries-directory`                                                                 |
+| `perm-scope-queries-production-hub` | `scope-queries-production-hub`                                                            |
+| `perm-audit-coverage-ui`              | `audit-table-hook`                                                                        |
+| `perm-performance-metrics`            | `performance-metrics`                                                                     |
 
 
 ## مهام مستقبلية لا تعوق التسليم
@@ -136,6 +145,6 @@ flowchart TB
 ## تعريف الجاهزية
 
 - **Local sync «مكتمل عملياً»:** أقسام في القائمة ومسار واضح، معدّن له مسار ويب محدد، مرجع اللوحة متسق، seed و env موثّقة، وملف local_api_sync محدّث الانعكاس.
-- **صلاحيات «مكتملة عملياً»:** دخول، حماية كتابة، نطاق على القراءة/التعديل، سجل تدقيق قابل للاستعلام من الواجهة، ثم لوحات أداء مع عزل.
+- **صلاحيات «مكتملة عملياً» (بحدود التعريف أعلاه):** دخول اختياري عبر JWT، حماية المسارات بالمفاتيح، نطاق صفّي على دليل السعة والموظفين ولأنشطة مقاييس الأفراد وسجل تدقيق ولوحات أداء وأوامر خشب/معدن وصفوف hub عند تعبئة مصنع/قسم.
 
 بعد إنجاز كل todo، حدّث `status` هنا إلى `completed` (أو استخدم أداة المشروع في Cursor إن كانت تدير الحالة تلقائياً).

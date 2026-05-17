@@ -17,7 +17,8 @@ export type WoodDepartmentId =
   | "DEPT_WOOD_PAINT"
   | "DEPT_UPHOLSTERY"
   | "DEPT_WOOD_ASSY"
-  | "DEPT_PACKAGING";
+  | "DEPT_PACKAGING"
+  | "DEPT_MAINTENANCE";
 
 export type MetalDepartmentId =
   | "DEPT_PREP"

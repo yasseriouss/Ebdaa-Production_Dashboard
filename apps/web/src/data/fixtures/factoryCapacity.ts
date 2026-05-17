@@ -1,4 +1,4 @@
-import type { FactoryCapacitySchema } from "../types";
+import type { DepartmentId, Factory, FactoryCapacitySchema } from "../types";
 
 /**
  * Canonical operations + capacity model for the two facilities. Sourced from
@@ -252,7 +252,7 @@ export const factoryCapacityFixture: FactoryCapacitySchema = {
           },
           {
             id: "EDGE_BANDING",
-            name: "ماكينة لزق شريط",
+            name: "ماكينة لصق شريط",
             type: "Edge Banding",
             capacity_metrics: { unit_of_measure: "Meter", cycle_time_seconds: 10, setup_time_minutes: 20, batch_size: 1, efficiency_factor: 0.85, max_capacity_per_hour: 360 },
             cost_center_info: { hourly_operating_cost: 250, labor_required: 1 },
@@ -448,6 +448,28 @@ export const factoryCapacityFixture: FactoryCapacitySchema = {
           },
         ],
       },
+      {
+        id: "DEPT_MAINTENANCE",
+        name: "قسم الصيانة",
+        process_step: 10,
+        description: "الصيانة الوقائية والأعطال، والمرافق المصنعية بما فيها الهواء المضغوط.",
+        tasks: [
+          {
+            id: "COMPRESSED_AIR_PLANT",
+            name: "محطات الهواء المضغوط (KAESER)",
+            type: "Utilities",
+            capacity_metrics: {
+              unit_of_measure: "m³/min",
+              cycle_time_seconds: 0,
+              setup_time_minutes: 0,
+              batch_size: 1,
+              efficiency_factor: 0.92,
+              max_capacity_per_hour: 1,
+            },
+            cost_center_info: { hourly_operating_cost: 45, labor_required: 1 },
+          },
+        ],
+      },
     ],
   },
 };
@@ -459,4 +481,26 @@ export function findDepartment(deptId: string) {
     ...factoryCapacityFixture.woodworking_factory.departments,
   ];
   return all.find((d) => d.id === deptId);
+}
+
+/**
+ * Optional org chart: child department → parent department (same factory).
+ * Extend when HR/org confirms more lines; UI reads this for labels only.
+ */
+export const DEPARTMENT_REPORTS_TO: Partial<Record<DepartmentId, DepartmentId>> = {
+  /** Veneer/press work is run as a line under panel & CNC in many plants. */
+  DEPT_VENEER: "DEPT_PANEL_PROC",
+  /** Packaging is the outbound tail of the assembly area in work-order flow. */
+  DEPT_PACKAGING: "DEPT_WOOD_ASSY",
+};
+
+/** Resolve which top-level factory record owns this department id. */
+export function getDepartmentFactory(deptId: DepartmentId): Factory | undefined {
+  if (factoryCapacityFixture.woodworking_factory.departments.some((d) => d.id === deptId)) {
+    return factoryCapacityFixture.woodworking_factory;
+  }
+  if (factoryCapacityFixture.metal_factory.departments.some((d) => d.id === deptId)) {
+    return factoryCapacityFixture.metal_factory;
+  }
+  return undefined;
 }

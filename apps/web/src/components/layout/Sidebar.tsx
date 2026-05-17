@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -10,150 +10,241 @@ import {
   BarChart3,
   Activity,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Trees,
   Cpu,
   Plus,
   Globe2,
   ScanSearch,
   BookOpen,
+  Waypoints,
   Factory,
   Shield,
   LineChart,
   Building2,
   Users,
+  Map,
+  FileUp,
+  UserCheck,
 } from "lucide-react";
-import { ArabicText } from "../brand/ArabicText";
-import { BrandLogo } from "../brand/BrandLogo";
 import { cn } from "../../lib/cn";
+import { useDirection } from "../../lib/useDirection";
+import { useTranslation } from "../../context/I18nContext";
 import { usePermissions } from "../../context/PermissionContext";
 import { ROUTE_REQUIRED_PERMISSION } from "../../lib/routePermissions";
+import { useSidebarCollapse } from "../../context/SidebarCollapseContext";
+import type { Translate } from "../../context/I18nContext";
 
-interface NavItem {
-  title: string;
-  arabicTitle: string;
-  icon: React.ElementType;
-  href?: string;
-  subItems?: { title: string; arabicTitle: string; href: string; icon: React.ElementType }[];
-}
+type NavIcon = React.ElementType;
 
-const navItems: NavItem[] = [
+type NavSub = { id: string; labelKey: string; href: string; icon: NavIcon };
+
+type NavEntry =
+  | { kind: "leaf"; id: string; labelKey: string; href: string; icon: NavIcon }
+  | {
+      kind: "group";
+      id: string;
+      labelKey: string;
+      icon: NavIcon;
+      children: NavSub[];
+    };
+
+const NAV_DEF: NavEntry[] = [
+  { kind: "leaf", id: "dashboard", labelKey: "nav.dashboard", href: "/", icon: LayoutDashboard },
   {
-    title: "Dashboard",
-    arabicTitle: "لوحة التحكم",
-    icon: LayoutDashboard,
-    href: "/",
-  },
-  {
-    title: "Production Orders",
-    arabicTitle: "أوامر الإنتاج",
-    icon: Package,
-    subItems: [
-      { title: "Metal Factory", arabicTitle: "مصنع المعادن", href: "/orders/metal", icon: Cpu },
-      { title: "Wood Factory", arabicTitle: "مصنع الأخشاب", href: "/orders/wood", icon: Trees },
-    ],
-  },
-  {
-    title: "Departments",
-    arabicTitle: "الأقسام",
-    icon: Building2,
-    href: "/departments",
-  },
-  {
-    title: "Daily Production",
-    arabicTitle: "الإنتاج اليومي",
-    icon: ClipboardCheck,
-    subItems: [
-      { title: "Metal Factory", arabicTitle: "مصنع المعادن", href: "/daily/metal", icon: Cpu },
-      { title: "Wood Factory", arabicTitle: "مصنع الأخشاب", href: "/daily/wood", icon: Trees },
-    ],
-  },
-  {
-    title: "Projects",
-    arabicTitle: "المشاريع",
-    icon: Layers,
-    subItems: [
-      { title: "Joint Projects", arabicTitle: "المشاريع المشتركة", href: "/projects/joint", icon: Layers },
-      { title: "New Project", arabicTitle: "مشروع جديد", href: "/projects/new", icon: Plus },
-      {
-        title: "WO Analysis",
-        arabicTitle: "تحليل أوامر الشغل",
-        href: "/projects/work-order-analysis",
-        icon: ScanSearch,
-      },
-    ],
-  },
-  {
-    title: "Planning & Scheduling",
-    arabicTitle: "التخطيط والجدولة",
-    icon: Calendar,
-    href: "/planning",
-  },
-  {
-    title: "About & Training",
-    arabicTitle: "حول النظام والتدريب",
-    icon: BookOpen,
-    href: "/about-system",
-  },
-  {
-    title: "Equipment",
-    arabicTitle: "سجل المعدات",
+    kind: "leaf",
+    id: "productionHub",
+    labelKey: "nav.productionHub",
+    href: "/production",
     icon: Factory,
-    href: "/equipment",
   },
   {
-    title: "Analytics",
-    arabicTitle: "التحليلات",
+    kind: "group",
+    id: "productionOrders",
+    labelKey: "nav.groups.productionOrders",
+    icon: Package,
+    children: [
+      { id: "om", labelKey: "nav.metalFactory", href: "/orders/metal", icon: Cpu },
+      { id: "ow", labelKey: "nav.woodFactory", href: "/orders/wood", icon: Trees },
+    ],
+  },
+  { kind: "leaf", id: "departments", labelKey: "nav.departments", href: "/departments", icon: Building2 },
+  {
+    kind: "group",
+    id: "dailyProduction",
+    labelKey: "nav.groups.dailyProduction",
+    icon: ClipboardCheck,
+    children: [
+      { id: "dm", labelKey: "nav.metalFactory", href: "/daily/metal", icon: Cpu },
+      { id: "dw", labelKey: "nav.woodFactory", href: "/daily/wood", icon: Trees },
+    ],
+  },
+  {
+    kind: "group",
+    id: "projects",
+    labelKey: "nav.groups.projects",
+    icon: Layers,
+    children: [
+      { id: "ph", labelKey: "nav.projectsHub", href: "/projects/hub", icon: Layers },
+      { id: "pj", labelKey: "nav.jointProjects", href: "/projects/joint", icon: Layers },
+      { id: "pn", labelKey: "nav.newProject", href: "/projects/new", icon: Plus },
+      { id: "pw", labelKey: "nav.woAnalysis", href: "/projects/work-order-analysis", icon: ScanSearch },
+    ],
+  },
+  {
+    kind: "leaf",
+    id: "workforce",
+    labelKey: "nav.workforce",
+    href: "/workforce",
+    icon: UserCheck,
+  },
+  {
+    kind: "leaf",
+    id: "planning",
+    labelKey: "nav.planning",
+    href: "/planning",
+    icon: Calendar,
+  },
+  {
+    kind: "leaf",
+    id: "about",
+    labelKey: "nav.aboutTraining",
+    href: "/about-system",
+    icon: BookOpen,
+  },
+  {
+    kind: "leaf",
+    id: "workflowRouting",
+    labelKey: "nav.workflowRouting",
+    href: "/workflow-routing",
+    icon: Waypoints,
+  },
+  { kind: "leaf", id: "equipment", labelKey: "nav.equipment", href: "/equipment", icon: Factory },
+  {
+    kind: "leaf",
+    id: "importExport",
+    labelKey: "nav.importExport",
+    href: "/import-export",
+    icon: FileUp,
+  },
+  {
+    kind: "group",
+    id: "analytics",
+    labelKey: "nav.groups.analytics",
     icon: BarChart3,
-    subItems: [
-      { title: "Multi-Factory", arabicTitle: "متعدد المصانع", href: "/analytics", icon: Globe2 },
-      { title: "Wood Analytics", arabicTitle: "تحليلات الأخشاب", href: "/analytics/wood", icon: Trees },
-      { title: "Metal Analytics", arabicTitle: "تحليلات المعادن", href: "/analytics/metal", icon: Cpu },
+    children: [
+      { id: "ax-multi", labelKey: "nav.multiFactory", href: "/analytics", icon: Globe2 },
+      { id: "ax-wood", labelKey: "nav.woodAnalytics", href: "/analytics/wood", icon: Trees },
+      { id: "ax-metal", labelKey: "nav.metalAnalytics", href: "/analytics/metal", icon: Cpu },
     ],
   },
   {
-    title: "Audit & performance",
-    arabicTitle: "التدقيق والأداء",
+    kind: "group",
+    id: "auditPerf",
+    labelKey: "nav.groups.auditPerf",
     icon: LineChart,
-    subItems: [
-      { title: "Audit log", arabicTitle: "سجل التدقيق", href: "/audit-log", icon: Shield },
-      {
-        title: "Perf · departments",
-        arabicTitle: "أداء الأقسام",
-        href: "/performance/departments",
-        icon: Activity,
-      },
-      {
-        title: "Perf · people",
-        arabicTitle: "أداء الأفراد",
-        href: "/performance/people",
-        icon: Users,
-      },
+    children: [
+      { id: "au-log", labelKey: "nav.auditLog", href: "/audit-log", icon: Shield },
+      { id: "pd", labelKey: "nav.perfDepartments", href: "/performance/departments", icon: Activity },
+      { id: "pp", labelKey: "nav.perfPeople", href: "/performance/people", icon: Users },
     ],
   },
   {
-    title: "Project Analytics",
-    arabicTitle: "تحليلات المشاريع",
-    icon: Activity,
+    kind: "leaf",
+    id: "projectAnalytics",
+    labelKey: "nav.projectAnalytics",
     href: "/project-analytics",
+    icon: Activity,
   },
   {
-    title: "Permissions admin",
-    arabicTitle: "توزيع الصلاحيات",
-    icon: Shield,
+    kind: "leaf",
+    id: "permissions",
+    labelKey: "nav.permissionsAdmin",
     href: "/admin/permissions",
+    icon: Shield,
   },
+  { kind: "leaf", id: "devmap", labelKey: "nav.devToolsMap", href: "/dev/tools", icon: Map },
 ];
 
+function SubmenuFlyout({
+  flyout,
+  rtl,
+  location,
+  subs,
+  onPick,
+  t,
+}: {
+  flyout: { key: string; rect: DOMRect };
+  rtl: boolean;
+  location: string;
+  subs: NavSub[];
+  onPick: () => void;
+  t: Translate;
+}) {
+  if (subs.length === 0) return null;
+  const vw = document.documentElement.clientWidth;
+  const top = Math.max(8, Math.min(flyout.rect.top, window.innerHeight - 260));
+  const style: React.CSSProperties = {
+    position: "fixed",
+    top,
+    right: vw - flyout.rect.left + 8,
+    width: 220,
+    zIndex: 60,
+  };
+  return (
+    <div
+      className="rounded-sm border border-brand-border bg-brand-elevated py-2 shadow-xl"
+      style={style}
+      role="menu"
+      dir={rtl ? "rtl" : "ltr"}
+      lang={rtl ? "ar" : "en"}
+      onMouseDown={(e) => e.stopPropagation()}
+    >
+      {subs.map((sub) => {
+        const active = location === sub.href;
+        const label = t(sub.labelKey);
+        return (
+          <Link
+            key={sub.href}
+            href={sub.href}
+            className={cn(
+              "flex items-start gap-2 px-3 py-2 font-bold hover:bg-brand-border/80 rounded-sm",
+              active ? "text-brand-luxury bg-brand-border/30" : "text-brand-metal",
+            )}
+            onClick={onPick}
+          >
+            <sub.icon className={cn("w-3.5 h-3.5 shrink-0 mt-0.5", active ? "text-brand-wood" : "")} />
+            <span
+              className={cn(
+                "flex min-w-0 flex-1 truncate text-[11px] font-semibold leading-snug text-brand-luxury",
+                rtl ? "text-end" : "text-start",
+                !rtl && "uppercase tracking-wide",
+              )}
+            >
+              {label}
+            </span>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
 export function Sidebar() {
+  const { direction } = useDirection();
+  const { t } = useTranslation();
+  const rtl = direction === "rtl";
   const [location] = useLocation();
   const { loading, unrestricted, keys } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<string[]>([
-    "Production Orders",
-    "Daily Production",
-    "Projects",
-    "Analytics",
-    "Audit & performance",
+    "productionOrders",
+    "dailyProduction",
+    "projects",
+    "analytics",
+    "auditPerf",
   ]);
 
   const visibleNavItems = useMemo(() => {
@@ -165,12 +256,12 @@ export function Sidebar() {
       return keys.has(req);
     };
 
-    const out: NavItem[] = [];
-    for (const item of navItems) {
-      if (item.subItems?.length) {
-        const subs = item.subItems.filter((s) => gate(s.href));
-        if (subs.length === 0) continue;
-        out.push({ ...item, subItems: subs });
+    const out: NavEntry[] = [];
+    for (const item of NAV_DEF) {
+      if (item.kind === "group") {
+        const children = item.children.filter((s) => gate(s.href));
+        if (children.length === 0) continue;
+        out.push({ ...item, children });
       } else if (gate(item.href)) {
         out.push(item);
       }
@@ -178,167 +269,250 @@ export function Sidebar() {
     return out;
   }, [loading, unrestricted, keys]);
 
-  const toggleExpand = (title: string) => {
-    setExpandedItems((prev) =>
-      prev.includes(title) ? prev.filter((t) => t !== title) : [...prev, title],
-    );
+  const { collapsed, toggle: toggleCollapsed } = useSidebarCollapse();
+  const [flyout, setFlyout] = useState<{ key: string; rect: DOMRect } | null>(null);
+  const asideRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    if (collapsed) setFlyout(null);
+  }, [collapsed]);
+
+  useEffect(() => {
+    if (!flyout) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setFlyout(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [flyout]);
+
+  const toggleExpand = (id: string) => {
+    setExpandedItems((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
+  const flyoutGroup = visibleNavItems.find((i) => i.kind === "group" && i.id === flyout?.key);
+
   return (
-    <motion.aside
-      initial={{ opacity: 0, x: -12 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
-      className="w-64 h-screen bg-brand-elevated border-e border-brand-border flex flex-col fixed start-0 top-0 z-50"
-    >
-      <div className="p-6 border-b border-brand-border flex flex-col gap-3">
-        <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ type: "spring", stiffness: 520, damping: 28 }}
-          className="block"
+    <>
+      {flyout ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-[45] cursor-default bg-black/25"
+          aria-label={t("nav.closeMenu")}
+          onClick={() => setFlyout(null)}
+        />
+      ) : null}
+      {flyout && flyoutGroup?.kind === "group" ? (
+        <SubmenuFlyout
+          flyout={flyout}
+          rtl={rtl}
+          location={location}
+          subs={flyoutGroup.children}
+          t={t}
+          onPick={() => setFlyout(null)}
+        />
+      ) : null}
+
+      <motion.aside
+        ref={asideRef}
+        dir={rtl ? "rtl" : "ltr"}
+        lang={rtl ? "ar" : "en"}
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.38, ease: [0.22, 1, 0.36, 1] }}
+        className={cn(
+          "sticky top-0 z-40 flex h-screen shrink-0 flex-col overflow-x-visible overflow-y-hidden border-l border-brand-border bg-brand-elevated transition-[width] duration-200 ease-out",
+          collapsed ? "w-16" : "w-64",
+        )}
+      >
+        <div
+          className={cn(
+            "border-b border-brand-border flex shrink-0 items-center justify-center",
+            collapsed ? "p-2" : "px-3 py-4",
+          )}
         >
-          <Link href="/">
-            <a
-              href="/"
-              className="block rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-wood"
-              aria-label="الصفحة الرئيسية — لوحة التحكم"
-            >
-              <BrandLogo className="h-12 w-full max-h-12 object-contain object-start" />
-            </a>
-          </Link>
-        </motion.div>
-        <div>
-          <h1 className="text-sm font-bold tracking-tighter uppercase leading-none">GL Dashboard</h1>
-          <p className="text-[9px] text-brand-metal font-bold tracking-wide uppercase mt-1 leading-snug">
-            The Grand Line Minimal Production Dashboard
-          </p>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="flex h-8 w-8 items-center justify-center rounded-md text-brand-metal transition-colors hover:bg-brand-border hover:text-brand-luxury focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-wood"
+            aria-expanded={!collapsed}
+            title={collapsed ? t("nav.expandMenu") : t("nav.collapseMenu")}
+          >
+            {collapsed ? (
+              <ChevronsLeft className="h-4 w-4" aria-hidden />
+            ) : (
+              <ChevronsRight className="h-4 w-4" aria-hidden />
+            )}
+          </button>
         </div>
-      </div>
+        <nav
+          className={cn(
+            "flex flex-1 min-h-0 flex-col overflow-y-auto py-3",
+            collapsed ? "items-center gap-1 px-1" : "space-y-1 px-3",
+          )}
+          dir={rtl ? "rtl" : "ltr"}
+        >
+          {visibleNavItems.map((item) => {
+            const isExpanded = expandedItems.includes(item.id);
+            const hasSubItems = item.kind === "group" && item.children.length > 0;
+            const isActive = item.kind === "leaf" && location === item.href;
+            const label = t(item.labelKey);
 
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {visibleNavItems.map((item) => {
-          const isExpanded = expandedItems.includes(item.title);
-          const hasSubItems = item.subItems && item.subItems.length > 0;
-          const isActive = location === item.href;
-
-          return (
-            <div key={item.title} className="space-y-1">
-              {hasSubItems ? (
-                <button
-                  type="button"
-                  onClick={() => toggleExpand(item.title)}
-                  className={cn(
-                    "w-full flex items-center justify-between p-3 text-xs font-bold uppercase tracking-widest rounded-sm transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] motion-reduce:active:scale-100 group",
-                    isExpanded ? "text-brand-luxury" : "text-brand-metal",
-                  )}
-                >
-                  <div className="flex items-center gap-3">
-                    <item.icon className="w-4 h-4" />
-                    <div className="flex flex-col items-start">
-                      <span>{item.title}</span>
-                      <ArabicText className="text-[10px] font-medium normal-case opacity-50">
-                        {item.arabicTitle}
-                      </ArabicText>
-                    </div>
-                  </div>
-                  {isExpanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
-                </button>
-              ) : (
-                <Link href={item.href || "#"}>
-                  <a
+            return (
+              <div key={item.id} className={cn("w-full", !collapsed && "space-y-1")}>
+                {hasSubItems ? (
+                  collapsed ? (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const r = (e.currentTarget as HTMLButtonElement).getBoundingClientRect();
+                        setFlyout((prev) => (prev?.key === item.id ? null : { key: item.id, rect: r }));
+                      }}
+                      className={cn(
+                        "mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-brand-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-wood",
+                        flyout?.key === item.id ? "bg-brand-border text-brand-luxury" : "text-brand-metal hover:text-brand-luxury",
+                      )}
+                      title={label}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0 opacity-90" strokeWidth={2} />
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpand(item.id)}
+                      className={cn(
+                        "w-full flex items-center justify-between p-3 text-xs font-bold rounded-sm transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] motion-reduce:active:scale-100 group",
+                        !rtl && "uppercase tracking-widest",
+                        isExpanded ? "text-brand-luxury" : "text-brand-metal",
+                      )}
+                    >
+                      <div className={cn("flex min-w-0 flex-1 items-center gap-3", rtl && "justify-start")}>
+                        <item.icon className="w-4 h-4 shrink-0" />
+                        <span
+                          className={cn(
+                            "min-w-0 flex-1 truncate text-[13px] font-semibold leading-tight text-brand-luxury",
+                            rtl ? "text-end" : "text-start",
+                          )}
+                        >
+                          {label}
+                        </span>
+                      </div>
+                      {isExpanded ? (
+                        <ChevronDown className="w-3 h-3 shrink-0" />
+                      ) : direction === "rtl" ? (
+                        <ChevronLeft className="w-3 h-3 shrink-0" />
+                      ) : (
+                        <ChevronRight className="w-3 h-3 shrink-0" />
+                      )}
+                    </button>
+                  )
+                ) : item.kind !== "leaf" ? null : collapsed ? (
+                  <Link
+                    href={item.href}
                     className={cn(
-                      "flex items-center gap-3 p-3 text-xs font-bold uppercase tracking-widest rounded-sm transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] motion-reduce:active:scale-100 group",
+                      "mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-wood motion-reduce:active:scale-100",
+                      isActive ? "nav-item-active text-brand-luxury" : "text-brand-metal hover:text-brand-luxury",
+                    )}
+                    title={label}
+                  >
+                    <item.icon className="h-5 w-5 shrink-0 opacity-90" strokeWidth={2} />
+                  </Link>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={cn(
+                      "flex w-full min-w-0 items-center gap-3 p-3 text-xs font-bold rounded-sm transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] motion-reduce:active:scale-100 group",
+                      !rtl && "uppercase tracking-widest",
                       isActive ? "nav-item-active text-brand-luxury" : "text-brand-metal",
                     )}
                   >
-                    <item.icon className="w-4 h-4" />
-                    <div className="flex flex-col items-start">
-                      <span>{item.title}</span>
-                      <ArabicText className="text-[10px] font-medium normal-case opacity-50">
-                        {item.arabicTitle}
-                      </ArabicText>
-                    </div>
-                  </a>
-                </Link>
-              )}
+                    <item.icon className="w-4 h-4 shrink-0" />
+                    <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-brand-luxury text-start">
+                      {label}
+                    </span>
+                  </Link>
+                )}
 
-              <AnimatePresence initial={false}>
-                {hasSubItems && isExpanded ? (
-                  <motion.div
-                    key={`sub-${item.title}`}
-                    initial={{ opacity: 0, y: -6 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -6 }}
-                    transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-                    className="overflow-hidden"
-                  >
-                    <div className="ms-4 ps-4 border-s border-brand-border space-y-1 mt-1 pb-0.5">
-                      {item.subItems?.map((sub) => {
-                        const isSubActive = location === sub.href;
-                        return (
-                          <Link key={sub.href} href={sub.href}>
-                            <a
+                <AnimatePresence initial={false}>
+                  {item.kind === "group" && isExpanded && !collapsed ? (
+                    <motion.div
+                      key={`sub-${item.id}`}
+                      initial={{ opacity: 0, y: -6 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -6 }}
+                      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      <div
+                        className={cn(
+                          "space-y-1 mt-1 pb-0.5",
+                          rtl ? "me-4 pe-4 border-e border-brand-border" : "ms-4 ps-4 border-s border-brand-border",
+                        )}
+                      >
+                        {item.children.map((sub) => {
+                          const isSubActive = location === sub.href;
+                          const subLabel = t(sub.labelKey);
+                          return (
+                            <Link
+                              key={sub.href}
+                              href={sub.href}
                               className={cn(
-                                "flex items-center gap-3 p-2 text-[11px] font-bold uppercase tracking-wider rounded-sm transition-[color,transform] duration-200 hover:text-brand-luxury active:scale-[0.99] motion-reduce:active:scale-100 group",
+                                "flex w-full items-center gap-3 p-2 text-[11px] font-bold rounded-sm transition-[color,transform] duration-200 hover:text-brand-luxury active:scale-[0.99] motion-reduce:active:scale-100 group",
+                                !rtl && "uppercase tracking-wider",
                                 isSubActive ? "text-brand-luxury" : "text-brand-metal",
                               )}
                             >
                               <sub.icon
                                 className={cn(
-                                  "w-3 h-3",
+                                  "w-3 h-3 shrink-0",
                                   isSubActive ? "text-brand-wood" : "text-brand-metal",
                                 )}
                               />
-                              <div className="flex flex-col items-start">
-                                <span>{sub.title}</span>
-                                <ArabicText className="text-[9px] font-medium normal-case opacity-50">
-                                  {sub.arabicTitle}
-                                </ArabicText>
-                              </div>
-                            </a>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                ) : null}
-              </AnimatePresence>
-            </div>
-          );
-        })}
-      </nav>
+                              <span className="min-w-0 flex-1 truncate text-[11px] font-semibold leading-tight text-start">
+                                {subLabel}
+                              </span>
+                            </Link>
+                          );
+                        })}
+                      </div>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
+            );
+          })}
+        </nav>
 
-      <div className="mt-auto p-4 border-t border-brand-border space-y-3">
-        <motion.div
-          whileHover={{ scale: 1.01 }}
-          transition={{ type: "spring", stiffness: 400, damping: 30 }}
-          className="flex items-center gap-3 p-3 glass-panel cursor-default border-brand-border"
-        >
-          <div className="w-8 h-8 rounded-full bg-brand-border flex items-center justify-center text-[10px] font-bold text-brand-luxury shrink-0">
-            YA
-          </div>
-          <div className="flex-1 overflow-hidden min-w-0">
-            <p className="text-[10px] font-bold text-brand-luxury truncate">Yasserious</p>
-            <p className="text-[8px] text-brand-metal uppercase tracking-widest">Administrator</p>
-          </div>
-        </motion.div>
-        <p
-          dir="rtl"
-          lang="ar"
-          className="text-center text-[10px] leading-relaxed text-brand-metal font-arabic px-1"
-        >
-          قام بإعداده{" "}
-          <a
-            href="https://yasserious.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="font-bold text-brand-luxury hover:text-brand-wood transition-colors duration-200 underline-offset-2 hover:underline"
+        <div className={cn("mt-auto border-t border-brand-border shrink-0", collapsed ? "space-y-2 p-2" : "space-y-3 p-4")}>
+          <motion.div
+            whileHover={{ scale: 1.01 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            dir={rtl ? "rtl" : "ltr"}
+            className={cn(
+              "flex items-center glass-panel cursor-default border-brand-border",
+              collapsed ? "justify-center p-2" : "gap-3 p-3",
+            )}
           >
-            Yasserious.com
-          </a>
-        </p>
-      </div>
-    </motion.aside>
+            <div className="w-8 h-8 rounded-full bg-brand-border flex items-center justify-center text-[10px] font-bold text-brand-luxury shrink-0">
+              YA
+            </div>
+            {!collapsed ? (
+              <div className={cn("flex-1 overflow-hidden min-w-0", rtl && "text-end")}>
+                <p
+                  className={cn(
+                    "text-[10px] font-bold text-brand-luxury truncate",
+                    rtl ? "font-arabic" : "tracking-wide",
+                  )}
+                >
+                  {t("nav.adminName")}
+                </p>
+                <p className="text-[8px] text-brand-metal tracking-wide font-arabic normal-case">{t("nav.adminRole")}</p>
+              </div>
+            ) : null}
+          </motion.div>
+        </div>
+      </motion.aside>
+    </>
   );
 }

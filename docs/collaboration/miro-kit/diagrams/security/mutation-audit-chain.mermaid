@@ -1,0 +1,6 @@
+flowchart LR
+  MA[mutationAuditMiddleware]
+  AE[audit_events_table]
+  R[mutation_HTTP_route_group]
+  R --> MA
+  MA -->|"insert_on_mutations"| AE

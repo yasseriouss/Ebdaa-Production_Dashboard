@@ -1,10 +1,13 @@
 import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { factoriesTable, departmentsTable } from "./factoryCapacity";
 
 /** Grand Line web panel shape: full `WoodWorkOrder` JSON per row. */
 export const fhWoodWorkOrdersTable = sqliteTable("fh_wood_work_orders", {
   workOrderId: text("work_order_id").primaryKey(),
   payload: text("payload").notNull(),
+  factoryId: text("factory_id").references(() => factoriesTable.id),
+  departmentId: text("department_id").references(() => departmentsTable.id),
   createdAt: text("created_at")
     .notNull()
     .$defaultFn(() => new Date().toISOString()),

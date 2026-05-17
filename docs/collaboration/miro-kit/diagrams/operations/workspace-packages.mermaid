@@ -1,0 +1,15 @@
+flowchart TB
+  root[pnpm_workspace_root]
+  libdb["@workspace/db schemas drizzle"]
+  spec["lib api-spec api-zod api-client-react"]
+  srv["artifacts api-server Express"]
+  w1["apps web Vite"]
+  w2["artifacts factory-app"]
+  root --> libdb
+  root --> spec
+  root --> srv
+  root --> w1
+  root --> w2
+  srv --> libdb
+  w1 --> spec
+  w2 --> spec

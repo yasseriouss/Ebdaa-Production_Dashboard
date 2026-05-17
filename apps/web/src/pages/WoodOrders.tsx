@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "wouter";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   AlertTriangle,
@@ -13,8 +14,11 @@ import {
   Trash2,
   Trees,
 } from "lucide-react";
+import { BrandLogoOverlay } from "../components/brand/BrandLogoLoader";
 import { ArabicText } from "../components/brand/ArabicText";
 import { BrandLogo } from "../components/brand/BrandLogo";
+import { useTranslation, type Translate } from "../context/I18nContext";
+import { useDeferredLoading } from "../lib/useDeferredLoading";
 import {
   DataTable,
   DataTableBulkBar,
@@ -35,19 +39,23 @@ import {
   WOOD_DEPARTMENT_OPTIONS,
   WOOD_STAGE_LABELS,
   WOOD_STAGE_ORDER,
-  woodOrderUiCompletedFromRouting,
+  departmentReportsToLabel,
 } from "../data/routing";
 import {
   completionPercent,
   statusFromCompletion,
+  type WoodDepartmentId,
   type WoodRoutingStageKey,
   type WoodWorkOrder,
   type WorkOrderPriority,
   type WorkOrderStatus,
 } from "../data/types";
 import { woodWorkOrdersFixture } from "../data/fixtures";
+import {
+  DEPARTMENT_REPORTS_TO,
+  getDepartmentFactory,
+} from "../data/fixtures/factoryCapacity";
 import { useDeleteFhWoodOrder, useFhWoodOrders, useUpsertFhWoodOrder } from "../lib/api/hooks/useFactoryHub";
-import { WoodWorkOrderDetail } from "./WoodWorkOrderDetail";
 
 type ViewMode = "table" | "kanban";
 
@@ -64,6 +72,58 @@ const PRIORITY_TONE: Record<WorkOrderPriority, string> = {
   Normal: "bg-brand-elevated text-brand-luxury border-brand-border",
   Low: "bg-brand-success/10 text-brand-success border-brand-success/30",
 };
+
+function woStatusT(t: Translate, s: WorkOrderStatus): string {
+  switch (s) {
+    case "Pending":
+      return t("pages.woodOrders.statusPending");
+    case "In Progress":
+      return t("pages.woodOrders.statusInProgress");
+    case "Done":
+      return t("pages.woodOrders.statusDone");
+    default:
+      return s;
+  }
+}
+
+function woPriorityT(t: Translate, p: WorkOrderPriority): string {
+  switch (p) {
+    case "Critical":
+      return t("pages.woodOrders.priorityCritical");
+    case "High":
+      return t("pages.woodOrders.priorityHigh");
+    case "Normal":
+      return t("pages.woodOrders.priorityNormal");
+    case "Low":
+      return t("pages.woodOrders.priorityLow");
+    default:
+      return p;
+  }
+}
+
+function woodDepartmentFilterDetail(
+  deptId: WoodDepartmentId,
+  locale: "ar" | "en",
+  t: Translate,
+): string {
+  const factory = getDepartmentFactory(deptId);
+  if (!factory) return "";
+  const factoryLabel =
+    locale === "ar"
+      ? factory.name
+      : factory.factory_id === "WF-001"
+        ? t("pages.departments.woodFactoryOfficial")
+        : t("pages.departments.metalFactoryOfficial");
+  const parentId = DEPARTMENT_REPORTS_TO[deptId];
+  if (!parentId) {
+    return t("pages.woodOrders.deptFilterDetailRoot", { factory: factoryLabel });
+  }
+  const parentLabel = departmentReportsToLabel(parentId, locale);
+  return t("pages.woodOrders.deptFilterDetailSub", {
+    factory: factoryLabel,
+    parent: parentLabel,
+  });
+}
 
 function formatDate(value: string): string {
   return value === "nan" ? "—" : value;
@@ -97,22 +157,25 @@ function currentStage(order: WoodWorkOrder): WoodRoutingStageKey | null {
 }
 
 export default function WoodOrders() {
+  const [, navigate] = useLocation();
   const toast = useToast();
-  const { data: orders = woodWorkOrdersFixture.work_orders, isError: woodOrdersError } = useFhWoodOrders(
-    woodWorkOrdersFixture.work_orders,
-  );
+  const { t, locale } = useTranslation();
+  const openDetail = (id: string) => navigate(`/orders/wood/${encodeURIComponent(id)}`);
+  const {
+    data: orders = woodWorkOrdersFixture.work_orders,
+    isError: woodOrdersError,
+    isFetching,
+  } = useFhWoodOrders(woodWorkOrdersFixture.work_orders);
+  const showBusy = useDeferredLoading(isFetching);
   const upsertWoodOrder = useUpsertFhWoodOrder();
   const deleteWoodOrder = useDeleteFhWoodOrder();
 
   useEffect(() => {
     if (woodOrdersError) {
-      toast.error(
-        "تعذّر تحميل أوامر الخشب من واجهة factory-hub — يتم عرض البيانات المحلية حتى يعمل الخادم.",
-      );
+      toast.error(t("pages.woodOrders.loadError"));
     }
-  }, [woodOrdersError, toast]);
+  }, [woodOrdersError, toast, t]);
   const [view, setView] = useState<ViewMode>("table");
-  const [detailId, setDetailId] = useState<string | null>(null);
   const [pendingDelete, setPendingDelete] = useState<string[] | null>(null);
   const [pendingBulkStatus, setPendingBulkStatus] = useState<WorkOrderStatus | "">("");
 
@@ -130,7 +193,7 @@ export default function WoodOrders() {
         enableResizing: false,
         header: ({ table }) => (
           <Checkbox
-            aria-label="Select all"
+            aria-label={t("pages.woodOrders.selectAll")}
             checked={table.getIsAllPageRowsSelected()}
             indeterminate={
               !table.getIsAllPageRowsSelected() && table.getIsSomePageRowsSelected()
@@ -140,7 +203,9 @@ export default function WoodOrders() {
         ),
         cell: ({ row }) => (
           <Checkbox
-            aria-label={`Select ${row.original.work_order_id}`}
+            aria-label={t("pages.woodOrders.selectRowAria", {
+              id: row.original.work_order_id,
+            })}
             checked={row.getIsSelected()}
             onChange={(event) => row.toggleSelected(event.target.checked)}
           />
@@ -149,8 +214,8 @@ export default function WoodOrders() {
       {
         accessorKey: "work_order_id",
         size: 140,
-        header: "Work Order",
-        meta: { label: "Work Order" },
+        header: t("pages.woodOrders.colWorkOrder"),
+        meta: { label: t("pages.woodOrders.colWorkOrder") },
         cell: ({ row }) => (
           <span className="font-bold text-brand-luxury tracking-wider">
             {row.original.work_order_id}
@@ -160,8 +225,8 @@ export default function WoodOrders() {
       {
         accessorKey: "project_name",
         size: 160,
-        header: "Project",
-        meta: { label: "Project" },
+        header: t("pages.woodOrders.colProject"),
+        meta: { label: t("pages.woodOrders.colProject") },
         filterFn: (row, _id, value) => {
           const v = value as string[] | undefined;
           if (!v || !v.length) return true;
@@ -171,8 +236,8 @@ export default function WoodOrders() {
       {
         accessorKey: "product_name",
         size: 280,
-        header: "Product",
-        meta: { label: "Product" },
+        header: t("pages.woodOrders.colProduct"),
+        meta: { label: t("pages.woodOrders.colProduct") },
         cell: ({ row }) => (
           <ArabicText className="text-brand-metal text-xs leading-snug">
             {row.original.product_name}
@@ -182,8 +247,8 @@ export default function WoodOrders() {
       {
         id: "quantities",
         size: 140,
-        header: "Quantities",
-        meta: { label: "Quantities" },
+        header: t("pages.woodOrders.colQuantities"),
+        meta: { label: t("pages.woodOrders.colQuantities") },
         enableSorting: true,
         sortingFn: (a, b) =>
           completionPercent(a.original.quantities) - completionPercent(b.original.quantities),
@@ -191,7 +256,7 @@ export default function WoodOrders() {
           const percent = completionPercent(row.original.quantities);
           return (
             <div>
-              <div className="text-xs font-bold text-brand-luxury text-right">
+              <div className="text-xs font-bold text-brand-luxury text-end">
                 {row.original.quantities.completed}/{row.original.quantities.total_required}
               </div>
               <div className="mt-1 h-1 w-full bg-brand-border">
@@ -208,8 +273,8 @@ export default function WoodOrders() {
         id: "delivery_date",
         size: 120,
         accessorFn: (row) => row.dates.delivery_date,
-        header: "Delivery",
-        meta: { label: "Delivery" },
+        header: t("pages.woodOrders.colDelivery"),
+        meta: { label: t("pages.woodOrders.colDelivery") },
         cell: ({ row }) => {
           const { status } = statusFor(row.original);
           const late = isLate(row.original, status);
@@ -225,8 +290,8 @@ export default function WoodOrders() {
         id: "priority",
         size: 110,
         accessorFn: (row) => row.priority ?? "Normal",
-        header: "Priority",
-        meta: { label: "Priority" },
+        header: t("pages.woodOrders.colPriority"),
+        meta: { label: t("pages.woodOrders.colPriority") },
         sortingFn: (a, b) => {
           const aRank = PRIORITY_RANK[(a.original.priority ?? "Normal") as WorkOrderPriority];
           const bRank = PRIORITY_RANK[(b.original.priority ?? "Normal") as WorkOrderPriority];
@@ -243,7 +308,7 @@ export default function WoodOrders() {
             <span
               className={`inline-flex items-center px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest border ${PRIORITY_TONE[priority]}`}
             >
-              {priority}
+              {woPriorityT(t, priority)}
             </span>
           );
         },
@@ -252,23 +317,20 @@ export default function WoodOrders() {
         id: "status",
         size: 130,
         accessorFn: (row) => statusFromCompletion(completionPercent(row.quantities)),
-        header: "Status",
-        meta: { label: "Status" },
+        header: t("pages.woodOrders.colStatus"),
+        meta: { label: t("pages.woodOrders.colStatus") },
         filterFn: (row, _id, value) => {
           const v = value as string[] | undefined;
           if (!v || !v.length) return true;
           return v.includes(statusFromCompletion(completionPercent(row.original.quantities)));
         },
         cell: ({ row }) => {
-          const { status, tone, arabic } = statusFor(row.original);
+          const { status, tone } = statusFor(row.original);
           return (
             <span
-              className={`inline-flex flex-col items-start gap-0 border px-3 py-1 text-[10px] font-bold uppercase tracking-widest ${tone}`}
+              className={`inline-flex items-center px-3 py-1 text-[10px] font-bold uppercase tracking-widest border ${tone}`}
             >
-              <span>{status}</span>
-              <ArabicText className="text-[9px] font-medium normal-case opacity-80">
-                {arabic}
-              </ArabicText>
+              {woStatusT(t, status)}
             </span>
           );
         },
@@ -277,8 +339,8 @@ export default function WoodOrders() {
         id: "current_stage",
         size: 140,
         accessorFn: (row) => currentStage(row) ?? "completed",
-        header: "Current Stage",
-        meta: { label: "Current Stage" },
+        header: t("pages.woodOrders.colCurrentStage"),
+        meta: { label: t("pages.woodOrders.colCurrentStage") },
         filterFn: (row, _id, value) => {
           const v = value as string[] | undefined;
           if (!v || !v.length) return true;
@@ -291,14 +353,22 @@ export default function WoodOrders() {
           if (!stage)
             return (
               <span className="text-[10px] uppercase tracking-widest text-brand-success">
-                Completed
+                {t("pages.woodOrders.stageCompleted")}
               </span>
             );
           const label = WOOD_STAGE_LABELS[stage];
+          const primary = locale === "ar" ? label.arabic : label.english;
+          const secondary = locale === "ar" ? label.english : label.arabic;
           return (
             <div className="text-xs text-brand-luxury">
-              <div className="font-bold">{label.english}</div>
-              <ArabicText className="text-[10px] text-brand-metal">{label.arabic}</ArabicText>
+              <div className="font-bold">{primary}</div>
+              {locale === "ar" ? (
+                <span className="block text-[10px] text-brand-metal" lang="en" dir="ltr">
+                  {secondary}
+                </span>
+              ) : (
+                <ArabicText className="text-[10px] text-brand-metal">{secondary}</ArabicText>
+              )}
             </div>
           );
         },
@@ -312,10 +382,10 @@ export default function WoodOrders() {
         header: "",
         cell: ({ row }) => {
           const actions: RowAction[] = [
-            { label: "View", icon: Eye, onSelect: () => setDetailId(row.original.work_order_id) },
-            { label: "Edit", icon: Pencil, onSelect: () => setDetailId(row.original.work_order_id) },
+            { label: t("pages.woodOrders.actionView"), icon: Eye, onSelect: () => openDetail(row.original.work_order_id) },
+            { label: t("pages.woodOrders.actionEdit"), icon: Pencil, onSelect: () => openDetail(row.original.work_order_id) },
             {
-              label: "Delete",
+              label: t("pages.woodOrders.actionDelete"),
               icon: Trash2,
               destructive: true,
               onSelect: () => setPendingDelete([row.original.work_order_id]),
@@ -329,7 +399,7 @@ export default function WoodOrders() {
         },
       },
     ];
-  }, []);
+  }, [t, locale]);
 
   const { table, setGlobalFilter, state } = useDataTable<WoodWorkOrder>({
     data: orders,
@@ -346,36 +416,37 @@ export default function WoodOrders() {
     return [
       {
         columnId: "project_name",
-        title: "Project",
+        title: t("pages.woodOrders.filterProject"),
         options: projects.map((p) => ({ value: p, label: p })),
       },
       {
         columnId: "status",
-        title: "Status",
+        title: t("pages.woodOrders.filterStatus"),
         options: (["Pending", "In Progress", "Done"] as WorkOrderStatus[]).map((s) => ({
           value: s,
-          label: s,
+          label: woStatusT(t, s),
         })),
       },
       {
         columnId: "priority",
-        title: "Priority",
+        title: t("pages.woodOrders.filterPriority"),
         options: (["Critical", "High", "Normal", "Low"] as WorkOrderPriority[]).map((p) => ({
           value: p,
-          label: p,
+          label: woPriorityT(t, p),
         })),
       },
       {
         columnId: "current_stage",
-        title: "Department",
+        title: t("pages.woodOrders.filterDepartment"),
         options: WOOD_DEPARTMENT_OPTIONS.map((d) => ({
           value: d.id,
-          label: d.english,
-          secondary: d.arabic,
+          label: locale === "ar" ? d.arabic : d.english,
+          secondary: locale === "ar" ? d.english : d.arabic,
+          detail: woodDepartmentFilterDetail(d.id, locale, t),
         })),
       },
     ];
-  }, [projects]);
+  }, [t, locale, projects]);
 
   const handleDelete = async (ids: string[]) => {
     try {
@@ -385,11 +456,11 @@ export default function WoodOrders() {
       table.resetRowSelection();
       toast.success(
         ids.length === 1
-          ? `Removed work order ${ids[0]}`
-          : `Removed ${ids.length} work orders`,
+          ? t("pages.woodOrders.removedOne", { id: ids[0] })
+          : t("pages.woodOrders.removedN", { n: String(ids.length) }),
       );
     } catch {
-      toast.error("فشل حذف أمر التشغيل من الخادم.");
+      toast.error(t("pages.woodOrders.deleteFail"));
     }
   };
 
@@ -421,68 +492,40 @@ export default function WoodOrders() {
         await upsertWoodOrder.mutateAsync(next);
       }
       table.resetRowSelection();
-      toast.success(`Updated ${selectedIds.length} orders to ${status}`);
+      toast.success(
+        t("pages.woodOrders.updatedStatus", {
+          n: String(selectedIds.length),
+          status: woStatusT(t, status),
+        }),
+      );
     } catch {
-      toast.error("فشل تحديث الحالة على الخادم.");
+      toast.error(t("pages.woodOrders.updateFail"));
     }
   };
 
   const handleBulkExport = (rows: WoodWorkOrder[]) => {
     const csv = rowsToCsv(rows, [
-      { header: "Work Order", accessor: (r) => r.work_order_id },
-      { header: "Project", accessor: (r) => r.project_name },
-      { header: "Client", accessor: (r) => r.client ?? "" },
-      { header: "Product", accessor: (r) => r.product_name },
-      { header: "Total", accessor: (r) => r.quantities.total_required },
-      { header: "Completed", accessor: (r) => r.quantities.completed },
-      { header: "Remaining", accessor: (r) => r.quantities.remaining },
-      { header: "Delivery", accessor: (r) => r.dates.delivery_date },
-      { header: "Priority", accessor: (r) => r.priority ?? "Normal" },
+      { header: t("pages.woodOrders.csvWorkOrder"), accessor: (r) => r.work_order_id },
+      { header: t("pages.woodOrders.csvProject"), accessor: (r) => r.project_name },
+      { header: t("pages.woodOrders.csvClient"), accessor: (r) => r.client ?? "" },
+      { header: t("pages.woodOrders.csvProduct"), accessor: (r) => r.product_name },
+      { header: t("pages.woodOrders.csvTotal"), accessor: (r) => r.quantities.total_required },
+      { header: t("pages.woodOrders.csvCompleted"), accessor: (r) => r.quantities.completed },
+      { header: t("pages.woodOrders.csvRemaining"), accessor: (r) => r.quantities.remaining },
+      { header: t("pages.woodOrders.csvDelivery"), accessor: (r) => r.dates.delivery_date },
+      { header: t("pages.woodOrders.csvPriority"), accessor: (r) => r.priority ?? "Normal" },
       {
-        header: "Status",
+        header: t("pages.woodOrders.csvStatus"),
         accessor: (r) => statusFromCompletion(completionPercent(r.quantities)),
       },
     ]);
     downloadCsv(`wood-work-orders-${new Date().toISOString().slice(0, 10)}`, csv);
-    toast.info(`Exported ${rows.length} rows to CSV`);
+    toast.info(t("pages.woodOrders.exportRows", { n: String(rows.length) }));
   };
-
-  const handleStageUpdate = async (
-    workOrderId: string,
-    stageKey: WoodRoutingStageKey,
-    qty: number,
-  ) => {
-    const order = orders.find((o) => o.work_order_id === workOrderId);
-    if (!order) return;
-    const total = order.quantities.total_required;
-    const clamped = Math.max(0, Math.min(qty, total));
-    const routing = {
-      ...order.routing_progress,
-      [stageKey]: { ...order.routing_progress[stageKey], qty_passed: clamped },
-    };
-    const completed = woodOrderUiCompletedFromRouting(routing, total);
-    const next: WoodWorkOrder = {
-      ...order,
-      routing_progress: routing,
-      quantities: {
-        total_required: total,
-        completed,
-        remaining: Math.max(total - completed, 0),
-      },
-    };
-    try {
-      await upsertWoodOrder.mutateAsync(next);
-    } catch {
-      toast.error("تعذّر حفظ التحديث على الخادم.");
-    }
-  };
-
-  const detailOrder = detailId
-    ? orders.find((o) => o.work_order_id === detailId) ?? null
-    : null;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
+      <BrandLogoOverlay label={t("loader.busy")} show={showBusy} />
       <header className="flex flex-col gap-6 sm:flex-row sm:justify-between sm:items-end border-b border-brand-border pb-6">
         <div className="flex items-start gap-4 min-w-0">
           <BrandLogo className="h-12 w-auto max-h-12 max-w-[120px] shrink-0 object-contain object-left" />
@@ -490,7 +533,7 @@ export default function WoodOrders() {
             <div className="flex items-center gap-3">
               <Trees className="w-5 h-5 text-brand-wood" />
               <h2 className="text-3xl font-bold tracking-tighter uppercase">
-                Wood Factory Orders
+                {t("pages.woodOrders.title")}
               </h2>
             </div>
             <p className="text-sm text-brand-metal font-medium mt-1">
@@ -498,7 +541,7 @@ export default function WoodOrders() {
                 {woodWorkOrdersFixture.factory_name}
               </ArabicText>
               <span className="mx-2 text-brand-border">|</span>
-              <span>{orders.length} active work orders</span>
+              <span>{t("pages.woodOrders.activeCount", { n: String(orders.length) })}</span>
             </p>
           </div>
         </div>
@@ -506,10 +549,10 @@ export default function WoodOrders() {
           <button
             type="button"
             className="industrial-btn"
-            onClick={() => toast.info("New work order — wire to API once available.")}
+            onClick={() => toast.info(t("pages.woodOrders.newWorkOrderHint"))}
           >
             <Package className="w-4 h-4" />
-            <span>New Work Order</span>
+            <span>{t("pages.woodOrders.newWorkOrder")}</span>
           </button>
         </div>
       </header>
@@ -525,19 +568,19 @@ export default function WoodOrders() {
       {view === "table" ? (
         <DataTable
           table={table}
-          onRowClick={(row) => setDetailId(row.work_order_id)}
+          onRowClick={(row) => openDetail(row.work_order_id)}
           selectionColumnId="select"
           emptyState={
             <div className="flex flex-col items-center gap-3 text-brand-metal">
               <RefreshCw className="w-6 h-6 opacity-50" />
-              <p>No orders match the current filters.</p>
+              <p>{t("pages.woodOrders.emptyFilters")}</p>
             </div>
           }
         />
       ) : (
         <KanbanBoard
           orders={table.getFilteredRowModel().rows.map((r) => r.original)}
-          onSelect={(id) => setDetailId(id)}
+          onSelect={(id) => openDetail(id)}
         />
       )}
 
@@ -549,7 +592,7 @@ export default function WoodOrders() {
         onBulkExport={handleBulkExport}
         extraActions={[
           {
-            label: "Set Status",
+            label: t("pages.woodOrders.bulkSetStatus"),
             icon: Download,
             onSelect: () => setPendingBulkStatus("In Progress"),
           },
@@ -560,13 +603,13 @@ export default function WoodOrders() {
         open={Boolean(pendingDelete)}
         onClose={() => setPendingDelete(null)}
         onConfirm={() => pendingDelete && handleDelete(pendingDelete)}
-        title="Delete work orders"
+        title={t("pages.woodOrders.deleteTitle")}
         description={
           pendingDelete?.length === 1
-            ? `Delete ${pendingDelete[0]}? This cannot be undone.`
-            : `Delete ${pendingDelete?.length ?? 0} selected work orders? This cannot be undone.`
+            ? t("pages.woodOrders.deleteConfirmOne", { id: pendingDelete[0] })
+            : t("pages.woodOrders.deleteConfirmN", { n: String(pendingDelete?.length ?? 0) })
         }
-        confirmLabel="Delete"
+        confirmLabel={t("common.delete")}
         destructive
       />
 
@@ -583,22 +626,18 @@ export default function WoodOrders() {
         />
       )}
 
-      <WoodWorkOrderDetail
-        order={detailOrder}
-        onClose={() => setDetailId(null)}
-        onUpdateStage={handleStageUpdate}
-      />
-
-      <p className="text-[10px] text-brand-metal uppercase tracking-[0.3em]">
-        Source: factory-hub `/api/factory-hub/wood-work-orders` (fallback to in-repo fixture if offline)
-      </p>
     </div>
   );
 }
 
 function ViewSwitch({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode) => void }) {
+  const { t } = useTranslation();
   return (
-    <div role="tablist" aria-label="View mode" className="inline-flex border border-brand-border">
+    <div
+      role="tablist"
+      aria-label={t("pages.woodOrders.viewModeAria")}
+      className="inline-flex border border-brand-border"
+    >
       <button
         role="tab"
         aria-selected={view === "table"}
@@ -609,7 +648,7 @@ function ViewSwitch({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode
         }`}
       >
         <TableIcon className="w-3.5 h-3.5" />
-        <span>Table</span>
+        <span>{t("pages.woodOrders.viewTable")}</span>
       </button>
       <button
         role="tab"
@@ -621,7 +660,7 @@ function ViewSwitch({ view, onChange }: { view: ViewMode; onChange: (v: ViewMode
         }`}
       >
         <LayoutGrid className="w-3.5 h-3.5" />
-        <span>Kanban</span>
+        <span>{t("pages.woodOrders.viewKanban")}</span>
       </button>
     </div>
   );
@@ -640,25 +679,28 @@ function BulkStatusDialog({
   onConfirm: () => void;
   selectedCount: number;
 }) {
+  const { t } = useTranslation();
+  const desc =
+    selectedCount === 1
+      ? t("pages.woodOrders.bulkUpdateDescOne")
+      : t("pages.woodOrders.bulkUpdateDesc", { n: String(selectedCount) });
   return (
     <ConfirmDialog
       open
       onClose={onClose}
       onConfirm={onConfirm}
-      title="Update status"
-      description={`Apply a new status to ${selectedCount} selected order${
-        selectedCount === 1 ? "" : "s"
-      }.`}
-      confirmLabel="Apply"
+      title={t("pages.woodOrders.bulkUpdateTitle")}
+      description={desc}
+      confirmLabel={t("pages.woodOrders.bulkApply")}
     >
       <Select
-        label="New status"
+        label={t("pages.woodOrders.bulkNewStatusLabel")}
         value={status}
         onChange={(event) => onChange(event.target.value as WorkOrderStatus)}
       >
-        <option value="Pending">Pending</option>
-        <option value="In Progress">In Progress</option>
-        <option value="Done">Done</option>
+        <option value="Pending">{t("pages.woodOrders.statusPending")}</option>
+        <option value="In Progress">{t("pages.woodOrders.statusInProgress")}</option>
+        <option value="Done">{t("pages.woodOrders.statusDone")}</option>
       </Select>
     </ConfirmDialog>
   );
@@ -671,6 +713,7 @@ function KanbanBoard({
   orders: WoodWorkOrder[];
   onSelect: (id: string) => void;
 }) {
+  const { t, locale } = useTranslation();
   const groups: Record<WorkOrderStatus, WoodWorkOrder[]> = {
     Pending: [],
     "In Progress": [],
@@ -681,24 +724,23 @@ function KanbanBoard({
     groups[status].push(order);
   }
 
-  const columns: { status: WorkOrderStatus; arabic: string; tone: string }[] = [
-    { status: "Pending", arabic: "بالانتظار", tone: "border-brand-metal/40" },
-    { status: "In Progress", arabic: "قيد التنفيذ", tone: "border-brand-warning/60" },
-    { status: "Done", arabic: "مكتمل", tone: "border-brand-success/60" },
+  const columns: { status: WorkOrderStatus; tone: string }[] = [
+    { status: "Pending", tone: "border-brand-metal/40" },
+    { status: "In Progress", tone: "border-brand-warning/60" },
+    { status: "Done", tone: "border-brand-success/60" },
   ];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-      {columns.map(({ status, arabic, tone }) => (
+      {columns.map(({ status, tone }) => (
         <section
           key={status}
-          aria-label={status}
+          aria-label={woStatusT(t, status)}
           className={`glass-panel border-t-2 ${tone} p-4 flex flex-col gap-3 min-h-[320px]`}
         >
           <header className="flex items-center justify-between">
             <div>
-              <h3 className="text-xs font-bold uppercase tracking-widest">{status}</h3>
-              <ArabicText className="text-[10px] text-brand-metal">{arabic}</ArabicText>
+              <h3 className="text-xs font-bold uppercase tracking-widest">{woStatusT(t, status)}</h3>
             </div>
             <span className="text-[10px] text-brand-metal uppercase tracking-widest">
               {groups[status].length}
@@ -714,7 +756,7 @@ function KanbanBoard({
                   key={order.work_order_id}
                   type="button"
                   onClick={() => onSelect(order.work_order_id)}
-                  className="w-full text-left border border-brand-border bg-brand-black/40 p-3 hover:border-brand-wood/60 transition-colors"
+                  className="w-full text-start border border-brand-border bg-brand-black/40 p-3 hover:border-brand-wood/60 transition-colors"
                 >
                   <div className="flex justify-between items-start gap-2">
                     <div className="min-w-0">
@@ -726,7 +768,7 @@ function KanbanBoard({
                     <span
                       className={`text-[9px] font-bold uppercase tracking-widest border px-2 py-0.5 ${PRIORITY_TONE[priority]}`}
                     >
-                      {priority}
+                      {woPriorityT(t, priority)}
                     </span>
                   </div>
                   <ArabicText className="block text-[11px] text-brand-luxury mt-2 line-clamp-2">
@@ -748,7 +790,12 @@ function KanbanBoard({
                   </div>
                   {stage && (
                     <p className="mt-2 text-[10px] text-brand-metal uppercase tracking-widest">
-                      Next · {WOOD_STAGE_LABELS[stage].english}
+                      {t("pages.woodOrders.kanbanNext", {
+                        stage:
+                          locale === "ar"
+                            ? WOOD_STAGE_LABELS[stage].arabic
+                            : WOOD_STAGE_LABELS[stage].english,
+                      })}
                     </p>
                   )}
                 </button>
@@ -756,7 +803,7 @@ function KanbanBoard({
             })}
             {groups[status].length === 0 && (
               <p className="text-[10px] text-brand-metal uppercase tracking-widest text-center py-6">
-                Empty
+                {t("pages.woodOrders.kanbanEmpty")}
               </p>
             )}
           </div>

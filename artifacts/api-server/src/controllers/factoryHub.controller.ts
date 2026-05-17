@@ -17,9 +17,9 @@ function sendError(res: Response, status: number, message: string) {
 }
 
 export class FactoryHubController {
-  static async listWoodWorkOrders(_req: Request, res: Response) {
+  static async listWoodWorkOrders(req: Request, res: Response) {
     try {
-      const rows = await FactoryHubService.listWoodWorkOrders();
+      const rows = await FactoryHubService.listWoodWorkOrders(req.auth);
       res.json(rows);
     } catch (error) {
       res.status(500).json({ error: "Failed to list wood work orders" });
@@ -28,7 +28,7 @@ export class FactoryHubController {
 
   static async createWoodWorkOrder(req: Request, res: Response) {
     try {
-      const row = await FactoryHubService.upsertWoodWorkOrder(undefined, req.body);
+      const row = await FactoryHubService.upsertWoodWorkOrder(undefined, req.body, req.auth);
       res.status(201).json(row);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -36,6 +36,10 @@ export class FactoryHubController {
         return;
       }
       const status = (error as Error & { status?: number }).status ?? 500;
+      if (status === 403) {
+        sendError(res, 403, String((error as Error).message));
+        return;
+      }
       const msg = status === 400 ? String((error as Error).message) : "Failed to create wood work order";
       res.status(status).json({ error: msg });
     }
@@ -44,7 +48,7 @@ export class FactoryHubController {
   static async getWoodWorkOrder(req: Request, res: Response) {
     try {
       const { workOrderId } = GetFhWoodWorkOrderParams.parse(req.params);
-      const row = await FactoryHubService.getWoodWorkOrder(workOrderId);
+      const row = await FactoryHubService.getWoodWorkOrder(workOrderId, req.auth);
       if (!row) {
         sendError(res, 404, "not_found");
         return;
@@ -62,7 +66,7 @@ export class FactoryHubController {
   static async updateWoodWorkOrder(req: Request, res: Response) {
     try {
       const { workOrderId } = UpdateFhWoodWorkOrderParams.parse(req.params);
-      const row = await FactoryHubService.upsertWoodWorkOrder(workOrderId, req.body);
+      const row = await FactoryHubService.upsertWoodWorkOrder(workOrderId, req.body, req.auth);
       res.json(row);
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -70,6 +74,14 @@ export class FactoryHubController {
         return;
       }
       const status = (error as Error & { status?: number }).status ?? 500;
+      if (status === 403) {
+        sendError(res, 403, String((error as Error).message));
+        return;
+      }
+      if (status === 404) {
+        sendError(res, 404, "not_found");
+        return;
+      }
       const msg = status === 400 ? String((error as Error).message) : "Failed to update wood work order";
       res.status(status).json({ error: msg });
     }
@@ -78,7 +90,7 @@ export class FactoryHubController {
   static async deleteWoodWorkOrder(req: Request, res: Response) {
     try {
       const { workOrderId } = DeleteFhWoodWorkOrderParams.parse(req.params);
-      const row = await FactoryHubService.deleteWoodWorkOrder(workOrderId);
+      const row = await FactoryHubService.deleteWoodWorkOrder(workOrderId, req.auth);
       if (!row) {
         sendError(res, 404, "not_found");
         return;

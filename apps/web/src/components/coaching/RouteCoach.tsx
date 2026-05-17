@@ -3,54 +3,38 @@ import { useLocation } from "wouter";
 import { Info, X } from "lucide-react";
 import { useToast } from "../ui/Toast";
 import { cn } from "../../lib/cn";
+import { useTranslation } from "../../context/I18nContext";
+import { useDirection } from "../../lib/useDirection";
 
-export interface CoachHint {
+export type CoachRouteConfig = {
   pathPrefix: string;
-  bannerAr: string;
-  toastAr?: string;
-}
+  bannerKey: string;
+  toastKey?: string;
+};
 
-export const EBdaa_ROUTE_COACH_HINTS: CoachHint[] = [
-  {
-    pathPrefix: "/orders/wood",
-    bannerAr:
-      "تحديث كميات المراحل يعكس التقدّم على شريط الحالة؛ راجع التسلسل: مقاطع → لزق شريط → CNC.",
-    toastAr:
-      "تلميح: أوامر الخشب تتبع مراحل التوجيه في لوحة الأعمدة؛ تأكد من تحديث الكميات بعد كل قسم.",
-  },
+export const EBdaa_ROUTE_COACH_HINTS: CoachRouteConfig[] = [
+  { pathPrefix: "/orders/wood", bannerKey: "coach.hints.ordersWood.banner", toastKey: "coach.hints.ordersWood.toast" },
   {
     pathPrefix: "/daily/wood",
-    bannerAr:
-      "اليومية تُصدَّر كمرافق للأرضية؛ سجّل أمر الشغل والفني وفق نفس أعمدة ملف الإكسل اليومية.",
-    toastAr: "يمكنك تصدير HTML أو XLS للطباعة من زر التصدير بعد اختيار القسم.",
+    bannerKey: "coach.hints.dailyWood.banner",
+    toastKey: "coach.hints.dailyWood.toast",
   },
-  {
-    pathPrefix: "/projects/new",
-    bannerAr:
-      "قبل التخطيط: تأكد أن المكتب الفني جهّز ملفات DXF للتخريم وفق دليل سير العمل.",
-  },
+  { pathPrefix: "/projects/new", bannerKey: "coach.hints.projectsNew.banner" },
   {
     pathPrefix: "/planning",
-    bannerAr:
-      "المتابعة الأسبوعية تربط الإنجاز بالجودة؛ حدّث الأهداف هنا بدل ترك خلايا القالب فارغة.",
-    toastAr: "صفحة التخطيط تعرض قالب KPI مستورد من متابعة إبداع الدورية.",
+    bannerKey: "coach.hints.planning.banner",
+    toastKey: "coach.hints.planning.toast",
   },
-  {
-    pathPrefix: "/about-system",
-    bannerAr: "استخدم الأقسام أدناه كمسار تدريب سريع للفريق عن الوحدات والمسؤوليات.",
-  },
-  {
-    pathPrefix: "/equipment",
-    bannerAr: "السجل المعروض يعتمد خط HOMAG الرسمي؛ أي مرجع SCM يظهر في صفحة حول النظام كمرجع تقني فقط.",
-  },
+  { pathPrefix: "/about-system", bannerKey: "coach.hints.aboutSystem.banner" },
+  { pathPrefix: "/equipment", bannerKey: "coach.hints.equipment.banner" },
   {
     pathPrefix: "/",
-    bannerAr: "ابدأ من صفحة «حول النظام» لفهم الوحدات؛ لوحة التحكم تعطي ملخص أوامر الخشب الحالية.",
-    toastAr: "مرحبًا — راجع «حول النظام» للتعريف التدريبي وسجل المعدات المعتمد.",
+    bannerKey: "coach.hints.home.banner",
+    toastKey: "coach.hints.home.toast",
   },
 ];
 
-function coachingMatch(pathname: string): CoachHint | undefined {
+function coachingMatch(pathname: string): CoachRouteConfig | undefined {
   const specific = [...EBdaa_ROUTE_COACH_HINTS]
     .filter((h) => h.pathPrefix !== "/")
     .sort((a, b) => b.pathPrefix.length - a.pathPrefix.length)
@@ -62,6 +46,9 @@ function coachingMatch(pathname: string): CoachHint | undefined {
 
 export function RouteCoach() {
   const [location] = useLocation();
+  const { t } = useTranslation();
+  const { direction } = useDirection();
+  const rtl = direction === "rtl";
   const toast = useToast();
   const hint = useMemo(() => coachingMatch(location), [location]);
 
@@ -78,12 +65,15 @@ export function RouteCoach() {
   }, [bannerStorageKey]);
 
   useEffect(() => {
-    if (!hint?.toastAr) return;
+    if (!hint?.toastKey) return;
     if (typeof sessionStorage === "undefined") return;
     if (sessionStorage.getItem(toastStorageKey)) return;
     sessionStorage.setItem(toastStorageKey, "1");
-    toast.push({ kind: "info", message: hint.toastAr, durationMs: 6500 });
-  }, [hint, toast, toastStorageKey]);
+    const msg = t(hint.toastKey);
+    if (msg && msg !== hint.toastKey) {
+      toast.push({ kind: "info", message: msg, durationMs: 6500 });
+    }
+  }, [hint, toast, toastStorageKey, t]);
 
   if (!hint || !bannerVisible) return null;
 
@@ -92,19 +82,26 @@ export function RouteCoach() {
     setBannerVisible(false);
   };
 
+  const bannerText = t(hint.bannerKey);
+
   return (
     <div
       role="note"
       className={cn(
         "mb-4 sm:mb-6 flex gap-3 border border-brand-metal/40 bg-brand-elevated/90 px-3 py-3 sm:px-4 text-xs text-brand-luxury",
-        "animate-in fade-in slide-in-from-top-2 duration-300",
+        "motion-safe:animate-in motion-safe:fade-in motion-safe:slide-in-from-top-2 motion-safe:duration-300",
       )}
     >
       <Info className="w-4 h-4 shrink-0 text-brand-metal mt-0.5" aria-hidden />
-      <p className="flex-1 leading-relaxed" dir="rtl" lang="ar">
-        {hint.bannerAr}
+      <p className="flex-1 leading-relaxed" dir={rtl ? "rtl" : "ltr"} lang={rtl ? "ar" : "en"}>
+        {bannerText}
       </p>
-      <button type="button" aria-label="Dismiss coaching banner" onClick={dismiss} className="text-brand-metal hover:text-brand-luxury shrink-0">
+      <button
+        type="button"
+        aria-label={t("coach.dismiss")}
+        onClick={dismiss}
+        className="text-brand-metal hover:text-brand-luxury shrink-0"
+      >
         <X className="w-4 h-4" />
       </button>
     </div>

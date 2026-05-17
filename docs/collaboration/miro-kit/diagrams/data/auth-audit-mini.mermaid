@@ -1,0 +1,14 @@
+flowchart TB
+  users[auth_users]
+  roles[auth_roles]
+  perms[auth_permissions]
+  rp[auth_role_permissions]
+  ur[auth_user_roles]
+  audit[audit_events]
+
+  roles --> rp
+  perms --> rp
+  users --> ur
+  roles --> ur
+  users -->|"FK actor"| audit
+  users -->|"optional"| employees_optional[employees_employee_id]

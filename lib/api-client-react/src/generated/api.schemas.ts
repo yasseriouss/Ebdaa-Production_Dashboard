@@ -29,6 +29,8 @@ export interface FhWoodWorkOrderPayload {
 export interface FhWoodWorkOrderEnvelope {
   workOrderId: string;
   payload: FhWoodWorkOrderPayload;
+  factoryId?: string | null;
+  departmentId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -93,6 +95,8 @@ export interface MetalWorkOrder {
   status?: string;
   createdAt?: string;
   updatedAt?: string;
+  factoryId?: string | null;
+  departmentId?: string | null;
 }
 
 export interface MetalProductionStage {
@@ -124,6 +128,8 @@ export interface CreateMetalOrderBody {
   backlogStatus?: string;
   notes?: string;
   status?: string;
+  factoryId?: string;
+  departmentId?: string;
 }
 
 export interface UpdateMetalStageBody {
@@ -170,6 +176,8 @@ export interface WoodenWorkOrder {
   prodDateFinished?: string;
   createdAt?: string;
   updatedAt?: string;
+  factoryId?: string | null;
+  departmentId?: string | null;
 }
 
 export interface WoodenProductionStage {
@@ -204,6 +212,8 @@ export interface CreateWoodenOrderBody {
   prodDateStart?: string;
   prodDateEnd?: string;
   prodDateFinished?: string;
+  factoryId?: string;
+  departmentId?: string;
 }
 
 export interface CreateMetalStageBody {

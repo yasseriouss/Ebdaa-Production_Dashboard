@@ -1,0 +1,8 @@
+flowchart TB
+  api["REST /api artifacts/api-server"]
+  web["apps_web primary_in_roadmap"]
+  fac["artifacts_factory-app documented_in_README_ARCHITECTURE"]
+  hub["LibSQL SQLite @workspace/db"]
+  web --> api
+  fac --> api
+  api --> hub

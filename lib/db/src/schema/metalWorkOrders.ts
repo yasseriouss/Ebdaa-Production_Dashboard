@@ -1,5 +1,6 @@
-import { sqliteTable, text, integer } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text } from "drizzle-orm/sqlite-core";
 import { createInsertSchema, createSelectSchema } from "drizzle-zod";
+import { factoriesTable, departmentsTable } from "./factoryCapacity";
 
 export const metalWorkOrdersTable = sqliteTable("metal_work_orders", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
@@ -14,6 +15,8 @@ export const metalWorkOrdersTable = sqliteTable("metal_work_orders", {
   deliveredQty: text("delivered_qty").notNull().default("0"),
   backlogQty: text("backlog_qty").notNull().default("0"),
   notes: text("notes"),
+  factoryId: text("factory_id").references(() => factoriesTable.id),
+  departmentId: text("department_id").references(() => departmentsTable.id),
   createdAt: text("created_at").notNull().$defaultFn(() => new Date().toISOString()),
   updatedAt: text("updated_at").notNull().$defaultFn(() => new Date().toISOString()),
   deletedAt: text("deleted_at"),

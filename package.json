@@ -4,6 +4,7 @@
   "license": "MIT",
   "scripts": {
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "dev:web": "pnpm --filter web run dev",
     "dev:wood-dashboard": "pnpm --filter factory-wood-dashboard dev",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"

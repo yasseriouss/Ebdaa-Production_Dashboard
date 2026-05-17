@@ -4,6 +4,7 @@ import { ClipboardCheck, Cpu, Download, FileSpreadsheet, Printer, Trees } from "
 import { ArabicText } from "../components/brand/ArabicText";
 import { Select } from "../components/ui/Select";
 import { useToast } from "../components/ui/Toast";
+import { useTranslation } from "../context/I18nContext";
 import { ebdaaExcelSheets } from "../data/ebdaa";
 import { factoryCapacityFixture, woodWorkOrdersFixture } from "../data/fixtures";
 import { WOOD_STAGE_LABELS, WOOD_STAGE_ORDER } from "../data/routing";
@@ -19,6 +20,7 @@ import { completionPercent, statusFromCompletion, type WoodWorkOrder } from "../
 type FactoryKind = "wood" | "metal";
 
 export default function DailyProduction({ factory }: { factory: FactoryKind }) {
+  const { t } = useTranslation();
   const toast = useToast();
   const { data: woodOrders = woodWorkOrdersFixture.work_orders } = useFhWoodOrders(
     woodWorkOrdersFixture.work_orders,
@@ -40,8 +42,9 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
     factoryData.departments.find((d) => d.id === department)?.name ?? "";
 
   const headerIcon = factory === "wood" ? Trees : Cpu;
-  const headerTitle = factory === "wood" ? "Wood Daily Logs" : "Metal Daily Logs";
-  const headerArabic = factory === "wood" ? "اليومية - الخشب" : "اليومية - المعادن";
+  const headerTitle = factory === "wood" ? t("pages.dailyProduction.woodTitle") : t("pages.dailyProduction.metalTitle");
+  const headerSecondary =
+    factory === "wood" ? t("pages.dailyProduction.woodArabic") : t("pages.dailyProduction.metalArabic");
 
   const handleExport = (kind: "html" | "xls" | "print") => {
     const params = {
@@ -55,7 +58,9 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
     if (kind === "html") downloadDailySheetHtml(params);
     if (kind === "xls") downloadDailySheetXls(params);
     if (kind === "print") openDailySheetPrint(params);
-    toast.success(`Daily sheet generated for ${departmentName} (${tasks.length} tasks)`);
+    toast.success(
+      t("pages.dailyProduction.toastGenerated", { dept: departmentName, n: String(tasks.length) }),
+    );
   };
 
   const Header = headerIcon;
@@ -69,14 +74,14 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
             <h2 className="text-3xl font-bold tracking-tighter uppercase">{headerTitle}</h2>
           </div>
           <p className="text-sm text-brand-metal mt-1">
-            <ArabicText>{headerArabic}</ArabicText>
+            <span className="font-medium">{headerSecondary}</span>
             <span className="mx-2 text-brand-border">|</span>
-            Export paper travelers for the factory floor.
+            {t("pages.dailyProduction.tagline")}
           </p>
         </div>
         <div className="flex flex-wrap items-end gap-3">
           <Select
-            label="Department"
+            label={t("pages.dailyProduction.department")}
             value={department}
             onChange={(event) => setDepartment(event.target.value)}
           >
@@ -87,7 +92,7 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
             ))}
           </Select>
           <Select
-            label="Date"
+            label={t("pages.dailyProduction.date")}
             value={date}
             onChange={(event) => setDate(event.target.value)}
             className="min-w-[10rem]"
@@ -100,18 +105,17 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
       {factory === "wood" && (
         <section className="glass-panel border border-dashed border-brand-border/80 p-4 space-y-2">
           <h3 className="text-[10px] font-bold uppercase tracking-widest text-brand-luxury">
-            Ebdaa daily columns (reference)
+            {t("pages.dailyProduction.ebdaaRefTitle")}
           </h3>
-          <ArabicText className="text-[11px] text-brand-metal leading-relaxed">
-            صف التصدير الحالي يملأ حقول المسافر الأساسية؛ عند النقل اليدوي إلى ملف «نظام_متابعة_الإنتاج_اليومي» استخدم أعمدة الملف كالتالي
-            (تاريخ الملف، الفني، المرحلة، الكميات المخططة/المنتجة، إذن الترحيل، إلخ تُسجَّل على الأرض أو في الإكسل).
-          </ArabicText>
+          <p className="text-[11px] text-brand-metal leading-relaxed" dir="auto">
+            {t("pages.dailyProduction.ebdaaExplain")}
+          </p>
           <p className="text-[10px] text-brand-metal/90 leading-snug" dir="rtl" lang="ar">
             {ebdaaExcelSheets.dailyProduction.sheets[0]?.columnsAr.join(" · ")}
           </p>
           <p className="text-[10px]">
             <Link href="/about-system" className="text-brand-wood underline-offset-2 hover:underline">
-              فتح صفحة حول النظام — مطابقة الأعمدة مع اليومية
+              {t("pages.dailyProduction.ebdaaRefLink")}
             </Link>
           </p>
         </section>
@@ -120,11 +124,11 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
       <section className="glass-panel p-4 sm:p-6 md:p-8 space-y-4">
         <header className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
-            <h3 className="text-xs font-bold uppercase tracking-widest">Export Daily Task Sheet</h3>
+            <h3 className="text-xs font-bold uppercase tracking-widest">{t("pages.dailyProduction.exportTitle")}</h3>
             <p className="text-[10px] text-brand-metal uppercase tracking-wider">
-              <ArabicText>تصدير يومية القسم</ArabicText>
+              <span>{t("pages.dailyProduction.exportSubAr")}</span>
               <span className="mx-1">·</span>
-              Paper traveler with pre-filled tasks and blank input fields
+              {t("pages.dailyProduction.exportSub")}
             </p>
           </div>
           <div className="flex gap-2">
@@ -134,7 +138,7 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
               className="industrial-btn border-brand-success/40 text-brand-success"
             >
               <FileSpreadsheet className="w-3.5 h-3.5" />
-              <span>Export .xls</span>
+              <span>{t("pages.dailyProduction.exportXls")}</span>
             </button>
             <button
               type="button"
@@ -142,27 +146,25 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
               className="industrial-btn border-brand-wood/60 text-brand-wood"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print / PDF</span>
+              <span>{t("pages.dailyProduction.exportPrint")}</span>
             </button>
             <button type="button" onClick={() => handleExport("html")} className="industrial-btn">
               <Download className="w-3.5 h-3.5" />
-              <span>Download HTML</span>
+              <span>{t("pages.dailyProduction.exportHtml")}</span>
             </button>
           </div>
         </header>
 
         <div className="border border-brand-border bg-brand-black/40 overflow-hidden">
-          <table className="w-full text-left">
+          <table className="w-full text-start">
             <thead className="bg-brand-elevated">
               <tr className="text-[10px] font-bold uppercase tracking-widest text-brand-metal">
                 <th className="px-3 py-3 w-10">#</th>
-                <th className="px-3 py-3">Order ID</th>
-                <th className="px-3 py-3">Project</th>
-                <th className="px-3 py-3">Product / Part</th>
-                <th className="px-3 py-3 text-right">Target</th>
-                <th className="px-3 py-3 w-44">
-                  Completed Qty <span className="text-brand-wood">↳ handwriting</span>
-                </th>
+                <th className="px-3 py-3">{t("pages.dailyProduction.tableOrderId")}</th>
+                <th className="px-3 py-3">{t("pages.dailyProduction.tableProject")}</th>
+                <th className="px-3 py-3">{t("pages.dailyProduction.tableProduct")}</th>
+                <th className="px-3 py-3 text-end">{t("pages.dailyProduction.tableTarget")}</th>
+                <th className="px-3 py-3 w-44">{t("pages.dailyProduction.tableCompleted")}</th>
               </tr>
             </thead>
             <tbody>
@@ -170,8 +172,8 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
                 <tr>
                   <td colSpan={6} className="px-3 py-12 text-center text-xs text-brand-metal">
                     {factory === "metal"
-                      ? "Metal factory work orders coming soon — connect once a metal dataset is provided."
-                      : "No active tasks for this department."}
+                      ? t("pages.dailyProduction.emptyMetal")
+                      : t("pages.dailyProduction.emptyWood")}
                   </td>
                 </tr>
               ) : (
@@ -188,7 +190,7 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
                     <td className="px-3 py-2 text-xs">
                       <ArabicText>{task.product}</ArabicText>
                     </td>
-                    <td className="px-3 py-2 text-xs text-brand-luxury text-right">
+                    <td className="px-3 py-2 text-xs text-brand-luxury text-end">
                       {task.target_qty}
                     </td>
                     <td className="px-3 py-2 bg-brand-elevated/40">
@@ -205,20 +207,20 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
       <section className="glass-panel p-4 sm:p-6 md:p-8">
         <div className="flex items-center gap-2 mb-3">
           <ClipboardCheck className="w-4 h-4 text-brand-wood" />
-          <h3 className="text-xs font-bold uppercase tracking-widest">How it works</h3>
+          <h3 className="text-xs font-bold uppercase tracking-widest">{t("pages.dailyProduction.howItWorks")}</h3>
         </div>
         <ol className="grid grid-cols-1 md:grid-cols-3 gap-3 text-[11px] text-brand-metal">
           <li className="border border-brand-border p-3">
-            <p className="text-xs font-bold text-brand-luxury">1 · Pick a department</p>
-            Choose the department whose floor team needs the daily traveler.
+            <p className="text-xs font-bold text-brand-luxury">{t("pages.dailyProduction.step1Title")}</p>
+            {t("pages.dailyProduction.step1Body")}
           </li>
           <li className="border border-brand-border p-3">
-            <p className="text-xs font-bold text-brand-luxury">2 · Export</p>
-            Print directly, save as PDF, or download .xls for Excel-based archives.
+            <p className="text-xs font-bold text-brand-luxury">{t("pages.dailyProduction.step2Title")}</p>
+            {t("pages.dailyProduction.step2Body")}
           </li>
           <li className="border border-brand-border p-3">
-            <p className="text-xs font-bold text-brand-luxury">3 · Capture results</p>
-            Data-entry clerks key in handwritten counts at end of shift to update routing.
+            <p className="text-xs font-bold text-brand-luxury">{t("pages.dailyProduction.step3Title")}</p>
+            {t("pages.dailyProduction.step3Body")}
           </li>
         </ol>
       </section>

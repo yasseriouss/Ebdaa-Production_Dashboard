@@ -1,0 +1,8 @@
+flowchart LR
+  B[Browser_SPA_apps_web_or_factory_app]
+  V[Vite_proxy_/api_optional]
+  E[Express_artifacts_api_server]
+  C[controllers]
+  S[services_Drizzle]
+  D[@workspace_db_SQLite_LibSQL]
+  B --> V --> E --> C --> S --> D

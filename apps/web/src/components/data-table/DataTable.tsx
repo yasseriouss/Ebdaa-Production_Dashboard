@@ -29,7 +29,7 @@ export function DataTable<T>({
     <div className="glass-panel overflow-hidden">
       <div className="overflow-x-auto">
         <table
-          className="w-full text-left"
+          className="w-full text-start table-fixed"
           style={{ width: table.getTotalSize() ? `${table.getTotalSize()}px` : "100%" }}
         >
           <thead className="bg-brand-black/40 border-b border-brand-border">
@@ -51,17 +51,23 @@ export function DataTable<T>({
                         isSelection && "sticky start-0 z-10 bg-brand-elevated w-[44px] px-3",
                       )}
                     >
-                      {header.isPlaceholder ? null : (
+                      {header.isPlaceholder ? null : isSelection ? (
+                        <div className="flex justify-center">
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </div>
+                      ) : (
                         <div
                           className={cn(
-                            "flex items-center gap-2",
+                            "flex min-w-0 max-w-full items-center gap-2",
                             canSort && "cursor-pointer hover:text-brand-luxury transition-colors",
                           )}
                           onClick={canSort ? header.column.getToggleSortingHandler() : undefined}
                         >
-                          {flexRender(header.column.columnDef.header, header.getContext())}
+                          <span className="min-w-0 truncate">
+                            {flexRender(header.column.columnDef.header, header.getContext())}
+                          </span>
                           {canSort && (
-                            <span aria-hidden className="text-brand-metal/70">
+                            <span aria-hidden className="shrink-0 text-brand-metal/70">
                               {sorted === "asc" ? (
                                 <ArrowUp className="h-3 w-3" />
                               ) : sorted === "desc" ? (
@@ -97,7 +103,7 @@ export function DataTable<T>({
               <tr>
                 <td
                   colSpan={table.getAllLeafColumns().length}
-                  className="px-6 py-16 text-center text-xs text-brand-metal"
+                  className="table-cell-multiline px-6 py-16 text-center text-xs text-brand-metal"
                 >
                   {emptyState ?? "No records match the current filters."}
                 </td>

@@ -9,6 +9,11 @@ export interface EbdaaWorkflowStageRow {
   /** Closest routing key when the stage touches WIP on the wood order; null for upstream office steps. */
   routingKey: WoodRoutingStageKey | null;
   notesAr?: string;
+  /**
+   * `true` = مراحل أرضية متكررة مرتبطة مباشرة بمفاتيح التوجيه؛
+   * `false` = مكتب/تنسيق/تصميم/تخطيط أو بوابة جودة بلا مفتاح مستقل في التطبيق.
+   */
+  isRoutine: boolean;
 }
 
 /**
@@ -22,6 +27,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     ownerAr: "المبيعات",
     descriptionAr: "التعاقد مع العميل واستلام المتطلبات",
     routingKey: null,
+    isRoutine: false,
   },
   {
     stepOrder: 2,
@@ -29,6 +35,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     ownerAr: "إدارة المشروعات",
     descriptionAr: "متابعة التفاصيل والتنسيق بين الأقسام",
     routingKey: null,
+    isRoutine: false,
   },
   {
     stepOrder: 3,
@@ -37,6 +44,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     descriptionAr: "رسم المنتجات وإعداد ملفات DXF للتخريم",
     routingKey: null,
     notesAr: "مدخل التخطيط قبل التقطيع.",
+    isRoutine: false,
   },
   {
     stepOrder: 4,
@@ -44,6 +52,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     ownerAr: "مكتب التخطيط",
     descriptionAr: "إعداد أمر الشغل وتحديد المتطلبات من الخامات",
     routingKey: null,
+    isRoutine: false,
   },
   {
     stepOrder: 5,
@@ -51,6 +60,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     ownerAr: "قسم التقطيع",
     descriptionAr: "استلام الألواح من المخزن بإذن صرف موثق",
     routingKey: "panel_saw",
+    isRoutine: true,
   },
   {
     stepOrder: 6,
@@ -58,6 +68,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     ownerAr: "قسم التقطيع",
     descriptionAr: "تقطيع الألواح حسب القياسات + إذن ترحيل",
     routingKey: "panel_saw",
+    isRoutine: true,
   },
   {
     stepOrder: 7,
@@ -65,6 +76,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     ownerAr: "قسم الشريط",
     descriptionAr: "لصق شريط الحواف + مراجعة + إذن ترحيل",
     routingKey: "edge_banding",
+    isRoutine: true,
   },
   {
     stepOrder: 8,
@@ -72,6 +84,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     ownerAr: "قسم CNC",
     descriptionAr: "التخريم والجروف والتشكيل + مراجعة + إذن ترحيل",
     routingKey: "cnc_routing",
+    isRoutine: true,
   },
   {
     stepOrder: 9,
@@ -80,6 +93,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     descriptionAr: "مراجعة شاملة لجميع المراحل والاعتماد",
     routingKey: null,
     notesAr: "لا يوجد مفتاح مستقل في التطبيق؛ يُنفَّذ كبوابة قبل التجميع.",
+    isRoutine: false,
   },
   {
     stepOrder: 10,
@@ -87,6 +101,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     ownerAr: "قسم التجميع",
     descriptionAr: "تجميع المنتج النهائي مع الإكسسوارات",
     routingKey: "assembly",
+    isRoutine: true,
   },
   {
     stepOrder: 11,
@@ -94,6 +109,7 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     ownerAr: "قسم التغليف",
     descriptionAr: "تغليف المنتج للحماية أثناء النقل",
     routingKey: "packaging",
+    isRoutine: true,
   },
   {
     stepOrder: 12,
@@ -102,5 +118,12 @@ export const ebdaaWorkflowRoutingRows: EbdaaWorkflowStageRow[] = [
     descriptionAr: "إدخال المخزن أو الشحن للموقع",
     routingKey: "packaging",
     notesAr: "يُغلق مسار التسليم بعد التغليف في الواجهة الحالية.",
+    isRoutine: true,
   },
 ];
+
+export function workflowRowsRoutineSplit(rows: EbdaaWorkflowStageRow[] = ebdaaWorkflowRoutingRows) {
+  const routine = rows.filter((r) => r.isRoutine);
+  const nonRoutine = rows.filter((r) => !r.isRoutine);
+  return { routine, nonRoutine };
+}

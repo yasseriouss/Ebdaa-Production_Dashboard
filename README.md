@@ -6,7 +6,8 @@
 
 | المكوّن | المسار | الوصف |
 |--------|--------|--------|
-| واجهة الإنتاج | `artifacts/factory-app` | React 19 + Vite + Tailwind v4 + Wouter |
+| **واجهة الإنتاج الموحّدة** | `apps/web` | React 19 + Vite + Wouter + i18n/RTL (يشمل شاشات `factory-app` المدمجة تحت `src/factory`) |
+| واجهة legacy (مهملة) | `artifacts/factory-app` | نُقلت ميزاتها إلى `apps/web` — لا تُستخدم للإنتاج |
 | الـ API | `artifacts/api-server` | Express 5، طبقة controllers ← services، اتصال عبر `@workspace/db` |
 | قاعدة البيانات | `lib/db` | **Drizzle ORM** + **SQLite عبر LibSQL** (`@libsql/client`) |
 | العقد API | `lib/api-spec`، `lib/api-zod`، `lib/api-client-react` | OpenAPI + Zod + React Query (Orval) |
@@ -30,8 +31,7 @@ cp .env.example .env
 
 - **`LIBSQL_URL`** أو **`SQLITE_FILE`** — موقع قاعدة SQLite (افتراضيًا ملف `local.db` في جذر المستودع إن لم تُضبط).
 - **`PORT`** — مطلوب لتشغيل **كلٍ من** الـ API وواجهة Vite.
-- **`BASE_PATH`** — مطلوب لواجهة `factory-app` (غالبًا `/`).
-- **`VITE_API_PROXY_TARGET`** — (اختياري) عنوان خادم الـ API لبروكسي Vite أثناء التطوير؛ الافتراضي `http://localhost:8085`.
+- **`VITE_API_PROXY_TARGET`** — (اختياري) بروكسي Vite لـ `/api` أثناء التطوير؛ الافتراضي `http://127.0.0.1:8787`.
 
 ## أوامر التشغيل اليومية
 
@@ -41,19 +41,21 @@ cp .env.example .env
 pnpm install
 ```
 
-**تشغيل الـ API** (يستمع على `PORT`، مثلاً `8085` ليتوافق مع إعداد البروكسي في Vite):
+**تشغيل الـ API** (يستمع على `PORT`؛ الافتراضي **8787** إن لم تُضبط `PORT`):
 
 ```bash
 pnpm --filter @workspace/api-server run dev
 ```
 
-**تشغيل الواجهة:**
+**تشغيل الواجهة الموحّدة:**
 
 ```bash
-pnpm --filter @workspace/factory-app run dev
+pnpm --filter web run dev
 ```
 
-> ملاحظة: [artifacts/factory-app/vite.config.ts](artifacts/factory-app/vite.config.ts) يوجّه طلبات `/api` إلى العنوان في **`VITE_API_PROXY_TARGET`** (افتراضيًا **http://localhost:8085**). شغّل الـ API على نفس المنفذ أو غيّر المتغير.
+يفتح عادةً على **http://localhost:5173**. يوجّه [apps/web/vite.config.ts](apps/web/vite.config.ts) طلبات `/api` إلى **`VITE_API_PROXY_TARGET`** (افتراضيًا **http://127.0.0.1:8787**). شغّل الـ API على نفس المنفذ أو غيّر المتغير.
+
+مصفوفة دمج المسارات: [docs/FACTORY_WEB_MERGE_PARITY.md](docs/FACTORY_WEB_MERGE_PARITY.md).
 
 **توليد أنواع العميل من OpenAPI:**
 

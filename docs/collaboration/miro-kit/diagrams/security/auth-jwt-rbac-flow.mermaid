@@ -1,0 +1,10 @@
+flowchart LR
+  L[POST_auth_login]
+  J[issue_JWT]
+  B[Bearer_on_requests]
+  OA[optionalAuthMiddleware]
+  RA[req_auth]
+  RP[requirePermission]
+  CTL[controllers_services]
+  L --> J --> B --> OA --> RA
+  RA --> RP --> CTL

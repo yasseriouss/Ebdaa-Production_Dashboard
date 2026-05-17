@@ -1,0 +1,45 @@
+flowchart TB
+  root[SPA_root_apps_web]
+  root --> home["`/ — Dashboard`"]
+  root --> dept["`/departments`"]
+  subgraph grp_orders_daily [Production_orders_daily]
+    direction TB
+    om["`/orders/metal`"]
+    ow["`/orders/wood`"]
+    dm["`/daily/metal`"]
+    dw["`/daily/wood`"]
+  end
+  subgraph grp_projects [Projects_planning]
+    direction TB
+    pj["`/projects/joint`"]
+    pn["`/projects/new`"]
+    pwa["`/projects/work-order-analysis`"]
+    plan["`/planning`"]
+  end
+  subgraph grp_info [About_equipment]
+    ab["`/about-system`"]
+    eq["`/equipment`"]
+  end
+  subgraph grp_analytics [Analytics]
+    direction TB
+    aa["`/analytics`"]
+    aw["`/analytics/wood`"]
+    am["`/analytics/metal`"]
+    pa["`/project-analytics`"]
+  end
+  subgraph grp_audit [Audit_performance_admin]
+    direction TB
+    al["`/audit-log`"]
+    pd["`/performance/departments`"]
+    pp["`/performance/people`"]
+    adm["`/admin/permissions`"]
+  end
+  root --> grp_orders_daily
+  root --> grp_projects
+  root --> grp_info
+  root --> grp_analytics
+  root --> grp_audit
+  login["`/login` off_Sidebar"]
+  notfound["`404`"]
+  root -.-> login
+  root -.-> notfound

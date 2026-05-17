@@ -9,11 +9,18 @@ import {
   CreateWoodenStageBody,
 } from "@workspace/api-zod";
 
+function errStatus(e: unknown): number | undefined {
+  if (e !== null && typeof e === "object" && "status" in e && typeof (e as { status: unknown }).status === "number") {
+    return (e as { status: number }).status;
+  }
+  return undefined;
+}
+
 export class WoodenController {
   static async listOrders(req: Request, res: Response) {
     try {
       const query = ListWoodenOrdersQueryParams.parse(req.query);
-      const orders = await WoodenService.listOrders(query);
+      const orders = await WoodenService.listOrders(query, req.auth);
       res.json(orders);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch wooden orders" });
@@ -23,9 +30,14 @@ export class WoodenController {
   static async createOrder(req: Request, res: Response) {
     try {
       const body = CreateWoodenOrderBody.parse(req.body);
-      const order = await WoodenService.createOrder(body);
+      const order = await WoodenService.createOrder(body, req.auth);
       res.status(201).json(order);
     } catch (error) {
+      const st = errStatus(error);
+      if (st === 403) {
+        res.status(403).json({ error: String((error as Error).message) });
+        return;
+      }
       res.status(500).json({ error: "Failed to create wooden order" });
     }
   }
@@ -33,7 +45,7 @@ export class WoodenController {
   static async getOrder(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const order = await WoodenService.getOrder(id);
+      const order = await WoodenService.getOrder(id, req.auth);
       if (!order) {
         res.status(404).json({ error: "Not found" });
         return;
@@ -48,13 +60,18 @@ export class WoodenController {
     try {
       const id = req.params.id as string;
       const body = UpdateWoodenOrderBody.parse(req.body);
-      const order = await WoodenService.updateOrder(id, body);
+      const order = await WoodenService.updateOrder(id, body, req.auth);
       if (!order) {
         res.status(404).json({ error: "Not found" });
         return;
       }
       res.json(order);
     } catch (error) {
+      const st = errStatus(error);
+      if (st === 403) {
+        res.status(403).json({ error: String((error as Error).message) });
+        return;
+      }
       res.status(500).json({ error: "Failed to update wooden order" });
     }
   }
@@ -62,7 +79,7 @@ export class WoodenController {
   static async deleteOrder(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const order = await WoodenService.deleteOrder(id);
+      const order = await WoodenService.deleteOrder(id, req.auth);
       if (!order) {
         res.status(404).json({ error: "Not found" });
         return;
@@ -76,9 +93,12 @@ export class WoodenController {
   static async listStages(req: Request, res: Response) {
     try {
       const query = ListWoodenStagesQueryParams.parse(req.query);
-      const stages = await WoodenService.listStages({
-        orderId: query.orderId ? String(query.orderId) : undefined,
-      });
+      const stages = await WoodenService.listStages(
+        {
+          orderId: query.orderId ? String(query.orderId) : undefined,
+        },
+        req.auth,
+      );
       res.json(stages);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch wooden stages" });
@@ -87,7 +107,7 @@ export class WoodenController {
 
   static async getStagesSummary(req: Request, res: Response) {
     try {
-      const summary = await WoodenService.getStagesSummary();
+      const summary = await WoodenService.getStagesSummary(req.auth);
       res.json(summary);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch wooden stage summary" });
@@ -97,9 +117,14 @@ export class WoodenController {
   static async createStage(req: Request, res: Response) {
     try {
       const body = CreateWoodenStageBody.parse(req.body);
-      const stage = await WoodenService.createStage(body);
+      const stage = await WoodenService.createStage(body, req.auth);
       res.status(201).json(stage);
     } catch (error) {
+      const st = errStatus(error);
+      if (st === 403) {
+        res.status(403).json({ error: String((error as Error).message) });
+        return;
+      }
       res.status(500).json({ error: "Failed to create wooden stage" });
     }
   }
@@ -107,7 +132,7 @@ export class WoodenController {
   static async getStage(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const stage = await WoodenService.getStage(id);
+      const stage = await WoodenService.getStage(id, req.auth);
       if (!stage) {
         res.status(404).json({ error: "Not found" });
         return;
@@ -122,7 +147,7 @@ export class WoodenController {
     try {
       const id = req.params.id as string;
       const body = UpdateWoodenStageBody.parse(req.body);
-      const stage = await WoodenService.updateStage(id, body);
+      const stage = await WoodenService.updateStage(id, body, req.auth);
       if (!stage) {
         res.status(404).json({ error: "Not found" });
         return;
@@ -136,7 +161,7 @@ export class WoodenController {
   static async deleteStage(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const stage = await WoodenService.deleteStage(id);
+      const stage = await WoodenService.deleteStage(id, req.auth);
       if (!stage) {
         res.status(404).json({ error: "Not found" });
         return;

@@ -8,9 +8,12 @@ todos:
   - id: api-auth-middleware
     content: مصادقة (JWT أو جلسة) ووسيط RBAC في artifacts/api-server على مسارات الكتابة ثم القراءة
     status: completed
-  - id: scope-queries
-    content: تطبيق تصفية مصنع/قسم في خدمات wooden/metal/factoryHub حسب req.auth
-    status: pending
+  - id: scope-queries-directory
+    content: تصفية مصنع/قسم لمسارات السعة والموظفين والأداء (dataScopeFilter + capacity.service + employees.service + performance.service مع req.auth)
+    status: completed
+  - id: scope-queries-production-hub
+    content: تصفية صفوف أوامر الخشب/المعدن ومصنع البيانات JSON عبر حقول factory_id / department_id وfactoryDepartmentRowScopeWhere
+    status: completed
   - id: audit-table-hook
     content: جدول audit_events + طبقة تسجيل في الطلبات ذات الأثر + واجهة /audit-log
     status: completed
@@ -20,6 +23,9 @@ todos:
   - id: web-guard-routes
     content: حماية مسارات apps/web وحالة مستخدم + إخفاء إجراءات الإدخال حسب الصلاحية
     status: completed
+  - id: ops-drizzle-migrate-scope-columns
+    content: (تم) ترحيلات 0006/0007 وإصلاح migrate للسجل الفارغ — [migrationRepair.ts](lib/db/src/migrationRepair.ts)؛ لقطات meta اختيارية لاحقاً
+    status: completed
 isProject: false
 ---
 
@@ -27,9 +33,9 @@ isProject: false
 
 ## الوضع الحالي ذو الصلة
 
-- الواجهة الرئيسية: [`apps/web`](apps/web) (React + Wouter) — لا توجد حاليًا جلسة مستخدم أو RBAC في الواجهة.
-- البيانات المنظمة: [`lib/db/src/schema`](lib/db/src/schema) يحتوي [`employeesTable`](lib/db/src/schema/employees.ts) مرتبطة بـ [`departmentsTable` / `factoriesTable`](lib/db/src/schema/factoryCapacity.ts) — أساس جيد لربط المستخدم بالقسم والمصنع.
-- الخلفية: [`artifacts/api-server`](artifacts/api-server) مسارات REST (`wooden`, `metal`, `factoryHub`, `employees`, …) بدون طبقة سياسات موحّدة موثّقة في الكود الذي تم مسحه.
+- الواجهة: [`apps/web`](apps/web) — [`PermissionProvider`](apps/web/src/context/PermissionContext.tsx)، [`effective-permissions`](artifacts/api-server/src/controllers/auth.controller.ts)، إخفاء عناصر [`Sidebar`](apps/web/src/components/layout/Sidebar.tsx) حسب [`routePermissions`](apps/web/src/lib/routePermissions.ts)، تسجيل دخول [`Login`](apps/web/src/pages/Login.tsx)، تمرير `Authorization: Bearer` في [`api/client.ts`](apps/web/src/lib/api/client.ts).
+- البيانات المنظمة: [`lib/db/src/schema`](lib/db/src/schema) — [`employeesTable`](lib/db/src/schema/employees.ts) مرتبطة بـ [`departmentsTable` / `factoriesTable`](lib/db/src/schema/factoryCapacity.ts).
+- الخلفية: [`artifacts/api-server`](artifacts/api-server) — `optionalAuthMiddleware` يحقن `req.auth`؛ [`requirePermission`](artifacts/api-server/src/middleware/requirePermission.ts) على مسارات REST؛ تصفية نطاق الصفوف على السعة والموظفين ([`dataScopeFilter.ts`](artifacts/api-server/src/lib/dataScopeFilter.ts)) وليس بعد على قائمة أوامر الخشب/المعدن أو hub.
 
 ## 1) نموذج الهوية والصلاحيات
 
@@ -44,7 +50,7 @@ isProject: false
 
 - في الطبقة السياسية: دوال `can(user, action, resourceMeta)` حيث `resourceMeta` يتضمن مصنع/قسم/كيان محدد للتحقق من الإسناد.
 - على مستوى API: وسيط موحّد بعد المصادقة يحقن `req.auth` ويرفض `403` قبل الوصول للـ controller.
-- على مستوى الواجهة: إخفاء أو تعطيل عناصر الإدخال بناءً على نفس المصفوفة (مع اعتبار أن الحقيقة الأمنية على الخادم فقط).
+- على مستوى الواجهة: إخفاء أو تعطيل عناصر الإدخال حيث وُجد الربط (القائمة الجانبية وغيرها)؛ لم يُراجع كل شاشة؛ الحقيقة الأمنية على الخادم فقط.
 
 ### 1.1 تنفيذ عميق — المخطط والبيانات (كيف يُبنى في Drizzle)
 
@@ -75,14 +81,15 @@ isProject: false
 
 ## 2) ظهور البيانات (Data visibility)
 
-- **تصفية استعلامات Drizzle** حسب نطاق المستخدم (مصنع/أقسام متعددة للمدير، قسم واحد للمشغّل).
-- توثيق **جدول سياسات** لكل مورد (أوامر خشب/معدن، إنتاج يومي، مشاريع): أي عمود أو مجموعة بيانات تحتاج صلاحية إضافية (مثلاً تكاليف أو معلومات عملاء) كحقول `sensitivity` مستقبلًا إن لزم.
+- **منجز حالياً:** تصفية `where` ضمن الطبقة الدليلية — [`capacity`](artifacts/api-server/src/services/capacity.service.ts)، [`employees`](artifacts/api-server/src/services/employees.service.ts)، و[`performance`](artifacts/api-server/src/services/performance.service.ts) (عبر موظفي الأقسام) عند وجود JWT و`req.auth.dataScope`.
+- **منجز:** تصفية `where` على [`wooden`](artifacts/api-server/src/services/wooden.service.ts) / [`metal`](artifacts/api-server/src/services/metal.service.ts) / [`factoryHub`](artifacts/api-server/src/services/factoryHub.service.ts) بأعمدة `factory_id` / `department_id` و[`factoryDepartmentRowScopeWhere`](artifacts/api-server/src/lib/dataScopeFilter.ts).
+- توثيق **جدول سياسات** لكل مورد: أي عمود يحتاج صلاحية إضافية أو `sensitivity` مستقبلاً.
 
 ### 2.1 تنفيذ عميق — أين تُلحق شروط Drizzle
 
-- تمرير **`AuthContext`** إلى كل دالة في [`*.service.ts`](artifacts/api-server/src/services) (`listWoodOrders`, `getWoodOrder`, إلخ).
-- بناء `where` مشروط: بدون نطاق للمدير المركزي؛ وإلا `inArray(department.id, allowedDepartmentIds)` أو ربط عبر join من أمر الشغل إلى قسم حسب المخطط الفعلي (قد لا يوجد `department_id` مباشر على الجدول — عندها النطاق يمر عبر `employee.department_id` فقط للمشغّل العادي).
-- **عرض الحقول**: دالة `serializeWoodOrder(row, auth)` تحذف المفاتيح الحساسة إن لم يوجد مثل `orders:sensitive:read` — أسهل من استعلامات متعددة وتقلل خطأ التسريب عند إضافة عمود جديد.
+- **الدليل:** تمرّر الدوال المذكورة أعلاه `RequestAuth` و[`departmentsScopeWhere` / `employeesScopeWhere`](artifacts/api-server/src/lib/dataScopeFilter.ts) كما هو منفَّذ اليوم.
+- **الإنتاج والـ hub:** تمرير `auth` وتعديل `list*`/`get*`/`update*` كما كان مخطَّطاً — عند وجود عمود أو دالة ربط قابلة للاستعلام.
+- **عرض الحقول:** دالة مثل `serializeWoodOrder(row, auth)` لم تُعتمد بعد على مستوى المستودع.
 
 ### 2.2 تنفيذ عميق — مصفوفة مسارات ↔ صلاحيات
 
@@ -177,7 +184,7 @@ flowchart LR
 | المرحلة | المحتوى |
 |---------|---------|
 | M1 | جداول المستخدمين/الأدوار/الصلاحيات + تسجيل دخول + وسيط RBAC على عدد محدود من مسارات الكتابة |
-| M2 | تطبيق نطاق مصنع/قسم على قراءة أوامر الشغل واللوحات |
+| M2 | تطبيق نطاق مصنع/قسم على الدليل (سعة، موظفون، لوحات أداء جزئياً)؛ أوامر الشغل والـ hub مستقبلية |
 | M3 | `audit_events` + تغطية مسارات التعديل والاستيراد/التصدير + شاشة السجل |
 | M4 | لوحات مقارنة الأقسام ثم توسيع الأفراد بعد ربط المعرفات في البيانات التشغيلية |
 
@@ -187,7 +194,8 @@ flowchart LR
 |-----------------|-------------------------|
 | `schema-auth-rbac` | ملفات مخطط Drizzle + ترحيل + seed الأدوار والصلاحيات الأساسية؛ FK إلى `employees` حسب الحاجة. |
 | `api-auth-middleware` | مسارات login/me، وسيط JWT، `requirePermission`، أول حماية على أهم مسارات الكتابة (Factory Hub / تحديث أوامر). |
-| `scope-queries` | تمرير `auth` إلى [`wooden`](artifacts/api-server/src/services/wooden.service.ts) / [`metal`](artifacts/api-server/src/services/metal.service.ts) / [`factoryHub`](artifacts/api-server/src/services/factoryHub.service.ts) وتعديل كل `list*` و`get*` و`update*`. |
+| `scope-queries-directory` | تطبيق المنفَّذ: [`dataScopeFilter`](artifacts/api-server/src/lib/dataScopeFilter.ts) مع [`capacity.service`](artifacts/api-server/src/services/capacity.service.ts)، [`employees.service`](artifacts/api-server/src/services/employees.service.ts)، [`performance.service`](artifacts/api-server/src/services/performance.service.ts). |
+| `scope-queries-production-hub` | أعمدة نطاق في المخطط + [`factoryDepartmentRowScopeWhere`](artifacts/api-server/src/lib/dataScopeFilter.ts) في [`wooden/metal/factoryHub`](artifacts/api-server/src/services/) |
 | `audit-table-hook` | جدول `audit_events`، إدراج من نقطة واحدة، فهارس، ثم تغطية تدريجية للمسارات + UI. |
 | `performance-metrics` | تعريف المقاييس ثم `GET /api/performance/...` + صفحات [`apps/web`](apps/web) مع نفس العزل. |
 | `web-guard-routes` | `/login`، حامل سياق مصادقة، حقن `Authorization` في [`apiJson`](apps/web/src/lib/api/client.ts)، إخفاء أزرار الإدخال حسب `/api/auth/me`. |

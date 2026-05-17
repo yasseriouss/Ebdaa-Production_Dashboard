@@ -21,6 +21,7 @@ import {
   ebdaaWorkflowRoutingRows,
 } from "../data/ebdaa";
 import { WOOD_STAGE_LABELS, WOOD_STAGE_ORDER } from "../data/routing";
+import { useTranslation } from "../context/I18nContext";
 
 const trainingModules = [
   {
@@ -30,7 +31,7 @@ const trainingModules = [
   },
   {
     title: "مسار أمر الشغل",
-    body: "المقاطع ← لزق الشريط ← CNC ← الجودة (بوابة) ← التجميع ← التغليف ← التسليم — يطابق الحقول داخل التوجيه الرقمي.",
+    body: "المقاطع ← لصق الشريط ← CNC ← الجودة (بوابة) ← التجميع ← التغليف ← التسليم — يطابق الحقول داخل التوجيه الرقمي.",
   },
   {
     title: "الوثائق ونقاط التفتيش",
@@ -67,6 +68,7 @@ const faqItems = [
 ];
 
 export default function AboutSystem() {
+  const { t } = useTranslation();
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
       <section className="glass-panel border border-brand-wood/30 p-5 space-y-4">
@@ -156,6 +158,11 @@ export default function AboutSystem() {
         <p className="text-xs text-brand-metal">
           يربط الجدول التالي مراحل الدليل الورقي بمفاتيح التوجيه في التطبيق (إن وُجدت). الخلايا الفارغة تعني أعمال مكتبية أو جودة
           قبل التجميع.
+        </p>
+        <p className="text-xs mt-2">
+          <Link href="/workflow-routing" className="text-brand-wood underline-offset-2 hover:underline font-medium">
+            {t("pages.workflowRouting.linkFromAbout")}
+          </Link>
         </p>
         <div className="overflow-x-auto border border-brand-border">
           <table className="w-full text-xs">

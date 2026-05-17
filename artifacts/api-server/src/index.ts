@@ -6,13 +6,8 @@ void bootstrapAdminFromEnv().catch((e) => {
   logger.error({ err: e }, "bootstrapAdminFromEnv failed");
 });
 
-const rawPort = process.env["PORT"];
-
-if (!rawPort) {
-  throw new Error(
-    "PORT environment variable is required but was not provided.",
-  );
-}
+/** Default matches `apps/web`, DevTools docs, and `artifacts/api-server/.env.example`. */
+const rawPort = process.env["PORT"] ?? "8787";
 
 const port = Number(rawPort);
 

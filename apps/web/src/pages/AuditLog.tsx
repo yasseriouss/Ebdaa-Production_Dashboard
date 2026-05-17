@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { Shield } from "lucide-react";
-import { ArabicText } from "../components/brand/ArabicText";
 import { apiJson } from "../lib/api/client";
+import { useTranslation } from "../context/I18nContext";
+import { useDirection } from "../lib/useDirection";
+import { appLocale, formatDateIso } from "../lib/formatLocale";
 
 type AuditEvent = {
   id: string;
@@ -16,6 +18,9 @@ type AuditEvent = {
 };
 
 export default function AuditLog() {
+  const { t } = useTranslation();
+  const { direction } = useDirection();
+  const locale = appLocale(direction);
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["audit-events"],
     queryFn: () => apiJson<AuditEvent[]>("/api/audit-events?limit=100"),
@@ -27,32 +32,34 @@ export default function AuditLog() {
       <header className="border-b border-brand-border pb-6">
         <h1 className="text-2xl font-bold tracking-tighter uppercase flex items-center gap-2">
           <Shield className="w-6 h-6 text-brand-luxury" />
-          Audit log
+          {t("pages.audit.title")}
         </h1>
-        <ArabicText className="text-brand-metal mt-1">سجل التحركات والمسارات</ArabicText>
+        <p className="text-sm text-brand-metal mt-1">{t("pages.audit.subtitle")}</p>
       </header>
 
       {isLoading ? (
-        <p className="text-xs text-brand-metal">Loading…</p>
+        <p className="text-xs text-brand-metal">{t("common.loading")}</p>
       ) : isError ? (
-        <p className="text-xs text-brand-error">{error instanceof Error ? error.message : "Failed to load"}</p>
+        <p className="text-xs text-brand-error">
+          {error instanceof Error ? error.message : t("pages.audit.loadFail")}
+        </p>
       ) : (
         <div className="overflow-x-auto glass-panel border border-brand-border text-[10px]">
-          <table className="w-full text-left">
+          <table className="w-full text-start">
             <thead className="border-b border-brand-border text-[9px] uppercase tracking-widest text-brand-metal">
               <tr>
-                <th className="p-2">Time</th>
-                <th className="p-2">Actor</th>
-                <th className="p-2">Action</th>
-                <th className="p-2">Resource</th>
-                <th className="p-2">Route</th>
-                <th className="p-2">HTTP</th>
+                <th className="p-2">{t("pages.audit.colTime")}</th>
+                <th className="p-2">{t("pages.audit.colActor")}</th>
+                <th className="p-2">{t("pages.audit.colAction")}</th>
+                <th className="p-2">{t("pages.audit.colResource")}</th>
+                <th className="p-2">{t("pages.audit.colRoute")}</th>
+                <th className="p-2">{t("pages.audit.colHttp")}</th>
               </tr>
             </thead>
             <tbody>
               {(data ?? []).map((row) => (
                 <tr key={row.id} className="border-b border-brand-border/50 font-mono">
-                  <td className="p-2 whitespace-nowrap">{row.occurredAt}</td>
+                  <td className="p-2 whitespace-nowrap">{formatDateIso(row.occurredAt, locale)}</td>
                   <td className="p-2">{row.actorLabel}</td>
                   <td className="p-2">{row.action}</td>
                   <td className="p-2">

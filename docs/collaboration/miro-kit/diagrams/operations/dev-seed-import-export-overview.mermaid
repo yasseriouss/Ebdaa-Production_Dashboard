@@ -1,0 +1,14 @@
+flowchart TB
+  dev[Developer_machine]
+  pnpmApi["pnpm --filter @workspace/api-server dev"]
+  pnpmWeb["pnpm --filter web dev apps/web"]
+  env[".env SQLITE_FILE FH_ALLOW_SEED FH_SYNC_WOODEN etc"]
+  seed["POST /api/factory-hub/seed guarded"]
+  imp["POST /api/import ..."]
+  exp["GET /api/export ..."]
+  dev --> env
+  dev --> pnpmApi
+  dev --> pnpmWeb
+  pnpmApi --> seed
+  pnpmApi --> imp
+  pnpmApi --> exp

@@ -1,5 +1,9 @@
 export { EBdaa_DATA_POLICY } from "./dataPolicy";
-export { ebdaaMachinesFixture } from "./machinesFixture";
+export {
+  ebdaaMachinesFixture,
+  ebdaaMachineHierarchyAr,
+  ebdaaMachineMainDepartmentAr,
+} from "./machinesFixture";
 export { ebdaaWorkflowRoutingRows } from "./workflowRoutingMap";
 export { ebdaaExcelSheets } from "./excelTemplates";
 export {

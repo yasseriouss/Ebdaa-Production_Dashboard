@@ -1,0 +1,28 @@
+flowchart TB
+  subgraph phaseA [Phase_A_Local_API_sync]
+    R[meta_reconcile_local_plan]
+    D[local_departments_ui]
+    REF[local_dashboard_reference]
+    M[local_metal_web]
+    S[local_seed_env]
+    R --> D --> REF --> M --> S
+  end
+  subgraph phaseB [Phase_B_Auth_RBAC]
+    DB[perm_db_auth_seed]
+    APIperm[perm_api_jwt_middleware]
+    WEBguard[perm_web_guard_client]
+    DB --> APIperm --> WEBguard
+  end
+  subgraph phaseC [Phase_C_Data_scope]
+    SCdir[perm_scope_queries_directory_done]
+    SCph[perm_scope_queries_production_hub_pending]
+    SCdir -.-> SCph
+  end
+  subgraph phaseD [Phase_D_Audit]
+    AU[perm_audit_coverage_ui]
+  end
+  subgraph phaseE [Phase_E_Performance]
+    PF[perm_performance_metrics]
+  end
+  S --> DB
+  WEBguard --> SCdir --> AU --> PF

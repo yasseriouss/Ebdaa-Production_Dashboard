@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer, primaryKey } from "drizzle-orm/sqlite-core";
+import { sqliteTable, text, integer, primaryKey, index } from "drizzle-orm/sqlite-core";
 import { employeesTable } from "./employees";
 import { departmentsTable, factoriesTable } from "./factoryCapacity";
 
@@ -75,7 +75,10 @@ export const auditEventsTable = sqliteTable("audit_events", {
   ip: text("ip"),
   userAgent: text("user_agent"),
   payloadSummary: text("payload_summary"),
-});
+}, (t) => ({
+  occurredAtIdx: index("audit_events_occurred_at_idx").on(t.occurredAt),
+  actorUserIdx: index("audit_events_actor_user_id_idx").on(t.actorUserId),
+}));
 
 export type AuthUser = typeof authUsersTable.$inferSelect;
 export type AuditEvent = typeof auditEventsTable.$inferSelect;

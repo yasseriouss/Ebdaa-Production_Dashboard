@@ -1,6 +1,7 @@
 import type { Table } from "@tanstack/react-table";
 import { Download, Trash2, X } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useTranslation } from "../../context/I18nContext";
 
 export interface BulkAction {
   label: string;
@@ -24,6 +25,7 @@ export function DataTableBulkBar<T>({
   onBulkExport?: (rows: T[]) => void;
   extraActions?: BulkAction[];
 }) {
+  const { t } = useTranslation();
   const selected = table.getSelectedRowModel().rows;
   if (!selected.length) return null;
   const data = selected.map((row) => row.original);
@@ -31,14 +33,14 @@ export function DataTableBulkBar<T>({
   return (
     <div
       role="region"
-      aria-label="Bulk actions"
+      aria-label={t("dataTable.bulkAria")}
       className={cn(
         "sticky bottom-4 z-20 flex flex-wrap items-center gap-3",
         "border border-brand-wood/50 bg-brand-elevated/95 backdrop-blur px-4 py-3 shadow-2xl",
       )}
     >
       <span className="text-[10px] font-bold uppercase tracking-widest text-brand-luxury">
-        {selected.length} selected
+        {t("dataTable.selectedN", { n: String(selected.length) })}
       </span>
       <span className="h-4 w-px bg-brand-border" aria-hidden />
 
@@ -49,7 +51,7 @@ export function DataTableBulkBar<T>({
           onClick={() => onBulkExport(data)}
         >
           <Download className="w-3.5 h-3.5" />
-          <span>Export CSV</span>
+          <span>{t("dataTable.exportCsv")}</span>
         </button>
       )}
 
@@ -78,7 +80,7 @@ export function DataTableBulkBar<T>({
           onClick={() => onBulkDelete(data)}
         >
           <Trash2 className="w-3.5 h-3.5" />
-          <span>Delete</span>
+          <span>{t("dataTable.delete")}</span>
         </button>
       )}
 
@@ -88,10 +90,10 @@ export function DataTableBulkBar<T>({
         type="button"
         onClick={() => table.resetRowSelection()}
         className="industrial-btn text-brand-metal"
-        aria-label="Clear selection"
+        aria-label={t("dataTable.clearSelection")}
       >
         <X className="w-3.5 h-3.5" />
-        <span>Clear</span>
+        <span>{t("dataTable.clear")}</span>
       </button>
     </div>
   );

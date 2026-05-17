@@ -3,7 +3,14 @@ import {
   metalWorkOrdersTable,
   metalProductionStagesTable,
 } from "@workspace/db";
-import { eq, isNull, and, or, ilike } from "@workspace/db";
+import { eq, isNull, and, or, ilike, inArray } from "@workspace/db";
+import type { RequestAuth } from "../lib/requestAuth";
+import {
+  assertScopedFactoryDepartment,
+  assertScopedRowHasSomeAssignment,
+  combineWhere,
+  factoryDepartmentRowScopeWhere,
+} from "../lib/dataScopeFilter";
 
 export const METAL_STAGES = [
   { name: "الليزر", order: 1 },
@@ -25,9 +32,28 @@ export const METAL_STAGES = [
   { name: "التسليم", order: 17 },
 ];
 
+function metalScope(auth: RequestAuth) {
+  return factoryDepartmentRowScopeWhere(
+    auth,
+    metalWorkOrdersTable.factoryId,
+    metalWorkOrdersTable.departmentId,
+  );
+}
+
+function parseScopeFromBody(body: Record<string, unknown>): {
+  factoryId: string | null;
+  departmentId: string | null;
+} {
+  const rawF = body["factoryId"];
+  const rawD = body["departmentId"];
+  const factoryId = rawF !== undefined && rawF !== null && String(rawF) !== "" ? String(rawF) : null;
+  const departmentId = rawD !== undefined && rawD !== null && String(rawD) !== "" ? String(rawD) : null;
+  return { factoryId, departmentId };
+}
+
 export class MetalService {
-  static async listOrders(query: { status?: string; client?: string; search?: string }) {
-    let whereClause = isNull(metalWorkOrdersTable.deletedAt);
+  static async listOrders(query: { status?: string; client?: string; search?: string }, auth: RequestAuth) {
+    let whereClause: ReturnType<typeof and> | ReturnType<typeof isNull> = isNull(metalWorkOrdersTable.deletedAt);
 
     if (query.status) {
       whereClause = and(whereClause, eq(metalWorkOrdersTable.status, query.status))!;
@@ -49,6 +75,8 @@ export class MetalService {
       )!;
     }
 
+    whereClause = combineWhere(whereClause, metalScope(auth))!;
+
     return await db
       .select()
       .from(metalWorkOrdersTable)
@@ -56,7 +84,10 @@ export class MetalService {
       .orderBy(metalWorkOrdersTable.id);
   }
 
-  static async createOrder(body: Record<string, unknown>) {
+  static async createOrder(body: Record<string, unknown>, auth: RequestAuth) {
+    const { factoryId, departmentId } = parseScopeFromBody(body);
+    assertScopedRowHasSomeAssignment(auth, factoryId, departmentId);
+
     return await db.transaction(async (tx) => {
       const [order] = await tx
         .insert(metalWorkOrdersTable)
@@ -72,6 +103,8 @@ export class MetalService {
           backlogQty: body.backlogQty !== undefined ? String(body.backlogQty) : "0",
           notes: body.notes !== undefined ? String(body.notes) : undefined,
           status: body.status !== undefined ? String(body.status) : "تحت التصنيع",
+          factoryId,
+          departmentId,
         })
         .returning();
 
@@ -91,11 +124,10 @@ export class MetalService {
     });
   }
 
-  static async getOrder(id: string) {
-    const [order] = await db
-      .select()
-      .from(metalWorkOrdersTable)
-      .where(and(eq(metalWorkOrdersTable.id, id), isNull(metalWorkOrdersTable.deletedAt)));
+  static async getOrder(id: string, auth: RequestAuth) {
+    const whereBase = and(eq(metalWorkOrdersTable.id, id), isNull(metalWorkOrdersTable.deletedAt));
+    const whereClause = combineWhere(whereBase, metalScope(auth));
+    const [order] = await db.select().from(metalWorkOrdersTable).where(whereClause);
 
     if (!order) return null;
 
@@ -108,8 +140,27 @@ export class MetalService {
     return { ...order, stages };
   }
 
-  static async updateOrder(id: string, body: Record<string, unknown>) {
-    const up: Record<string, string | undefined> = { updatedAt: new Date().toISOString() };
+  static async updateOrder(id: string, body: Record<string, unknown>, auth: RequestAuth) {
+    const existing = await MetalService.getOrder(id, auth);
+    if (!existing) return null;
+
+    const nextFactory =
+      "factoryId" in body
+        ? body["factoryId"] === null || body["factoryId"] === ""
+          ? null
+          : String(body["factoryId"])
+        : existing.factoryId ?? null;
+    const nextDept =
+      "departmentId" in body
+        ? body["departmentId"] === null || body["departmentId"] === ""
+          ? null
+          : String(body["departmentId"])
+        : existing.departmentId ?? null;
+
+    assertScopedRowHasSomeAssignment(auth, nextFactory, nextDept);
+    assertScopedFactoryDepartment(auth, nextFactory, nextDept);
+
+    const up: Record<string, string | undefined | null> = { updatedAt: new Date().toISOString() };
     if (body.moNumber !== undefined) up.moNumber = String(body.moNumber);
     if (body.project !== undefined) up.project = String(body.project);
     if (body.client !== undefined) up.client = String(body.client);
@@ -121,24 +172,30 @@ export class MetalService {
     if (body.backlogQty !== undefined) up.backlogQty = String(body.backlogQty);
     if (body.notes !== undefined) up.notes = String(body.notes);
     if (body.status !== undefined) up.status = String(body.status);
+    if ("factoryId" in body) up.factoryId = nextFactory;
+    if ("departmentId" in body) up.departmentId = nextDept;
+
+    const whereBase = and(eq(metalWorkOrdersTable.id, id), isNull(metalWorkOrdersTable.deletedAt));
+    const whereClause = combineWhere(whereBase, metalScope(auth));
 
     const [order] = await db
       .update(metalWorkOrdersTable)
       .set(up)
-      .where(and(eq(metalWorkOrdersTable.id, id), isNull(metalWorkOrdersTable.deletedAt)))
+      .where(whereClause)
       .returning();
 
     return order;
   }
 
-  static async deleteOrder(id: string) {
+  static async deleteOrder(id: string, auth: RequestAuth) {
+    const existing = await MetalService.getOrder(id, auth);
+    if (!existing) return null;
+
     return await db.transaction(async (tx) => {
       const now = new Date().toISOString();
-      const [order] = await tx
-        .update(metalWorkOrdersTable)
-        .set({ deletedAt: now })
-        .where(eq(metalWorkOrdersTable.id, id))
-        .returning();
+      const whereBase = and(eq(metalWorkOrdersTable.id, id), isNull(metalWorkOrdersTable.deletedAt));
+      const whereClause = combineWhere(whereBase, metalScope(auth));
+      const [order] = await tx.update(metalWorkOrdersTable).set({ deletedAt: now }).where(whereClause).returning();
 
       if (order) {
         await tx
@@ -151,10 +208,25 @@ export class MetalService {
     });
   }
 
-  static async getStagesSummary() {
+  static async getStagesSummary(auth: RequestAuth) {
+    const scope = metalScope(auth);
+    const joinOn = scope
+      ? and(
+          eq(metalProductionStagesTable.metalOrderId, metalWorkOrdersTable.id),
+          isNull(metalWorkOrdersTable.deletedAt),
+          scope,
+        )!
+      : and(eq(metalProductionStagesTable.metalOrderId, metalWorkOrdersTable.id), isNull(metalWorkOrdersTable.deletedAt))!;
+
     const stages = await db
-      .select()
+      .select({
+        stageName: metalProductionStagesTable.stageName,
+        stageOrder: metalProductionStagesTable.stageOrder,
+        qtyTarget: metalProductionStagesTable.qtyTarget,
+        qtyDone: metalProductionStagesTable.qtyDone,
+      })
       .from(metalProductionStagesTable)
+      .innerJoin(metalWorkOrdersTable, joinOn)
       .where(isNull(metalProductionStagesTable.deletedAt));
 
     const summaryMap = new Map<string, Record<string, unknown>>();
@@ -180,8 +252,16 @@ export class MetalService {
     );
   }
 
-  static async listStages(query: { moNumber?: string; stageName?: string }) {
-    let whereClause = isNull(metalProductionStagesTable.deletedAt);
+  static async listStages(query: { moNumber?: string; stageName?: string }, auth: RequestAuth) {
+    const orderWhere = combineWhere(isNull(metalWorkOrdersTable.deletedAt), metalScope(auth))!;
+    const visibleOrderIds = db
+      .select({ id: metalWorkOrdersTable.id })
+      .from(metalWorkOrdersTable)
+      .where(orderWhere);
+    let whereClause = and(
+      isNull(metalProductionStagesTable.deletedAt),
+      inArray(metalProductionStagesTable.metalOrderId, visibleOrderIds),
+    )!;
     if (query.moNumber) whereClause = and(whereClause, eq(metalProductionStagesTable.moNumber, query.moNumber))!;
     if (query.stageName) whereClause = and(whereClause, eq(metalProductionStagesTable.stageName, query.stageName))!;
 
@@ -192,7 +272,14 @@ export class MetalService {
       .orderBy(metalProductionStagesTable.metalOrderId, metalProductionStagesTable.stageOrder);
   }
 
-  static async createStage(body: Record<string, unknown>) {
+  static async createStage(body: Record<string, unknown>, auth: RequestAuth) {
+    const parent = await MetalService.getOrder(String(body.metalOrderId), auth);
+    if (!parent) {
+      const err = new Error("parent_order_inaccessible");
+      (err as Error & { status: number }).status = 403;
+      throw err;
+    }
+
     const [stage] = await db
       .insert(metalProductionStagesTable)
       .values({
@@ -208,15 +295,21 @@ export class MetalService {
     return stage;
   }
 
-  static async getStage(id: string) {
+  static async getStage(id: string, auth: RequestAuth) {
     const [stage] = await db
       .select()
       .from(metalProductionStagesTable)
       .where(and(eq(metalProductionStagesTable.id, id), isNull(metalProductionStagesTable.deletedAt)));
+    if (!stage) return null;
+    const order = await MetalService.getOrder(stage.metalOrderId, auth);
+    if (!order) return null;
     return stage;
   }
 
-  static async updateStage(id: string, body: Record<string, unknown>) {
+  static async updateStage(id: string, body: Record<string, unknown>, auth: RequestAuth) {
+    const visible = await MetalService.getStage(id, auth);
+    if (!visible) return null;
+
     const up: Record<string, string> = { updatedAt: new Date().toISOString() };
     if (body.qtyDone !== undefined) up.qtyDone = String(body.qtyDone);
     if (body.status !== undefined) up.status = String(body.status);
@@ -269,7 +362,10 @@ export class MetalService {
       .where(eq(metalWorkOrdersTable.id, metalOrderId));
   }
 
-  static async deleteStage(id: string) {
+  static async deleteStage(id: string, auth: RequestAuth) {
+    const visible = await MetalService.getStage(id, auth);
+    if (!visible) return null;
+
     const [stage] = await db
       .update(metalProductionStagesTable)
       .set({ deletedAt: new Date().toISOString() })

@@ -1,0 +1,12 @@
+flowchart LR
+  panel[Dashboard_web_hub_first]
+  hubJSON[fh_wood_work_orders_json_payload]
+  canonWood[wooden_work_orders_normalized]
+  canonMetal[metal_work_orders_normalized]
+  doc[legacy_adapter_factory_hub_md]
+  followup[followup_translator_routing]
+
+  hubJSON --> panel
+  doc -->|"field_mapping"| canonWood
+  doc -->|"field_mapping"| canonMetal
+  followup -.->|"backlog"| hubJSON

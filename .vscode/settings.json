@@ -1,3 +1,6 @@
 {
-    "editor.unicodeHighlight.includeComments": true
+  "editor.unicodeHighlight.includeComments": true,
+  "typescript.tsdk": "apps/web/node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "github-actions.workflows.pinned.workflows": [".github/workflows/web.yml"]
 }

@@ -1,0 +1,46 @@
+<!--
+  مرجع علاقات Drizzle SQLite — ملخص هيكلي (أسماء جداول مثل مخطّط قاعدة البيانات).
+  للأعمدة الكاملة وكل خواص FK/PK/UQ: رسوم لوحة «Factory Hub Drizzle SQLite full ERD»؛ التوليد:
+  `node docs/collaboration/miro-kit/scripts/build-miro-er-full-payload.js` ثم MCP `diagram_create` من ملف JSON الناتج.
+
+  المصدر المعياري للأعمدة: lib/db/src/schema/*.ts
+-->
+erDiagram
+  factories ||--o{ departments : factory_id
+  departments ||--o{ tasks : department_id
+  factories ||--o{ employees : factory_id
+  departments |o--o{ employees : department_id_optional
+  factories |o--o{ wooden_work_orders : factory_optional
+  departments |o--o{ wooden_work_orders : dept_optional
+  wooden_work_orders ||--o{ wooden_production_stages : wooden_order_id
+  factories |o--o{ metal_work_orders : factory_optional
+  departments |o--o{ metal_work_orders : dept_optional
+  metal_work_orders ||--o{ metal_production_stages : metal_order_id
+  metal_work_orders ||--o{ metal_stage_log : metal_order_id
+  factories |o--o{ fh_wood_work_orders : factory_optional
+  departments |o--o{ fh_wood_work_orders : dept_optional
+  employees ||--o| auth_users : employee_id_optional
+  auth_users ||--o{ auth_user_roles : user_id
+  auth_roles ||--o{ auth_user_roles : role_id
+  factories |o--o{ auth_user_roles : scope_factory_optional
+  departments |o--o{ auth_user_roles : scope_dept_optional
+  auth_roles ||--o{ auth_role_permissions : role_id
+  auth_permissions ||--o{ auth_role_permissions : permission_id
+  auth_users ||--o{ audit_events : actor_user_id_optional
+  entity_notes {
+    text id PK
+    text entity_type NOT_NULL
+    text entity_id NOT_NULL
+  }
+  fh_reference_snapshots {
+    text key PK
+  }
+  fh_work_order_analysis_sessions {
+    text id PK
+  }
+  fh_new_project_autosave {
+    text singleton_key PK
+  }
+  shared_projects {
+    text id PK
+  }

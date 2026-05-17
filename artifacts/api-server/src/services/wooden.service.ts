@@ -3,7 +3,14 @@ import {
   woodenWorkOrdersTable,
   woodenProductionStagesTable,
 } from "@workspace/db";
-import { eq, isNull, and, or, ilike } from "@workspace/db";
+import { eq, isNull, and, or, ilike, inArray } from "@workspace/db";
+import type { RequestAuth } from "../lib/requestAuth";
+import {
+  assertScopedFactoryDepartment,
+  assertScopedRowHasSomeAssignment,
+  combineWhere,
+  factoryDepartmentRowScopeWhere,
+} from "../lib/dataScopeFilter";
 
 export const WOODEN_STAGES = [
   { name: "القطع", order: 1 },
@@ -17,9 +24,28 @@ function stripVbc(val: string | null | undefined): string {
   return val.replace(/\bvbc\b/gi, "").replace(/\s+/g, " ").trim();
 }
 
+function woodScope(auth: RequestAuth) {
+  return factoryDepartmentRowScopeWhere(
+    auth,
+    woodenWorkOrdersTable.factoryId,
+    woodenWorkOrdersTable.departmentId,
+  );
+}
+
+function parseScopeFromBody(body: Record<string, unknown>): {
+  factoryId: string | null;
+  departmentId: string | null;
+} {
+  const rawF = body["factoryId"];
+  const rawD = body["departmentId"];
+  const factoryId = rawF !== undefined && rawF !== null && String(rawF) !== "" ? String(rawF) : null;
+  const departmentId = rawD !== undefined && rawD !== null && String(rawD) !== "" ? String(rawD) : null;
+  return { factoryId, departmentId };
+}
+
 export class WoodenService {
-  static async listOrders(query: { status?: string; client?: string; search?: string }) {
-    let whereClause = isNull(woodenWorkOrdersTable.deletedAt);
+  static async listOrders(query: { status?: string; client?: string; search?: string }, auth: RequestAuth) {
+    let whereClause: ReturnType<typeof and> | ReturnType<typeof isNull> = isNull(woodenWorkOrdersTable.deletedAt);
 
     if (query.status) {
       whereClause = and(whereClause, eq(woodenWorkOrdersTable.status, query.status))!;
@@ -41,6 +67,8 @@ export class WoodenService {
       )!;
     }
 
+    whereClause = combineWhere(whereClause, woodScope(auth))!;
+
     return await db
       .select()
       .from(woodenWorkOrdersTable)
@@ -48,7 +76,10 @@ export class WoodenService {
       .orderBy(woodenWorkOrdersTable.id);
   }
 
-  static async createOrder(body: Record<string, unknown>) {
+  static async createOrder(body: Record<string, unknown>, auth: RequestAuth) {
+    const { factoryId, departmentId } = parseScopeFromBody(body);
+    assertScopedRowHasSomeAssignment(auth, factoryId, departmentId);
+
     return await db.transaction(async (tx) => {
       const qtyStr = String(body.qty ?? "0");
       const doneStr = body.done !== undefined ? String(body.done) : "0";
@@ -68,6 +99,8 @@ export class WoodenService {
           rem: remStr,
           status: body.status !== undefined ? String(body.status) : "تحت التصنيع",
           prodDateEnd: body.prodDateEnd !== undefined && body.prodDateEnd !== null ? String(body.prodDateEnd) : null,
+          factoryId,
+          departmentId,
         })
         .returning();
 
@@ -85,11 +118,10 @@ export class WoodenService {
     });
   }
 
-  static async getOrder(id: string) {
-    const [order] = await db
-      .select()
-      .from(woodenWorkOrdersTable)
-      .where(and(eq(woodenWorkOrdersTable.id, id), isNull(woodenWorkOrdersTable.deletedAt)));
+  static async getOrder(id: string, auth: RequestAuth) {
+    const whereBase = and(eq(woodenWorkOrdersTable.id, id), isNull(woodenWorkOrdersTable.deletedAt));
+    const whereClause = combineWhere(whereBase, woodScope(auth));
+    const [order] = await db.select().from(woodenWorkOrdersTable).where(whereClause);
 
     if (!order) return null;
 
@@ -102,7 +134,26 @@ export class WoodenService {
     return { ...order, stages };
   }
 
-  static async updateOrder(id: string, body: Record<string, unknown>) {
+  static async updateOrder(id: string, body: Record<string, unknown>, auth: RequestAuth) {
+    const existing = await WoodenService.getOrder(id, auth);
+    if (!existing) return null;
+
+    const nextFactory =
+      "factoryId" in body
+        ? body["factoryId"] === null || body["factoryId"] === ""
+          ? null
+          : String(body["factoryId"])
+        : existing.factoryId ?? null;
+    const nextDept =
+      "departmentId" in body
+        ? body["departmentId"] === null || body["departmentId"] === ""
+          ? null
+          : String(body["departmentId"])
+        : existing.departmentId ?? null;
+
+    assertScopedRowHasSomeAssignment(auth, nextFactory, nextDept);
+    assertScopedFactoryDepartment(auth, nextFactory, nextDept);
+
     const up: Record<string, string | null> = { updatedAt: new Date().toISOString() };
     if (body.extension !== undefined) up.extension = stripVbc(String(body.extension));
     if (body.orderDate !== undefined) up.orderDate = String(body.orderDate);
@@ -116,24 +167,30 @@ export class WoodenService {
     if (body.prodDateEnd !== undefined) {
       up.prodDateEnd = body.prodDateEnd === null || body.prodDateEnd === "" ? null : String(body.prodDateEnd);
     }
+    if ("factoryId" in body) up.factoryId = nextFactory;
+    if ("departmentId" in body) up.departmentId = nextDept;
+
+    const whereBase = and(eq(woodenWorkOrdersTable.id, id), isNull(woodenWorkOrdersTable.deletedAt));
+    const whereClause = combineWhere(whereBase, woodScope(auth));
 
     const [order] = await db
       .update(woodenWorkOrdersTable)
       .set(up)
-      .where(and(eq(woodenWorkOrdersTable.id, id), isNull(woodenWorkOrdersTable.deletedAt)))
+      .where(whereClause)
       .returning();
 
     return order;
   }
 
-  static async deleteOrder(id: string) {
+  static async deleteOrder(id: string, auth: RequestAuth) {
+    const existing = await WoodenService.getOrder(id, auth);
+    if (!existing) return null;
+
     return await db.transaction(async (tx) => {
       const now = new Date().toISOString();
-      const [order] = await tx
-        .update(woodenWorkOrdersTable)
-        .set({ deletedAt: now })
-        .where(eq(woodenWorkOrdersTable.id, id))
-        .returning();
+      const whereBase = and(eq(woodenWorkOrdersTable.id, id), isNull(woodenWorkOrdersTable.deletedAt));
+      const whereClause = combineWhere(whereBase, woodScope(auth));
+      const [order] = await tx.update(woodenWorkOrdersTable).set({ deletedAt: now }).where(whereClause).returning();
 
       if (order) {
         await tx
@@ -146,9 +203,19 @@ export class WoodenService {
     });
   }
 
-  static async listStages(query: { orderId?: string }) {
-    let whereClause = isNull(woodenProductionStagesTable.deletedAt);
-    if (query.orderId) whereClause = and(whereClause, eq(woodenProductionStagesTable.woodenOrderId, query.orderId))!;
+  static async listStages(query: { orderId?: string }, auth: RequestAuth) {
+    const orderWhere = combineWhere(isNull(woodenWorkOrdersTable.deletedAt), woodScope(auth))!;
+    const visibleOrderIds = db
+      .select({ id: woodenWorkOrdersTable.id })
+      .from(woodenWorkOrdersTable)
+      .where(orderWhere);
+    let whereClause = and(
+      isNull(woodenProductionStagesTable.deletedAt),
+      inArray(woodenProductionStagesTable.woodenOrderId, visibleOrderIds),
+    )!;
+    if (query.orderId) {
+      whereClause = and(whereClause, eq(woodenProductionStagesTable.woodenOrderId, query.orderId))!;
+    }
 
     return await db
       .select()
@@ -158,7 +225,11 @@ export class WoodenService {
   }
 
   /** WIP / done per stage (same shape as metal summary) — pressure uses order qty vs stage qty done */
-  static async getStagesSummary() {
+  static async getStagesSummary(auth: RequestAuth) {
+    const scope = woodScope(auth);
+    const base = and(isNull(woodenProductionStagesTable.deletedAt), isNull(woodenWorkOrdersTable.deletedAt));
+    const whereClause = combineWhere(base, scope)!;
+
     const rows = await db
       .select({
         stageName: woodenProductionStagesTable.stageName,
@@ -172,9 +243,7 @@ export class WoodenService {
         woodenWorkOrdersTable,
         eq(woodenProductionStagesTable.woodenOrderId, woodenWorkOrdersTable.id),
       )
-      .where(
-        and(isNull(woodenProductionStagesTable.deletedAt), isNull(woodenWorkOrdersTable.deletedAt)),
-      );
+      .where(whereClause);
 
     const summaryMap = new Map<
       string,
@@ -201,7 +270,14 @@ export class WoodenService {
     return Array.from(summaryMap.values()).sort((a, b) => a.stageOrder - b.stageOrder);
   }
 
-  static async createStage(body: Record<string, unknown>) {
+  static async createStage(body: Record<string, unknown>, auth: RequestAuth) {
+    const parent = await WoodenService.getOrder(String(body.woodenOrderId), auth);
+    if (!parent) {
+      const err = new Error("parent_order_inaccessible");
+      (err as Error & { status: number }).status = 403;
+      throw err;
+    }
+
     const [stage] = await db
       .insert(woodenProductionStagesTable)
       .values({
@@ -215,15 +291,21 @@ export class WoodenService {
     return stage;
   }
 
-  static async getStage(id: string) {
+  static async getStage(id: string, auth: RequestAuth) {
     const [stage] = await db
       .select()
       .from(woodenProductionStagesTable)
       .where(and(eq(woodenProductionStagesTable.id, id), isNull(woodenProductionStagesTable.deletedAt)));
+    if (!stage) return null;
+    const order = await WoodenService.getOrder(stage.woodenOrderId, auth);
+    if (!order) return null;
     return stage;
   }
 
-  static async updateStage(id: string, body: Record<string, unknown>) {
+  static async updateStage(id: string, body: Record<string, unknown>, auth: RequestAuth) {
+    const visible = await WoodenService.getStage(id, auth);
+    if (!visible) return null;
+
     const up: Record<string, string> = { updatedAt: new Date().toISOString() };
     if (body.qtyDone !== undefined) up.qtyDone = String(body.qtyDone);
     if (body.status !== undefined) up.status = String(body.status);
@@ -268,7 +350,10 @@ export class WoodenService {
       .where(eq(woodenWorkOrdersTable.id, woodenOrderId));
   }
 
-  static async deleteStage(id: string) {
+  static async deleteStage(id: string, auth: RequestAuth) {
+    const visible = await WoodenService.getStage(id, auth);
+    if (!visible) return null;
+
     const [stage] = await db
       .update(woodenProductionStagesTable)
       .set({ deletedAt: new Date().toISOString() })

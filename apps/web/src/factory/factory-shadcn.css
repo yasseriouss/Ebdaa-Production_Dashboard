@@ -1,0 +1,149 @@
+/* Shadcn semantic tokens for ported factory-app UI — scoped under .factory-shadcn-scope */
+.factory-shadcn-scope {
+  --background: oklch(97% 0.018 70);
+  --surface: oklch(99% 0.008 70);
+  --foreground: oklch(22% 0.02 50);
+  --accent: oklch(64% 0.13 28);
+  --muted: oklch(50% 0.018 50);
+  --muted-foreground: var(--muted);
+  --border: oklch(22% 0.02 50 / 0.1);
+  --input: oklch(22% 0.02 50 / 0.05);
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
+  --popover: var(--surface);
+  --popover-foreground: var(--foreground);
+  --primary: var(--accent);
+  --primary-foreground: oklch(99% 0.008 70);
+  --secondary: oklch(22% 0.02 50 / 0.05);
+  --secondary-foreground: var(--foreground);
+  --destructive: oklch(55% 0.2 25);
+  --destructive-foreground: oklch(99% 0.008 70);
+  --ring: var(--accent);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--foreground);
+  --sidebar-primary: var(--accent);
+  --sidebar-primary-foreground: var(--primary-foreground);
+  --sidebar-accent: oklch(22% 0.02 50 / 0.07);
+  --sidebar-accent-foreground: var(--foreground);
+  --sidebar-border: oklch(22% 0.02 50 / 0.12);
+  --sidebar-ring: var(--ring);
+  --radius: 1rem;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--primary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  color: var(--foreground);
+}
+
+html[data-theme="industrial"] .factory-shadcn-scope {
+  --background: var(--theme-brand-black);
+  --surface: var(--theme-brand-elevated);
+  --foreground: var(--theme-brand-luxury);
+  --accent: var(--theme-brand-wood);
+  --muted: var(--theme-brand-metal);
+  --border: var(--theme-brand-border);
+  --card: var(--surface);
+  --primary: var(--accent);
+  --ring: var(--accent);
+}
+
+.factory-shadcn-scope .tabular-nums,
+.factory-shadcn-scope [data-metrics="true"],
+.factory-shadcn-scope td {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Card chrome (ported from factory-app) */
+.factory-shadcn-scope .double-bezel-outer {
+  padding: 0.25rem;
+  border-radius: 1.25rem;
+  background: color-mix(in oklch, var(--foreground) 6%, transparent);
+}
+
+.factory-shadcn-scope .double-bezel-inner {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem;
+  background: var(--card);
+  box-shadow: inset 0 1px 2px color-mix(in oklch, white 55%, transparent);
+}
+
+/* Embedded executive block inside home dashboard shell */
+.factory-shadcn-scope.factory-embedded-in-industrial {
+  --background: color-mix(in oklch, var(--theme-brand-black, oklch(14% 0.01 50)) 92%, transparent);
+  --surface: var(--theme-brand-elevated, oklch(18% 0.012 50));
+  --foreground: var(--theme-brand-luxury, oklch(96% 0.01 85));
+  --muted-foreground: var(--theme-brand-metal, oklch(68% 0.02 70));
+  --border: var(--theme-brand-border, oklch(96% 0.01 85 / 0.12));
+  --accent: var(--theme-brand-wood, oklch(64% 0.13 28));
+  --card: var(--surface);
+}
+
+html[data-theme="executive"] .factory-shadcn-scope.factory-embedded-in-industrial {
+  --background: oklch(98% 0.012 75);
+  --surface: oklch(100% 0.006 80);
+  --foreground: oklch(22% 0.02 50);
+  --muted-foreground: oklch(48% 0.02 55);
+  --border: oklch(22% 0.02 50 / 0.1);
+  --accent: oklch(58% 0.14 28);
+  --card: var(--surface);
+}
+
+.factory-shadcn-scope.factory-embedded-in-industrial .double-bezel-outer {
+  border-radius: 0.75rem;
+  background: color-mix(in oklch, var(--accent) 8%, var(--card));
+}
+
+.factory-shadcn-scope.factory-embedded-in-industrial .double-bezel-inner {
+  border-radius: 0.625rem;
+  box-shadow: inset 0 1px 0 color-mix(in oklch, white 12%, transparent);
+}
+
+.factory-shadcn-scope.factory-embedded-in-industrial .executive-embedded-panel {
+  border-radius: 0.75rem;
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+/* Legacy industrial-only overrides (kept for contrast tuning) */
+html[data-theme="industrial"] .factory-shadcn-scope.factory-embedded-in-industrial {
+  --background: oklch(14% 0.01 50);
+  --surface: oklch(18% 0.012 50);
+  --foreground: oklch(96% 0.01 85);
+  --muted-foreground: oklch(68% 0.02 70);
+  --border: oklch(96% 0.01 85 / 0.12);
+  --accent: var(--theme-brand-wood);
+  --card: var(--surface);
+}
+
+html[data-theme="industrial"] .factory-shadcn-scope.factory-embedded-in-industrial .double-bezel-outer {
+  border-radius: 0.875rem;
+  background: color-mix(in oklch, var(--theme-brand-wood) 12%, var(--theme-brand-elevated));
+}
+
+html[data-theme="industrial"] .factory-shadcn-scope.factory-embedded-in-industrial .double-bezel-inner {
+  border-radius: 0.75rem;
+  padding: clamp(0.875rem, 2vw, 1.25rem);
+  box-shadow:
+    inset 0 1px 0 color-mix(in oklch, white 8%, transparent),
+    0 1px 0 color-mix(in oklch, black 35%, transparent);
+}
+
+html[data-theme="industrial"] .factory-shadcn-scope.factory-embedded-in-industrial .double-bezel-inner .text-4xl {
+  font-size: clamp(1.75rem, 4vw, 2.25rem);
+}

@@ -1,0 +1,22 @@
+flowchart TD
+  A[User_opens_SPA]
+  B[GET_effective_permissions]
+  C{HTTP_success}
+  D[Unrestricted_fallback_all_nav]
+  E{unrestricted_flag}
+  F[Full_sidebar_structure]
+  G{has_each_ROUTE_REQUIRED_key}
+  H[Hide_parent_if_all_subs_hidden]
+  I[Expand_groups_user_clicks]
+  J[Navigate_href_or_direct_URL]
+  K[Wouter_render_page]
+  A --> B --> C
+  C -->|no| D --> F
+  C -->|yes| E
+  E -->|true| F
+  E -->|false| G
+  G -->|all_keys| F
+  G -->|missing| H --> I
+  F --> J
+  H --> J
+  J --> K

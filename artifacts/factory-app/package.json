@@ -2,9 +2,10 @@
   "name": "@workspace/factory-app",
   "version": "0.0.0",
   "private": true,
+  "deprecated": "Merged into apps/web (src/factory). Do not use for production.",
   "type": "module",
   "scripts": {
-    "dev": "vite --config vite.config.ts --host 0.0.0.0",
+    "dev": "echo \"Use: pnpm --filter web run dev\" && exit 1",
     "build": "vite build --config vite.config.ts",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit"

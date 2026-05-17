@@ -1,13 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="ar" dir="rtl" data-theme="executive">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      try {
+        var k = "factory-data-hub:ui-theme";
+        var t = localStorage.getItem(k);
+        if (t === "industrial" || t === "executive") document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+      try {
+        var d = localStorage.getItem("factory-data-hub:direction");
+        if (d === "ltr" || d === "rtl") {
+          document.documentElement.setAttribute("dir", d);
+          document.documentElement.setAttribute("lang", d === "rtl" ? "ar" : "en");
+        }
+      } catch (e) {}
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0a0a0a" />
-    <title>GL Dashboard · Yasserious</title>
+    <meta name="theme-color" content="#0a0908" />
+    <title>لوحة بيانات الإنتاج والمتابعة اليومية</title>
     <meta
       name="description"
-      content="GL Dashboard (The Grand Line Minimal Production Dashboard) — production orders, daily logs, and analytics."
+      content="لوحة بيانات الإنتاج والمتابعة اليومية: أوامر الشغل، اليوميات، والتحليلات."
     />
 
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
@@ -20,23 +34,23 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Comfortaa:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&family=Tajawal:wght@400;500;700;800&display=swap"
     />
 
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="GL Dashboard · Yasserious" />
+    <meta property="og:title" content="لوحة بيانات الإنتاج والمتابعة اليومية" />
     <meta
       property="og:description"
-      content="The Grand Line Minimal Production Dashboard — production orders, daily logs, and analytics."
+      content="لوحة بيانات الإنتاج والمتابعة اليومية: أوامر الشغل، اليوميات، والتحليلات."
     />
     <meta property="og:image" content="/og-image.png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:title" content="GL Dashboard · Yasserious" />
+    <meta name="twitter:title" content="لوحة بيانات الإنتاج والمتابعة اليومية" />
     <meta
       name="twitter:description"
-      content="The Grand Line Minimal Production Dashboard — production orders, daily logs, and analytics."
+      content="لوحة بيانات الإنتاج والمتابعة اليومية: أوامر الشغل، اليوميات، والتحليلات."
     />
     <meta name="twitter:image" content="/og-image.png" />
   </head>

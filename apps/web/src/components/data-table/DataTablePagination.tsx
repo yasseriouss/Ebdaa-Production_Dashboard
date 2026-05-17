@@ -1,5 +1,8 @@
 import type { Table } from "@tanstack/react-table";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { useTranslation } from "../../context/I18nContext";
+import { useDirection } from "../../lib/useDirection";
+import { appLocale, formatNumber } from "../../lib/formatLocale";
 
 const PAGE_SIZES = [10, 25, 50, 100];
 
@@ -11,6 +14,9 @@ export function DataTablePagination<T>({
   /** Optional override; for server-side pagination pass the upstream count. */
   totalRows?: number;
 }) {
+  const { t } = useTranslation();
+  const { direction } = useDirection();
+  const locale = appLocale(direction);
   const pageIndex = table.getState().pagination.pageIndex;
   const pageSize = table.getState().pagination.pageSize;
   const pageCount = table.getPageCount();
@@ -22,16 +28,19 @@ export function DataTablePagination<T>({
       <div className="flex items-center gap-3">
         <span>
           {selectedCount > 0
-            ? `${selectedCount} of ${rowCount} selected`
-            : `${rowCount.toLocaleString()} records`}
+            ? t("dataTable.selectedOfTotal", {
+                n: String(formatNumber(selectedCount, locale)),
+                total: String(formatNumber(rowCount, locale)),
+              })
+            : t("dataTable.records", { n: String(formatNumber(rowCount, locale)) })}
         </span>
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2">
-          <span>Rows</span>
+          <span>{t("dataTable.rows")}</span>
           <select
-            aria-label="Rows per page"
+            aria-label={t("dataTable.rowsPerPageAria")}
             value={pageSize}
             onChange={(event) => table.setPageSize(Number(event.target.value))}
             className="bg-brand-elevated border border-brand-border px-2 py-1 text-xs text-brand-luxury"
@@ -45,7 +54,10 @@ export function DataTablePagination<T>({
         </label>
 
         <span className="text-brand-metal">
-          Page {pageIndex + 1} / {Math.max(pageCount, 1)}
+          {t("dataTable.pageOf", {
+            page: String(pageIndex + 1),
+            pages: String(Math.max(pageCount, 1)),
+          })}
         </span>
 
         <div className="flex items-center gap-1">
@@ -54,7 +66,7 @@ export function DataTablePagination<T>({
             onClick={() => table.setPageIndex(0)}
             disabled={!table.getCanPreviousPage()}
             className="industrial-btn p-2 disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="First page"
+            aria-label={t("dataTable.firstPage")}
           >
             <ChevronsLeft className="w-3.5 h-3.5" />
           </button>
@@ -63,7 +75,7 @@ export function DataTablePagination<T>({
             onClick={() => table.previousPage()}
             disabled={!table.getCanPreviousPage()}
             className="industrial-btn p-2 disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Previous page"
+            aria-label={t("dataTable.prevPage")}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -72,7 +84,7 @@ export function DataTablePagination<T>({
             onClick={() => table.nextPage()}
             disabled={!table.getCanNextPage()}
             className="industrial-btn p-2 disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Next page"
+            aria-label={t("dataTable.nextPage")}
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -81,7 +93,7 @@ export function DataTablePagination<T>({
             onClick={() => table.setPageIndex(Math.max(pageCount - 1, 0))}
             disabled={!table.getCanNextPage()}
             className="industrial-btn p-2 disabled:opacity-30 disabled:cursor-not-allowed"
-            aria-label="Last page"
+            aria-label={t("dataTable.lastPage")}
           >
             <ChevronsRight className="w-3.5 h-3.5" />
           </button>

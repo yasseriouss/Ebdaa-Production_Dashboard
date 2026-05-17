@@ -9,11 +9,18 @@ import {
   CreateMetalStageBody,
 } from "@workspace/api-zod";
 
+function errStatus(e: unknown): number | undefined {
+  if (e !== null && typeof e === "object" && "status" in e && typeof (e as { status: unknown }).status === "number") {
+    return (e as { status: number }).status;
+  }
+  return undefined;
+}
+
 export class MetalController {
   static async listOrders(req: Request, res: Response) {
     try {
       const query = ListMetalOrdersQueryParams.parse(req.query);
-      const orders = await MetalService.listOrders(query);
+      const orders = await MetalService.listOrders(query, req.auth);
       res.json(orders);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch metal orders" });
@@ -23,9 +30,14 @@ export class MetalController {
   static async createOrder(req: Request, res: Response) {
     try {
       const body = CreateMetalOrderBody.parse(req.body);
-      const order = await MetalService.createOrder(body);
+      const order = await MetalService.createOrder(body, req.auth);
       res.status(201).json(order);
     } catch (error) {
+      const st = errStatus(error);
+      if (st === 403) {
+        res.status(403).json({ error: String((error as Error).message) });
+        return;
+      }
       res.status(500).json({ error: "Failed to create metal order" });
     }
   }
@@ -33,7 +45,7 @@ export class MetalController {
   static async getOrder(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const order = await MetalService.getOrder(id);
+      const order = await MetalService.getOrder(id, req.auth);
       if (!order) {
         res.status(404).json({ error: "Not found" });
         return;
@@ -48,13 +60,18 @@ export class MetalController {
     try {
       const id = req.params.id as string;
       const body = UpdateMetalOrderBody.parse(req.body);
-      const order = await MetalService.updateOrder(id, body);
+      const order = await MetalService.updateOrder(id, body, req.auth);
       if (!order) {
         res.status(404).json({ error: "Not found" });
         return;
       }
       res.json(order);
     } catch (error) {
+      const st = errStatus(error);
+      if (st === 403) {
+        res.status(403).json({ error: String((error as Error).message) });
+        return;
+      }
       res.status(500).json({ error: "Failed to update metal order" });
     }
   }
@@ -62,7 +79,7 @@ export class MetalController {
   static async deleteOrder(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const order = await MetalService.deleteOrder(id);
+      const order = await MetalService.deleteOrder(id, req.auth);
       if (!order) {
         res.status(404).json({ error: "Not found" });
         return;
@@ -75,7 +92,7 @@ export class MetalController {
 
   static async getStagesSummary(req: Request, res: Response) {
     try {
-      const summary = await MetalService.getStagesSummary();
+      const summary = await MetalService.getStagesSummary(req.auth);
       res.json(summary);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch stage summary" });
@@ -85,7 +102,13 @@ export class MetalController {
   static async listStages(req: Request, res: Response) {
     try {
       const query = ListMetalStagesQueryParams.parse(req.query);
-      const stages = await MetalService.listStages(query);
+      const stages = await MetalService.listStages(
+        {
+          moNumber: query.moNumber ? String(query.moNumber) : undefined,
+          stageName: query.stageName ? String(query.stageName) : undefined,
+        },
+        req.auth,
+      );
       res.json(stages);
     } catch (error) {
       res.status(500).json({ error: "Failed to fetch metal stages" });
@@ -95,9 +118,14 @@ export class MetalController {
   static async createStage(req: Request, res: Response) {
     try {
       const body = CreateMetalStageBody.parse(req.body);
-      const stage = await MetalService.createStage(body);
+      const stage = await MetalService.createStage(body, req.auth);
       res.status(201).json(stage);
     } catch (error) {
+      const st = errStatus(error);
+      if (st === 403) {
+        res.status(403).json({ error: String((error as Error).message) });
+        return;
+      }
       res.status(500).json({ error: "Failed to create metal stage" });
     }
   }
@@ -105,7 +133,7 @@ export class MetalController {
   static async getStage(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const stage = await MetalService.getStage(id);
+      const stage = await MetalService.getStage(id, req.auth);
       if (!stage) {
         res.status(404).json({ error: "Not found" });
         return;
@@ -120,7 +148,7 @@ export class MetalController {
     try {
       const id = req.params.id as string;
       const body = UpdateMetalStageBody.parse(req.body);
-      const stage = await MetalService.updateStage(id, body);
+      const stage = await MetalService.updateStage(id, body, req.auth);
       if (!stage) {
         res.status(404).json({ error: "Not found" });
         return;
@@ -134,7 +162,7 @@ export class MetalController {
   static async deleteStage(req: Request, res: Response) {
     try {
       const id = req.params.id as string;
-      const stage = await MetalService.deleteStage(id);
+      const stage = await MetalService.deleteStage(id, req.auth);
       if (!stage) {
         res.status(404).json({ error: "Not found" });
         return;

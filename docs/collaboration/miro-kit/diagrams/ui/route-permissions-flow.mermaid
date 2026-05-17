@@ -1,0 +1,12 @@
+flowchart LR
+  User[Browser_user]
+  LoginPage["/login optional"]
+  PC[PermissionContext]
+  APIme["GET /api/auth/effective-permissions"]
+  RPM[ROUTE_REQUIRED_PERMISSION]
+  Side[Sidebar_filter]
+  User --> LoginPage
+  User --> PC
+  PC --> APIme
+  RPM --> Side
+  PC --> Side

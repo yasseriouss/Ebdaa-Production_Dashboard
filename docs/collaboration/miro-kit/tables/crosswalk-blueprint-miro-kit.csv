@@ -1,0 +1,22 @@
+blueprint_section,miro_kit_path,artifact_type,status
+Project Dashboard,diagrams/ui/site-map-groups.mermaid,diagram,done
+Project Dashboard,docs/FACTORY_WEB_MERGE_PARITY.md,doc,done
+Discovery,frames/business-scenarios-ar.md,doc,done
+Discovery,diagrams/ui/customer-journey-sidebar-gates.mermaid,diagram,done
+Definition,exports/miro-er-full-diagram-create.json,erd,done
+Definition,frames/workflow-and-dataflow-ar.md,doc,done
+Definition,diagrams/api/middleware-before-routes.mermaid,diagram,done
+Delivery,diagrams/planning/execution-roadmap.mermaid,diagram,done
+Delivery,tables/roadmap-todos.csv,table,done
+Team Meetings,frames/slide-outline-management-review.md,doc,done
+Catalog Planning,diagrams/planning/execution-roadmap.mermaid,diagram,done
+Catalog Planning,diagrams/planning/parallel-and-debt.mermaid,diagram,done
+Catalog UI,diagrams/ui/routes-ia.mermaid,diagram,done
+Catalog UI,diagrams/ui/route-permissions-flow.mermaid,diagram,done
+Catalog API,diagrams/api/http-mounts.mermaid,diagram,done
+Catalog Data,diagrams/data/database-er-drizzle-full.mermaid,erd,done
+Catalog Security,diagrams/security/auth-jwt-rbac-flow.mermaid,diagram,done
+Catalog Operations,diagrams/operations/request-value-stream.mermaid,diagram,done
+Catalog System,diagrams/system/system-end-to-end-flowchart.mermaid,diagram,done
+Hybrid Index,frames/board-layout-three-views-ar.md,doc,done
+ERD Legend,tables/erd-relationship-legend-ar.md,doc,done

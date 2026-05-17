@@ -1,39 +1,142 @@
 @import "tailwindcss";
 
-@theme {
-  --color-brand-black: #050505;
-  --color-brand-elevated: #101010;
-  --color-brand-border: #1F1F1F;
-  --color-brand-wood: #D97706;
-  --color-brand-metal: #71717A;
-  --color-brand-luxury: #F3F4F6;
-  --color-brand-success: #10B981;
-  --color-brand-warning: #F59E0B;
-  --color-brand-error: #EF4444;
+/* Executive = artifacts/factory-app (warm light, RTL-first). Industrial = dark factory floor. */
+html[data-theme="executive"] {
+  --theme-brand-black: oklch(96.5% 0.019 70);
+  --theme-brand-elevated: oklch(99% 0.008 70);
+  --theme-brand-border: oklch(72% 0.02 50 / 0.35);
+  --theme-brand-wood: oklch(64% 0.13 28);
+  --theme-brand-metal: oklch(48% 0.025 50);
+  --theme-brand-luxury: oklch(22% 0.02 50);
+  --theme-brand-success: #0d9f6e;
+  --theme-brand-warning: #e6983a;
+  --theme-brand-error: #e85d4c;
+  --font-industrial: "Tajawal", "Comfortaa", "Cairo", system-ui, sans-serif;
+  --font-heading: "Tajawal", "Comfortaa", "Outfit", "Cairo", system-ui, sans-serif;
+  --font-arabic: "Tajawal", "Cairo", "Comfortaa", system-ui, sans-serif;
+}
 
-  /* English UI defaults to Comfortaa; Inter is kept as a fallback for any
-     metric edge-cases, and Tajawal stays in the chain for Arabic glyphs. */
-  --font-industrial: "Comfortaa", "Inter", "Tajawal", system-ui, sans-serif;
-  --font-heading: "Comfortaa", "Outfit", "Inter", "Tajawal", sans-serif;
-  --font-arabic: "Tajawal", "Comfortaa", system-ui, sans-serif;
+html[data-theme="industrial"] {
+  --theme-brand-black: #0a0908;
+  --theme-brand-elevated: #141210;
+  --theme-brand-border: #2c2825;
+  --theme-brand-wood: #c17f2f;
+  --theme-brand-metal: #8f8a84;
+  --theme-brand-luxury: #f2efe9;
+  --theme-brand-success: #0d9f6e;
+  --theme-brand-warning: #e6983a;
+  --theme-brand-error: #e85d4c;
+  --font-industrial: "Comfortaa", "Inter", "Cairo", "Tajawal", system-ui, sans-serif;
+  --font-heading: "Comfortaa", "Outfit", "Inter", "Cairo", "Tajawal", sans-serif;
+  --font-arabic: "Cairo", "Tajawal", "Comfortaa", system-ui, sans-serif;
+}
+
+@theme {
+  --color-brand-black: var(--theme-brand-black);
+  --color-brand-elevated: var(--theme-brand-elevated);
+  --color-brand-border: var(--theme-brand-border);
+  --color-brand-wood: var(--theme-brand-wood);
+  --color-brand-metal: var(--theme-brand-metal);
+  --color-brand-luxury: var(--theme-brand-luxury);
+  --color-brand-success: var(--theme-brand-success);
+  --color-brand-warning: var(--theme-brand-warning);
+  --color-brand-error: var(--theme-brand-error);
+
+  --font-industrial: var(--font-industrial);
+  --font-heading: var(--font-heading);
+  --font-arabic: var(--font-arabic);
 }
 
 @layer base {
   body {
-    @apply bg-brand-black text-gray-300 font-industrial antialiased;
+    @apply bg-brand-black font-industrial antialiased text-brand-metal;
     margin: 0;
     overflow-x: hidden;
+  }
+
+  html[dir="rtl"] body {
+    line-height: 1.65;
+    text-rendering: optimizeLegibility;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply text-brand-luxury font-heading font-semibold tracking-tight;
   }
 
-  /* Arabic copy always uses Tajawal — covers text wrapped in [lang="ar"]
-     or rendered inside an RTL subtree, even without the font-arabic class. */
+  html[dir="rtl"] h1,
+  html[dir="rtl"] h2,
+  html[dir="rtl"] h3,
+  html[dir="rtl"] h4,
+  html[dir="rtl"] h5,
+  html[dir="rtl"] h6 {
+    letter-spacing: normal;
+    font-weight: 600;
+  }
+
   [lang="ar"],
   [dir="rtl"] {
     font-family: var(--font-arabic);
+  }
+
+  html[data-theme="executive"][dir="rtl"] p,
+  html[data-theme="executive"][dir="rtl"] li,
+  html[data-theme="executive"][dir="rtl"] td,
+  html[data-theme="executive"][dir="rtl"] th {
+    unicode-bidi: plaintext;
+  }
+
+  /* RTL (Arabic): page shell + tables — mirrors useDirection on <html> */
+  html[dir="rtl"] #root {
+    direction: rtl;
+  }
+
+  html[dir="rtl"] [role="main"] {
+    direction: rtl;
+    text-align: start;
+  }
+
+  html[dir="rtl"] .overflow-x-auto {
+    direction: rtl;
+  }
+
+  /* Tables follow page direction; logical alignment keeps RTL/LTR coherent */
+  html[dir="rtl"] table {
+    direction: rtl;
+  }
+  html[dir="rtl"] table th,
+  html[dir="rtl"] table td {
+    text-align: start;
+  }
+
+  /* Single-line cells: no wrap; clip with ellipsis when width is bounded (horizontal scroll on table wrapper). */
+  #root table:not(.table-allow-wrap) th,
+  #root table:not(.table-allow-wrap) td {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+  }
+
+  #root table th.table-cell-multiline,
+  #root table td.table-cell-multiline {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  html[data-theme="executive"] body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: 0.035;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
+
+  html[data-theme="executive"] #root {
+    position: relative;
+    z-index: 2;
   }
 
   ::-webkit-scrollbar {
@@ -56,15 +159,27 @@
          hover:border-brand-metal/30 hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)];
 }
 
+html[data-theme="executive"] .glass-panel {
+  @apply rounded-lg shadow-sm hover:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.55)];
+}
+
 @utility industrial-btn {
-  @apply px-4 py-2 bg-brand-elevated border border-brand-border text-brand-luxury 
+  @apply px-4 py-2 bg-brand-elevated border border-brand-border text-brand-luxury
          hover:bg-brand-border hover:border-brand-metal transition-all duration-200 ease-out
          active:scale-[0.98] motion-reduce:active:scale-100
          uppercase tracking-widest text-xs font-bold flex items-center gap-2;
 }
 
+html[data-theme="executive"] .industrial-btn {
+  @apply rounded-lg normal-case tracking-normal font-bold;
+}
+
 @utility nav-item-active {
   @apply bg-brand-border text-brand-luxury border-e-2 border-brand-wood transition-colors duration-200;
+}
+
+html[data-theme="executive"] .nav-item-active {
+  @apply bg-brand-wood/10 border-brand-wood text-brand-luxury;
 }
 
 @utility stat-card {
@@ -75,6 +190,6 @@
          hover:shadow-[0_12px_40px_-24px_rgba(0,0,0,0.85)];
 }
 
-/* RTL support is handled via Tailwind logical properties (`ms-`, `me-`,
-   `ps-`, `pe-`, `start-`, `end-`) plus the `dir` attribute on `<html>`.
-   The Arabic font is applied automatically via the base layer above. */
+html[data-theme="executive"] .stat-card {
+  @apply rounded-xl hover:shadow-[0_12px_32px_-18px_rgba(0,0,0,0.12)];
+}

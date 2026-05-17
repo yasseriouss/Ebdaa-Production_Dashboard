@@ -1,0 +1,14 @@
+http_prefix_or_path,middleware_order,examples_notes
+/api/healthz,optionalAuth_then_mutationAudit,GET health probe
+/api/metal,optionalAuth_then_mutationAudit,mount metalRouter
+/api/wooden,,wooden canonical tables
+/api/dashboard,,dashboard aggregates
+/api/shared-projects,,joint projects REST
+/api/employees,,roster CSV export sibling route /export/employees
+/api/import,,same importExportRouter prefix
+/api/export,,imports exports employees export line 36 routes index
+/api/capacity,,directory tasks machines scope-aware
+/api/factory-hub,,seed wood JSON payloads reference snapshots
+POST /api/auth/login,optionalAuth parses anonymous too,alongside GET auth/me catalog matrix users
+/api/performance,,scoped metrics aggregates
+GET /api/audit-events,,requirePermission audit_view

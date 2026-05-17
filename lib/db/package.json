@@ -12,6 +12,7 @@
     "push": "drizzle-kit push --config ./drizzle.config.ts",
     "push-force": "drizzle-kit push --force --config ./drizzle.config.ts",
     "generate": "drizzle-kit generate --config ./drizzle.config.ts",
+    "rebuild-snapshots": "node ./scripts/rebuild-snapshots-from-migrations.mjs",
     "migrate": "tsx src/migrate.ts",
     "apply-fh-ddl": "tsx src/applyFactoryHubDdl.ts",
     "apply-auth-ddl": "tsx src/applyAuthAuditDdl.ts",

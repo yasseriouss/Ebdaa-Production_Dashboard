@@ -51,3 +51,5 @@ Thumbs.db
 # Local secrets
 .env
 .env.*.local
+
+lib/db/drizzle/.snapshot-build-temp.db

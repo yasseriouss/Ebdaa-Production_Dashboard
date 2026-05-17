@@ -1098,6 +1098,12 @@ components:
           type: string
         payload:
           $ref: "#/components/schemas/FhWoodWorkOrderPayload"
+        factoryId:
+          type: string
+          nullable: true
+        departmentId:
+          type: string
+          nullable: true
         createdAt:
           type: string
         updatedAt:
@@ -1198,6 +1204,12 @@ components:
           type: string
         updatedAt:
           type: string
+        factoryId:
+          type: string
+          nullable: true
+        departmentId:
+          type: string
+          nullable: true
       required:
         - id
         - moNumber
@@ -1240,6 +1252,10 @@ components:
         notes:
           type: string
         status:
+          type: string
+        factoryId:
+          type: string
+        departmentId:
           type: string
       required:
         - moNumber
@@ -1369,6 +1385,12 @@ components:
           type: string
         updatedAt:
           type: string
+        factoryId:
+          type: string
+          nullable: true
+        departmentId:
+          type: string
+          nullable: true
       required:
         - id
         - orderNo
@@ -1421,6 +1443,10 @@ components:
         prodDateEnd:
           type: string
         prodDateFinished:
+          type: string
+        factoryId:
+          type: string
+        departmentId:
           type: string
       required:
         - orderNo

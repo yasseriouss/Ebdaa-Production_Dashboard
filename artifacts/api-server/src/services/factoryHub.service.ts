@@ -17,6 +17,14 @@ import {
 } from "@workspace/api-zod";
 import { eq } from "@workspace/db";
 import { maybeSyncHubWoodOrderToWooden } from "./factoryHubWoodenBridge";
+import type { RequestAuth } from "../lib/requestAuth";
+import { DEFAULT_ANONYMOUS_AUTH } from "../lib/requestAuth";
+import {
+  assertScopedFactoryDepartment,
+  assertScopedRowHasSomeAssignment,
+  combineWhere,
+  factoryDepartmentRowScopeWhere,
+} from "../lib/dataScopeFilter";
 
 const dataDir = path.join(process.cwd(), "src", "data");
 
@@ -35,39 +43,65 @@ function parseJsonRecord(value: string): Record<string, unknown> {
   throw new Error("invalid_json");
 }
 
+function fhWoodScope(auth: RequestAuth) {
+  return factoryDepartmentRowScopeWhere(
+    auth,
+    fhWoodWorkOrdersTable.factoryId,
+    fhWoodWorkOrdersTable.departmentId,
+  );
+}
+
+function scopeFromPayload(payload: Record<string, unknown>): {
+  factoryId: string | null;
+  departmentId: string | null;
+} {
+  const factoryId =
+    typeof payload["factory_id"] === "string" && payload["factory_id"] !== "" ? payload["factory_id"] : null;
+  const departmentId =
+    typeof payload["department_id"] === "string" && payload["department_id"] !== ""
+      ? payload["department_id"]
+      : null;
+  return { factoryId, departmentId };
+}
+
 export class FactoryHubService {
-  static async listWoodWorkOrders() {
-    const rows = await db.select().from(fhWoodWorkOrdersTable);
+  static async listWoodWorkOrders(auth: RequestAuth) {
+    const scope = fhWoodScope(auth);
+    const rows = scope
+      ? await db.select().from(fhWoodWorkOrdersTable).where(scope)
+      : await db.select().from(fhWoodWorkOrdersTable);
     return rows.map((r) => ({
       workOrderId: r.workOrderId,
       payload: parseJsonRecord(r.payload),
+      factoryId: r.factoryId ?? null,
+      departmentId: r.departmentId ?? null,
       createdAt: r.createdAt,
       updatedAt: r.updatedAt,
     }));
   }
 
-  static async getWoodWorkOrder(workOrderId: string) {
-    const [row] = await db
-      .select()
-      .from(fhWoodWorkOrdersTable)
-      .where(eq(fhWoodWorkOrdersTable.workOrderId, workOrderId));
+  static async getWoodWorkOrder(workOrderId: string, auth: RequestAuth) {
+    const whereBase = eq(fhWoodWorkOrdersTable.workOrderId, workOrderId);
+    const whereClause = combineWhere(whereBase, fhWoodScope(auth));
+    const [row] = await db.select().from(fhWoodWorkOrdersTable).where(whereClause);
     if (!row) return null;
     return {
       workOrderId: row.workOrderId,
       payload: parseJsonRecord(row.payload),
+      factoryId: row.factoryId ?? null,
+      departmentId: row.departmentId ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
     };
   }
 
-  static async upsertWoodWorkOrder(workOrderIdParam: string | undefined, rawBody: unknown) {
+  static async upsertWoodWorkOrder(workOrderIdParam: string | undefined, rawBody: unknown, auth: RequestAuth) {
     const payload = (
       workOrderIdParam ? UpdateFhWoodWorkOrderBody : CreateFhWoodWorkOrderBody
     ).parse(rawBody) as Record<string, unknown>;
 
     const id =
-      workOrderIdParam ??
-      (typeof payload["work_order_id"] === "string" ? payload["work_order_id"] : "");
+      workOrderIdParam ?? (typeof payload["work_order_id"] === "string" ? payload["work_order_id"] : "");
     if (!id) {
       const err = new Error("missing_work_order_id");
       (err as Error & { status: number }).status = 400;
@@ -83,11 +117,36 @@ export class FactoryHubService {
     const json = JSON.stringify(payload);
     const ts = nowIso();
 
-    const existing = await FactoryHubService.getWoodWorkOrder(id);
+    const [globalRow] = await db
+      .select()
+      .from(fhWoodWorkOrdersTable)
+      .where(eq(fhWoodWorkOrdersTable.workOrderId, id));
+    const existing = await FactoryHubService.getWoodWorkOrder(id, auth);
+
+    if (workOrderIdParam && !globalRow) {
+      const err = new Error("not_found");
+      (err as Error & { status: number }).status = 404;
+      throw err;
+    }
+    if (globalRow && !existing) {
+      const err = new Error("forbidden");
+      (err as Error & { status: number }).status = 403;
+      throw err;
+    }
+
+    let { factoryId, departmentId } = scopeFromPayload(payload);
     if (existing) {
+      if (!("factory_id" in payload)) factoryId = existing.factoryId ?? null;
+      if (!("department_id" in payload)) departmentId = existing.departmentId ?? null;
+    }
+
+    assertScopedRowHasSomeAssignment(auth, factoryId, departmentId);
+    assertScopedFactoryDepartment(auth, factoryId, departmentId);
+
+    if (globalRow) {
       await db
         .update(fhWoodWorkOrdersTable)
-        .set({ payload: json, updatedAt: ts })
+        .set({ payload: json, updatedAt: ts, factoryId, departmentId })
         .where(eq(fhWoodWorkOrdersTable.workOrderId, id));
     } else {
       await db.insert(fhWoodWorkOrdersTable).values({
@@ -95,20 +154,23 @@ export class FactoryHubService {
         payload: json,
         createdAt: ts,
         updatedAt: ts,
+        factoryId,
+        departmentId,
       });
     }
 
-    await maybeSyncHubWoodOrderToWooden(payload);
+    await maybeSyncHubWoodOrderToWooden(payload, auth);
 
-    const next = await FactoryHubService.getWoodWorkOrder(id);
+    const next = await FactoryHubService.getWoodWorkOrder(id, auth);
     if (!next) throw new Error("persist_failed");
     return next;
   }
 
-  static async deleteWoodWorkOrder(workOrderId: string) {
+  static async deleteWoodWorkOrder(workOrderId: string, auth: RequestAuth) {
+    const whereClause = combineWhere(eq(fhWoodWorkOrdersTable.workOrderId, workOrderId), fhWoodScope(auth))!;
     const [row] = await db
       .delete(fhWoodWorkOrdersTable)
-      .where(eq(fhWoodWorkOrdersTable.workOrderId, workOrderId))
+      .where(whereClause)
       .returning({ workOrderId: fhWoodWorkOrdersTable.workOrderId });
     return row ?? null;
   }
@@ -272,7 +334,7 @@ export class FactoryHubService {
       const payload = o as Record<string, unknown>;
       const woid = typeof payload["work_order_id"] === "string" ? payload["work_order_id"] : "";
       if (!woid) continue;
-      await FactoryHubService.upsertWoodWorkOrder(woid, payload);
+      await FactoryHubService.upsertWoodWorkOrder(woid, payload, DEFAULT_ANONYMOUS_AUTH);
       woodOrdersUpserted += 1;
     }
 

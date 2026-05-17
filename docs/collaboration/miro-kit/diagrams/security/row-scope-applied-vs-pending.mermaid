@@ -1,0 +1,21 @@
+flowchart TB
+  auth[req_auth_from_optionalAuth]
+
+  subgraph applied [Row_scope_via_dataScopeFilter]
+    cap["capacity_services"]
+    emp["employees_services"]
+    perf["performance_services"]
+  end
+
+  subgraph pending [Route_permission_only_pending_row_labels]
+    w["wooden_routes_services"]
+    m["metal_routes_services"]
+    fh["factoryHub_JSON_routes_services"]
+  end
+
+  auth --> cap
+  auth --> emp
+  auth --> perf
+  auth -.->|"not_yet_filtered_by_factory_department"| w
+  auth -.-> m
+  auth -.-> fh

@@ -1,0 +1,8 @@
+flowchart LR
+  main[Delivery_mainline]
+  RT[local_routing_translator_followup_future]
+  EB[meta_ebdaa_doc_nit_optional]
+  PH[perm_scope_queries_production_hub_pending_policy]
+  main -.->|"same_board_do_not_block"| RT
+  main -.->|"doc_only"| EB
+  phaseC[Phase_C_scope_gap] -.->|"needs"| PH

@@ -1,4 +1,5 @@
-import type { WoodDepartmentId, WoodRoutingProgress, WoodRoutingStageKey } from "./types";
+import type { DepartmentId, WoodDepartmentId, WoodRoutingProgress, WoodRoutingStageKey } from "./types";
+import { findDepartment } from "./fixtures/factoryCapacity";
 
 /**
  * Ordered list of wood-factory routing stage keys. Mirrors the sequence
@@ -25,7 +26,7 @@ interface StageLabel {
 export const WOOD_STAGE_LABELS: Record<WoodRoutingStageKey, StageLabel> = {
   solid_wood: { english: "Solid Wood", arabic: "الخشب الطبيعي", department: "DEPT_SOLID_WOOD" },
   panel_saw: { english: "Panel Saw", arabic: "المقاطع", department: "DEPT_PANEL_PROC" },
-  edge_banding: { english: "Edge Banding", arabic: "لزق الشريط", department: "DEPT_PANEL_PROC" },
+  edge_banding: { english: "Edge Banding", arabic: "لصق الشريط", department: "DEPT_PANEL_PROC" },
   cnc_routing: { english: "CNC Routing", arabic: "تشغيل CNC", department: "DEPT_PANEL_PROC" },
   upholstery: { english: "Upholstery", arabic: "التنجيد", department: "DEPT_UPHOLSTERY" },
   painting: { english: "Painting", arabic: "الدهانات", department: "DEPT_WOOD_PAINT" },
@@ -48,7 +49,20 @@ export const WOOD_DEPARTMENT_OPTIONS: Array<{
   { id: "DEPT_WOOD_PAINT", english: "Paint Booth", arabic: "الدهانات" },
   { id: "DEPT_WOOD_ASSY", english: "Assembly", arabic: "التجميع" },
   { id: "DEPT_PACKAGING", english: "Packaging", arabic: "التغليف" },
+  { id: "DEPT_MAINTENANCE", english: "Maintenance", arabic: "الصيانة" },
 ];
+
+export function woodDepartmentLabel(id: WoodDepartmentId, locale: "ar" | "en"): string {
+  const row = WOOD_DEPARTMENT_OPTIONS.find((x) => x.id === id);
+  if (!row) return id;
+  return locale === "ar" ? row.arabic : row.english;
+}
+
+export function departmentReportsToLabel(parentId: DepartmentId, locale: "ar" | "en"): string {
+  const wood = WOOD_DEPARTMENT_OPTIONS.find((o) => o.id === parentId);
+  if (wood) return woodDepartmentLabel(wood.id, locale);
+  return findDepartment(parentId)?.name ?? parentId;
+}
 
 /** تقدير تقدّم أمر الخشب للواجهة: متوسط كميات المراحل (أي تعديل يحدّث شريط التقدّم والجدول). */
 export function woodOrderUiCompletedFromRouting(routing: WoodRoutingProgress, total: number): number {

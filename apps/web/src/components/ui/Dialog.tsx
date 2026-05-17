@@ -2,6 +2,7 @@ import { useEffect, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { cn } from "../../lib/cn";
+import { useTranslation } from "../../context/I18nContext";
 
 interface DialogProps {
   open: boolean;
@@ -29,6 +30,7 @@ export function Dialog({
   variant = "modal",
   footer,
 }: DialogProps) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!open) return;
     const previousOverflow = document.body.style.overflow;
@@ -77,7 +79,7 @@ export function Dialog({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
+            aria-label={t("dialog.closeAria")}
             className="p-1.5 text-brand-metal hover:text-brand-luxury hover:bg-brand-border transition-colors"
           >
             <X className="w-4 h-4" />
@@ -113,10 +115,12 @@ export function ConfirmDialog({
   onConfirm,
   title,
   description,
-  confirmLabel = "Confirm",
+  confirmLabel,
   destructive,
   children,
 }: ConfirmDialogProps) {
+  const { t } = useTranslation();
+  const resolvedConfirm = confirmLabel ?? t("dialog.confirm");
   return (
     <Dialog
       open={open}
@@ -126,7 +130,7 @@ export function ConfirmDialog({
       footer={
         <>
           <button type="button" onClick={onClose} className="industrial-btn">
-            Cancel
+            {t("dialog.cancel")}
           </button>
           <button
             type="button"
@@ -141,7 +145,7 @@ export function ConfirmDialog({
                 : "border-brand-wood/60 text-brand-luxury bg-brand-wood/15 hover:bg-brand-wood/25",
             )}
           >
-            {confirmLabel}
+            {resolvedConfirm}
           </button>
         </>
       }

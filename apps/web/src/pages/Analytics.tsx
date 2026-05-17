@@ -12,7 +12,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArabicText } from "../components/brand/ArabicText";
 import {
   employeeAssignmentsFixture,
   factoryCapacityFixture,
@@ -21,6 +20,7 @@ import {
 } from "../data/fixtures";
 import { useFhWoodOrders } from "../lib/api/hooks/useFactoryHub";
 import type { Factory } from "../data/types";
+import { useTranslation } from "../context/I18nContext";
 
 type Scope = "all" | "wood" | "metal";
 
@@ -35,21 +35,24 @@ export function AnalyticsMetal() {
 }
 
 function AnalyticsView({ scope }: { scope: Scope }) {
+  const { t } = useTranslation();
+  const subtitle =
+    scope === "all"
+      ? t("pages.analytics.subtitleAll")
+      : scope === "wood"
+        ? t("pages.analytics.subtitleWood")
+        : t("pages.analytics.subtitleMetal");
   return (
     <div className="space-y-10 animate-in fade-in duration-500">
       <header className="border-b border-brand-border pb-6">
         <div className="flex items-center gap-3">
           <BarChart3 className="w-5 h-5 text-brand-wood" />
-          <h2 className="text-3xl font-bold tracking-tighter uppercase">Analytics</h2>
+          <h2 className="text-3xl font-bold tracking-tighter uppercase">{t("pages.analytics.title")}</h2>
         </div>
         <p className="text-sm text-brand-metal mt-1">
-          {scope === "all"
-            ? "Aggregated KPIs across both factories"
-            : scope === "wood"
-              ? "Woodworking factory deep-dive"
-              : "Metalworking factory deep-dive"}
+          {subtitle}
           <span className="mx-2 text-brand-border">|</span>
-          <ArabicText>التحليلات</ArabicText>
+          {t("pages.analytics.subtitleAr")}
         </p>
       </header>
 
@@ -59,8 +62,8 @@ function AnalyticsView({ scope }: { scope: Scope }) {
         <>
           {scope === "all" && <Divider />}
           <FactorySection
-            title="Woodworking Factory"
-            arabic="مصنع الأخشاب والأثاث"
+            title={t("pages.analytics.woodworkingTitle")}
+            subtitleLine={t("pages.analytics.woodworkingArabic")}
             icon={Trees}
             factory={factoryCapacityFixture.woodworking_factory}
             extra={<WoodKpis />}
@@ -72,8 +75,8 @@ function AnalyticsView({ scope }: { scope: Scope }) {
         <>
           {scope === "all" && <Divider />}
           <FactorySection
-            title="Metalworking Factory"
-            arabic="مصنع تشكيل المعادن"
+            title={t("pages.analytics.metalworkingTitle")}
+            subtitleLine={t("pages.analytics.metalworkingArabic")}
             icon={Cpu}
             factory={factoryCapacityFixture.metal_factory}
             extra={<MetalKpis />}
@@ -85,64 +88,57 @@ function AnalyticsView({ scope }: { scope: Scope }) {
 }
 
 function Divider() {
-  return (
-    <hr className="border-t border-brand-border" aria-hidden />
-  );
+  return <hr className="border-t border-brand-border" aria-hidden />;
 }
 
 function OverallSection() {
+  const { t } = useTranslation();
   const { data: orders = woodWorkOrdersFixture.work_orders } = useFhWoodOrders(
     woodWorkOrdersFixture.work_orders,
   );
-  const data = useMemo(() => {
-    return [
-      { name: "Wood", value: orders.length },
-      { name: "Metal", value: 0 },
-    ];
-  }, [orders]);
+  type MixRow = { id: "wood" | "metal"; name: string; value: number };
+  const data: MixRow[] = useMemo(
+    () => [
+      { id: "wood", name: t("pages.analytics.woodLabel"), value: orders.length },
+      { id: "metal", name: t("pages.analytics.metalLabel"), value: 0 },
+    ],
+    [orders.length, t],
+  );
   return (
     <section className="space-y-4">
       <div className="flex items-center gap-3">
         <Globe2 className="w-4 h-4 text-brand-wood" />
-        <h3 className="text-sm font-bold uppercase tracking-widest">Overall</h3>
-        <ArabicText className="text-[10px] text-brand-metal">إجمالي المصانع</ArabicText>
+        <h3 className="text-sm font-bold uppercase tracking-widest">{t("pages.analytics.overall")}</h3>
+        <span className="text-[10px] text-brand-metal">{t("pages.analytics.overallAr")}</span>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <KpiCard label="Active Orders" arabic="الطلبات النشطة" value={orders.length.toString()} />
+        <KpiCard titleKey="pages.analytics.kpiActiveOrders" value={orders.length.toString()} />
         <KpiCard
-          label="Workforce"
-          arabic="القوى العاملة"
+          titleKey="pages.analytics.kpiWorkforce"
           value={(
             Object.values(employeeAssignmentsFixture.departments).reduce((a, l) => a + l.length, 0) +
             employeeAssignmentsFixture.management_layer.length
           ).toString()}
         />
         <KpiCard
-          label="Operational Machines"
-          arabic="الماكينات النشطة"
+          titleKey="pages.analytics.kpiMachines"
           value={(
-            factoryCapacityFixture.metal_factory.departments.reduce(
-              (a, d) => a + d.tasks.length,
-              0,
-            ) +
-            factoryCapacityFixture.woodworking_factory.departments.reduce(
-              (a, d) => a + d.tasks.length,
-              0,
-            )
+            factoryCapacityFixture.metal_factory.departments.reduce((a, d) => a + d.tasks.length, 0) +
+            factoryCapacityFixture.woodworking_factory.departments.reduce((a, d) => a + d.tasks.length, 0)
           ).toString()}
         />
       </div>
       <div className="glass-panel p-4 sm:p-6 md:p-8">
-        <h4 className="text-xs font-bold uppercase tracking-widest mb-3">Factory Order Mix</h4>
+        <h4 className="text-xs font-bold uppercase tracking-widest mb-3">{t("pages.analytics.factoryMix")}</h4>
         <ul
           className="m-0 mb-6 flex list-none flex-wrap items-center gap-x-4 gap-y-2 p-0"
-          aria-label="مرجع ألوان المخطط الدائري"
+          aria-label={t("pages.analytics.chartLegendPie")}
         >
           {data.map((row) => (
-            <li key={row.name} className="flex items-center gap-2">
+            <li key={row.id} className="flex items-center gap-2">
               <span
                 className="size-2.5 shrink-0 rounded-full ring-2 ring-brand-border shadow-sm"
-                style={{ backgroundColor: row.name === "Wood" ? "#D97706" : "#71717A" }}
+                style={{ backgroundColor: row.id === "wood" ? "#D97706" : "#71717A" }}
                 aria-hidden
               />
               <span className="text-[10px] font-bold uppercase tracking-wider text-brand-luxury">
@@ -183,13 +179,13 @@ function OverallSection() {
           </div>
           <ul
             className="flex flex-col gap-4 md:gap-5 flex-1 min-w-0 md:ps-8 md:ms-2 md:border-s border-brand-border"
-            aria-label="Factory mix legend"
+            aria-label={t("pages.analytics.chartLegendList")}
           >
             {data.map((row) => (
-              <li key={row.name} className="flex items-start gap-4">
+              <li key={row.id} className="flex items-start gap-4">
                 <span
                   className="mt-1 shrink-0 w-3 h-3 rounded-full ring-2 ring-brand-border"
-                  style={{ backgroundColor: row.name === "Wood" ? "#D97706" : "#71717A" }}
+                  style={{ backgroundColor: row.id === "wood" ? "#D97706" : "#71717A" }}
                   aria-hidden
                 />
                 <div className="min-w-0 flex-1 flex flex-col gap-0.5">
@@ -197,7 +193,9 @@ function OverallSection() {
                     {row.name}
                   </span>
                   <span className="text-[10px] text-brand-metal tabular-nums">
-                    {row.value} active {row.value === 1 ? "order" : "orders"}
+                    {row.value === 1
+                      ? t("pages.analytics.activeOrdersOne", { n: String(row.value) })
+                      : t("pages.analytics.activeOrdersOther", { n: String(row.value) })}
                   </span>
                 </div>
               </li>
@@ -211,17 +209,18 @@ function OverallSection() {
 
 function FactorySection({
   title,
-  arabic,
+  subtitleLine,
   icon: Icon,
   factory,
   extra,
 }: {
   title: string;
-  arabic: string;
+  subtitleLine: string;
   icon: React.ElementType;
   factory: Factory;
   extra?: React.ReactNode;
 }) {
+  const { t } = useTranslation();
   const utilisation = useMemo(
     () =>
       factory.departments.map((dept) => {
@@ -247,14 +246,14 @@ function FactorySection({
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <Icon className="w-4 h-4 text-brand-wood" />
         <h3 className="text-sm font-bold uppercase tracking-widest">{title}</h3>
-        <ArabicText className="text-[10px] text-brand-metal">{arabic}</ArabicText>
+        <span className="text-[10px] text-brand-metal">{subtitleLine}</span>
       </div>
       {extra}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <ChartCard title="Capacity per Department" subtitle="Units / hour at theoretical max">
+        <ChartCard title={t("pages.analytics.capPerDept")} subtitle={t("pages.analytics.capPerDeptSub")}>
           <div className="h-[280px] sm:h-[300px] min-h-[260px] pt-1">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={utilisation} margin={{ top: 12, right: 12, left: 8, bottom: 28 }}>
@@ -270,7 +269,7 @@ function FactorySection({
             </ResponsiveContainer>
           </div>
         </ChartCard>
-        <ChartCard title="Hourly Operating Cost" subtitle="Per department · EGP / hour">
+        <ChartCard title={t("pages.analytics.hourlyCost")} subtitle={t("pages.analytics.hourlyCostSub")}>
           <div className="h-[280px] sm:h-[300px] min-h-[260px] pt-1">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={opCosts} margin={{ top: 12, right: 12, left: 8, bottom: 28 }}>
@@ -299,20 +298,13 @@ function WoodKpis() {
     (acc, d) => acc + d.staff.reduce((s, r) => s + r.count, 0),
     0,
   );
-  const actual = Object.values(employeeAssignmentsFixture.departments).reduce(
-    (a, l) => a + l.length,
-    0,
-  );
+  const actual = Object.values(employeeAssignmentsFixture.departments).reduce((a, l) => a + l.length, 0);
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-      <KpiCard label="Wood Orders" arabic="أوامر الأخشاب" value={String(woodOrders.length)} />
-      <KpiCard label="Planned Staff" arabic="العمالة المخططة" value={String(planned)} />
-      <KpiCard label="Actual Staff" arabic="العمالة الفعلية" value={String(actual)} />
-      <KpiCard
-        label="Fill Rate"
-        arabic="نسبة الاكتمال"
-        value={`${Math.round((actual / planned) * 100)}%`}
-      />
+      <KpiCard titleKey="pages.analytics.kpiWoodOrders" value={String(woodOrders.length)} />
+      <KpiCard titleKey="pages.analytics.kpiPlannedStaff" value={String(planned)} />
+      <KpiCard titleKey="pages.analytics.kpiActualStaff" value={String(actual)} />
+      <KpiCard titleKey="pages.analytics.kpiFillRate" value={`${Math.round((actual / planned) * 100)}%`} />
     </div>
   );
 }
@@ -320,10 +312,10 @@ function WoodKpis() {
 function MetalKpis() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
-      <KpiCard label="Metal Orders" arabic="أوامر المعادن" value="0" />
-      <KpiCard label="CNC / Laser Cells" arabic="خلايا التشغيل" value="2" />
-      <KpiCard label="Welding Stations" arabic="محطات اللحام" value="4" />
-      <KpiCard label="Material Waste" arabic="هالك الخامة" value="—" />
+      <KpiCard titleKey="pages.analytics.kpiMetalOrders" value="0" />
+      <KpiCard titleKey="pages.analytics.kpiCnc" value="2" />
+      <KpiCard titleKey="pages.analytics.kpiWelding" value="4" />
+      <KpiCard titleKey="pages.analytics.kpiWaste" value="—" />
     </div>
   );
 }
@@ -340,9 +332,7 @@ function ChartCard({
   return (
     <div className="glass-panel p-4 sm:p-6 md:p-8">
       <header className="mb-4">
-        <h4 className="text-xs font-bold uppercase tracking-widest text-brand-luxury">
-          {title}
-        </h4>
+        <h4 className="text-xs font-bold uppercase tracking-widest text-brand-luxury">{title}</h4>
         {subtitle && (
           <p className="text-[10px] text-brand-metal uppercase tracking-wider">{subtitle}</p>
         )}
@@ -352,19 +342,11 @@ function ChartCard({
   );
 }
 
-function KpiCard({
-  label,
-  arabic,
-  value,
-}: {
-  label: string;
-  arabic: string;
-  value: string;
-}) {
+function KpiCard({ titleKey, value }: { titleKey: string; value: string }) {
+  const { t } = useTranslation();
   return (
     <div className="glass-panel p-4">
-      <p className="text-[10px] font-bold uppercase tracking-widest text-brand-metal">{label}</p>
-      <ArabicText className="text-[10px] text-brand-metal/70">{arabic}</ArabicText>
+      <p className="text-[10px] font-bold uppercase tracking-widest text-brand-metal">{t(titleKey)}</p>
       <p className="mt-2 text-2xl font-bold text-brand-luxury">{value}</p>
     </div>
   );

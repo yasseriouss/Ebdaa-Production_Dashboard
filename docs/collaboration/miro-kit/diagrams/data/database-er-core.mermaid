@@ -1,0 +1,28 @@
+erDiagram
+  FACTORIES ||--o{ DEPARTMENTS : has
+  DEPARTMENTS ||--o{ TASKS : owns
+  FACTORIES ||--o{ EMPLOYEES : employs
+  DEPARTMENTS |o--o{ EMPLOYEES : optional_dept
+  FACTORIES ||--o{ WOODEN_WORK_ORDERS : optional_factory_scope
+  DEPARTMENTS |o--o{ WOODEN_WORK_ORDERS : optional_dept_scope
+  FACTORIES ||--o{ METAL_WORK_ORDERS : optional_factory_scope
+  DEPARTMENTS |o--o{ METAL_WORK_ORDERS : optional_dept_scope
+  WOODEN_WORK_ORDERS ||--o{ WOODEN_PRODUCTION_STAGES : stages
+  METAL_WORK_ORDERS ||--o{ METAL_PRODUCTION_STAGES : stages
+  METAL_WORK_ORDERS ||--o{ METAL_STAGE_LOG : daily_lines
+  FACTORIES ||--o{ FH_WOOD_WORK_ORDERS : hub_rows_optional_factory
+  DEPARTMENTS |o--o{ FH_WOOD_WORK_ORDERS : hub_rows_optional_dept
+  FH_WOOD_WORK_ORDERS {
+    text work_order_id PK
+    text payload
+  }
+  FH_REFERENCE_SNAPSHOTS {
+    text key PK
+    text payload
+  }
+  AUTH_USERS |o--o| EMPLOYEES : optional_link
+  AUTH_USERS ||--o{ AUTH_USER_ROLES : memberships
+  AUTH_ROLES ||--o{ AUTH_USER_ROLES : members
+  AUTH_ROLES ||--o{ AUTH_ROLE_PERMISSIONS : grants
+  AUTH_PERMISSIONS ||--o{ AUTH_ROLE_PERMISSIONS : granted
+  AUTH_USERS ||--o{ AUDIT_EVENTS : actor_optional

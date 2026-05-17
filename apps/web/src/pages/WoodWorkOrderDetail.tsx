@@ -4,6 +4,7 @@ import { ArabicText } from "../components/brand/ArabicText";
 import { Dialog } from "../components/ui/Dialog";
 import { Select, TextField } from "../components/ui/Select";
 import { useToast } from "../components/ui/Toast";
+import { EntityNotesPanel } from "../components/notes/EntityNotesPanel";
 import { WOOD_STAGE_LABELS, WOOD_STAGE_ORDER } from "../data/routing";
 import { findDepartment } from "../data/fixtures/factoryCapacity";
 import {
@@ -50,6 +51,9 @@ export function WoodWorkOrderDetail({ order, onClose, onUpdateStage }: DetailPro
           toast.success(`Saved ${WOOD_STAGE_LABELS[stage].english}`);
         }}
       />
+      <div className="mt-6">
+        <EntityNotesPanel entityType="wood_work_order" entityId={order.work_order_id} />
+      </div>
     </Dialog>
   );
 }

@@ -1,0 +1,31 @@
+flowchart TB
+  subgraph capacityDomain [capacity_directory]
+    factories[factories]
+    departments[departments]
+    tasks[tasks]
+    employees[employees]
+    factories --> departments --> tasks
+    factories --> employees
+    departments -.-> employees
+  end
+
+  subgraph woodMetal [canonical_orders_tables]
+    wwo[wooden_work_orders]
+    wps[wooden_production_stages]
+    mwo[metal_work_orders]
+    mps[metal_production_stages]
+    msl[metal_stage_log]
+    wwo --> wps
+    mwo --> mps --> msl
+  end
+
+  subgraph hubTables [factory_hub_JSON_payloads]
+    fhw[fh_wood_work_orders.payload]
+    fhref[fh_reference_snapshots]
+    fhanalysis[fh_work_order_analysis_sessions]
+    fhautosave[fh_new_project_autosave]
+  end
+
+  subgraph sharedProj [projects]
+    sp[shared_projects]
+  end

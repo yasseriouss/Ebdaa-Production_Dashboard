@@ -1,98 +1,119 @@
-import { Route, Switch } from "wouter";
-import { ArabicText } from "./components/brand/ArabicText";
+import { Redirect, Route, Switch } from "wouter";
 import { BrandLogo } from "./components/brand/BrandLogo";
 import { Layout } from "./components/layout/Layout";
+import { LegacyFactoryRedirects } from "./components/routing/LegacyFactoryRedirects";
+import { RequirePermission } from "./components/routing/RequirePermission";
 import { ToastProvider } from "./components/ui/Toast";
+import { useTranslation } from "./context/I18nContext";
+import { guardedRoute } from "./lib/guardedRoute";
 import Dashboard from "./pages/Dashboard";
-import WoodOrders from "./pages/WoodOrders";
-import { AnalyticsAll, AnalyticsMetal, AnalyticsWood } from "./pages/Analytics";
 import ProjectAnalytics from "./pages/ProjectAnalytics";
 import NewProject from "./pages/NewProject";
 import WorkOrderAnalysis from "./pages/WorkOrderAnalysis";
 import DailyProduction from "./pages/DailyProduction";
 import AboutSystem from "./pages/AboutSystem";
+import WorkflowRoutingMapPage from "./pages/WorkflowRoutingMap";
 import EquipmentRegistry from "./pages/EquipmentRegistry";
-import PlanningKpi from "./pages/PlanningKpi";
 import PermissionsAdmin from "./pages/PermissionsAdmin";
 import Login from "./pages/Login";
 import Departments from "./pages/Departments";
 import AuditLog from "./pages/AuditLog";
 import PerformanceDepartments from "./pages/PerformanceDepartments";
 import PerformancePeople from "./pages/PerformancePeople";
-import MetalOrders from "./pages/MetalOrders";
+import DevToolsMap from "./pages/DevToolsMap";
+import {
+  AnalyticsPage,
+  ImportExportPage,
+  MetalOrderDetailPage,
+  MetalOrdersPage,
+  PlanningPage,
+  ProductionHubPage,
+  ProjectAtlasPage,
+  ProjectsHubPage,
+  SharedProjectsPage,
+  WorkforcePage,
+  WoodenOrderDetailPage,
+  WoodenOrdersPage,
+} from "./pages/factory/FactoryPages";
 
-const Placeholder = ({ title, arabicTitle, hint }: { title: string; arabicTitle: string; hint?: string }) => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] glass-panel p-12 border-dashed">
-    <BrandLogo className="h-16 w-auto max-w-[min(280px,85vw)] object-contain mb-8 opacity-90" />
-    <h2 className="text-4xl font-bold tracking-tighter uppercase mb-4">{title}</h2>
-    <ArabicText block className="text-xl font-medium text-brand-metal mb-8">
-      {arabicTitle}
-    </ArabicText>
-    {hint ? (
-      <p className="text-xs text-brand-metal text-center max-w-lg mb-8 leading-relaxed">{hint}</p>
-    ) : null}
-    <div className="flex gap-4">
-      <div className="w-12 h-px bg-brand-border" />
-      <p className="text-[10px] text-brand-metal uppercase tracking-[0.5em]">Module Under Construction</p>
-      <div className="w-12 h-px bg-brand-border" />
+const G = guardedRoute;
+
+function DailyMetalPage() {
+  return (
+    <RequirePermission path="/daily/metal">
+      <DailyProduction factory="metal" />
+    </RequirePermission>
+  );
+}
+
+function DailyWoodPage() {
+  return (
+    <RequirePermission path="/daily/wood">
+      <DailyProduction factory="wood" />
+    </RequirePermission>
+  );
+}
+
+function NotFoundPage() {
+  const { t } = useTranslation();
+  return (
+    <div className="flex flex-col items-center justify-center gap-6 min-h-[60vh]">
+      <BrandLogo className="h-14 w-auto max-w-[200px] object-contain opacity-80" />
+      <h2 className="text-2xl font-bold text-brand-error tracking-tight text-center">{t("notFound.title")}</h2>
     </div>
-  </div>
-);
+  );
+}
 
 function App() {
   return (
     <ToastProvider>
       <Layout>
+        <LegacyFactoryRedirects />
         <Switch>
-          <Route path="/" component={Dashboard} />
-
+          <Route path="/" component={G("/", Dashboard)} />
+          <Route path="/dashboard/classic">
+            <Redirect to="/" />
+          </Route>
           <Route path="/login" component={Login} />
-          <Route path="/departments" component={Departments} />
-          <Route path="/audit-log" component={AuditLog} />
-          <Route path="/performance/departments" component={PerformanceDepartments} />
-          <Route path="/performance/people" component={PerformancePeople} />
+          <Route path="/departments" component={G("/departments", Departments)} />
+          <Route path="/audit-log" component={G("/audit-log", AuditLog)} />
+          <Route path="/performance/departments" component={G("/performance/departments", PerformanceDepartments)} />
+          <Route path="/performance/people" component={G("/performance/people", PerformancePeople)} />
 
-          {/* Production Orders */}
-          <Route path="/orders/metal" component={MetalOrders} />
-          <Route path="/orders/wood" component={WoodOrders} />
+          <Route path="/production" component={G("/production", ProductionHubPage)} />
 
-          {/* Daily Production */}
-          <Route path="/daily/metal">
-            <DailyProduction factory="metal" />
-          </Route>
-          <Route path="/daily/wood">
-            <DailyProduction factory="wood" />
-          </Route>
+          <Route path="/orders/metal" component={G("/orders/metal", MetalOrdersPage)} />
+          <Route path="/orders/metal/:id" component={G("/orders/metal", MetalOrderDetailPage)} />
+          <Route path="/orders/wood" component={G("/orders/wood", WoodenOrdersPage)} />
+          <Route path="/orders/wood/:id" component={G("/orders/wood", WoodenOrderDetailPage)} />
 
-          {/* Projects */}
-          <Route path="/projects/joint">
-            <Placeholder title="Joint Projects" arabicTitle="المشاريع المشتركة" />
-          </Route>
-          <Route path="/projects/new" component={NewProject} />
-          <Route path="/projects/work-order-analysis" component={WorkOrderAnalysis} />
+          <Route path="/daily/metal" component={DailyMetalPage} />
+          <Route path="/daily/wood" component={DailyWoodPage} />
 
-          <Route path="/planning" component={PlanningKpi} />
+          <Route path="/projects/joint" component={G("/projects/joint", SharedProjectsPage)} />
+          <Route path="/projects/hub" component={G("/projects/hub", ProjectsHubPage)} />
+          <Route path="/projects/new" component={G("/projects/new", NewProject)} />
+          <Route path="/projects/work-order-analysis" component={G("/projects/work-order-analysis", WorkOrderAnalysis)} />
 
-          <Route path="/about-system" component={AboutSystem} />
-          <Route path="/equipment" component={EquipmentRegistry} />
+          <Route path="/workforce" component={G("/workforce", WorkforcePage)} />
+          <Route path="/import-export" component={G("/import-export", ImportExportPage)} />
 
-          {/* Analytics */}
-          <Route path="/analytics" component={AnalyticsAll} />
-          <Route path="/analytics/wood" component={AnalyticsWood} />
-          <Route path="/analytics/metal" component={AnalyticsMetal} />
-          <Route path="/project-analytics" component={ProjectAnalytics} />
+          <Route path="/planning" component={G("/planning", PlanningPage)} />
+          <Route path="/about-system" component={G("/about-system", AboutSystem)} />
+          <Route path="/workflow-routing" component={G("/workflow-routing", WorkflowRoutingMapPage)} />
+          <Route path="/equipment" component={G("/equipment", EquipmentRegistry)} />
 
-          <Route path="/admin/permissions" component={PermissionsAdmin} />
+          <Route path="/analytics" component={G("/analytics", AnalyticsPage)} />
+          <Route path="/analytics/wood" component={G("/analytics/wood", AnalyticsPage)} />
+          <Route path="/analytics/metal" component={G("/analytics/metal", AnalyticsPage)} />
+          <Route path="/project-analytics" component={G("/project-analytics", ProjectAnalytics)} />
 
-          {/* 404 */}
-          <Route>
-            <div className="flex flex-col items-center justify-center gap-6 min-h-[60vh]">
-              <BrandLogo className="h-14 w-auto max-w-[200px] object-contain opacity-80" />
-              <h2 className="text-2xl font-bold uppercase tracking-widest text-brand-error">
-                404 | Out of Bounds
-              </h2>
-            </div>
-          </Route>
+          <Route path="/admin/permissions" component={G("/admin/permissions", PermissionsAdmin)} />
+
+          <Route path="/dev/tools" component={G("/dev/tools", DevToolsMap)} />
+          <Route path="/dev/project-atlas" component={G("/dev/project-atlas", ProjectAtlasPage)} />
+
+          <Route component={NotFoundPage} />
         </Switch>
       </Layout>
     </ToastProvider>
