@@ -53,3 +53,8 @@ Thumbs.db
 .env.*.local
 
 lib/db/drizzle/.snapshot-build-temp.db
+lib/db/drizzle/.debug-tables.db
+lib/db/drizzle/.test-row.db
+
+# Vite
+.vite/
