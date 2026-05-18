@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
+﻿import { useEffect, useMemo, useSyncExternalStore, type ComponentType, type ReactNode } from "react";
+import { AnalyticsMetricRow } from "../../components/dashboard/AnalyticsMetricRow";
+import { dashboardAnalyticsSubtitleClass } from "../../components/dashboard/DashboardAnalyticsPanel";
+import { ExecutiveAnalyticsListPanel } from "../../components/dashboard/ExecutiveAnalyticsListPanel";
 import { ExecutiveDataStatus } from "../../components/dashboard/ExecutiveDataStatus";
 import { useExecutiveDashboardData } from "../hooks/useExecutiveDashboardData";
 import type { StageSummary, CapacityMachineRow } from "@workspace/api-client-react";
@@ -8,6 +11,7 @@ import { Skeleton } from "@factory/components/ui/skeleton";
 import { Factory, Boxes, AlertTriangle, CheckCircle2, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@factory/lib/utils";
+import { formatDepartmentDisplayName } from "../../lib/departmentDisplayName";
 import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 import { useDirection } from "../../lib/useDirection";
 import {
@@ -219,6 +223,7 @@ function ExecutiveCard({
   title,
   icon: Icon,
   value,
+  valueSuffix,
   subtitle,
   embedded = false,
   rtl = false,
@@ -228,6 +233,7 @@ function ExecutiveCard({
   title: string;
   icon?: ComponentType<{ className?: string }>;
   value: ReactNode;
+  valueSuffix?: ReactNode;
   subtitle?: string;
   embedded?: boolean;
   rtl?: boolean;
@@ -259,6 +265,11 @@ function ExecutiveCard({
           )}
         >
           {value}
+          {valueSuffix ? (
+            <span className={cn("ms-2 text-lg font-medium sm:text-xl", embedded ? "text-brand-metal" : "text-muted-foreground")}>
+              {valueSuffix}
+            </span>
+          ) : null}
         </div>
         {subtitle ? (
           <p className={cn("mt-2 text-xs font-medium", embedded ? "text-brand-metal" : "text-muted-foreground")}>
@@ -471,56 +482,81 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
         />
 
         {/* Clients Analytics - Large Bento Piece */}
-        <motion.div variants={cardMotion} className="double-bezel-outer md:col-span-6 lg:col-span-6 row-span-2 min-w-0">
-          <div className="double-bezel-inner h-full p-4 sm:p-6 lg:p-8 min-w-0">
-            <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4 sm:mb-6 lg:mb-8">
-              {ft("dashboard.topClientsTitle")}
-            </h3>
-            <div className="w-full min-w-0 max-h-[min(52vh,440px)] overflow-y-auto overflow-x-hidden pe-1 -me-1">
-              {topClients.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-8 text-center">{ft("dashboard.noClients")}</p>
-              ) : (
-                <ul className="space-y-5 sm:space-y-6 pb-1">
-                  {topClients.map((row, idx) => {
-                    const widthPct = (row.totalOrders / topClientsMaxOrders) * 100;
-                    return (
-                      <li key={`${row.clientFull}-${idx}`} className="min-w-0 list-none space-y-2.5 sm:space-y-3">
-                        <div className="flex flex-col gap-1.5 sm:gap-2 min-w-0 sm:flex-row sm:items-baseline sm:justify-between sm:gap-x-4">
-                          <p className="text-sm font-medium text-foreground leading-relaxed break-words min-w-0 order-1">
-                            {row.clientFull}
-                          </p>
-                          <div className="shrink-0 text-xs text-muted-foreground tabular-nums order-2 sm:order-none sm:text-end">
-                            <span className="font-semibold text-foreground">{row.totalOrders}</span>
-                            {" "}
-                            {ft("dashboard.ordersUnit")}
-                            {typeof row.completionPct === "number" && (
-                              <span className="ms-2 opacity-90">{ft("dashboard.completionPct", { pct: Math.round(row.completionPct) })}</span>
-                            )}
-                          </div>
-                        </div>
-                        <div
-                          className="h-3 sm:h-3.5 w-full rounded-full bg-muted/45 ring-1 ring-border/35 overflow-hidden"
-                          dir="rtl"
-                          aria-hidden
-                        >
-                          <div
-                            className="h-full rounded-full transition-[width] duration-500 ease-out"
-                            style={{
-                              width: `${widthPct}%`,
-                              background: "oklch(64% 0.13 28)",
-                              minWidth: row.totalOrders > 0 ? "6px" : undefined,
-                            }}
-                          />
-                        </div>
-                      </li>
-                    );
-                  })}
-                </ul>
-              )}
+        <motion.div variants={cardMotion} className="md:col-span-6 lg:col-span-6 row-span-2 min-w-0">
+          {embedded ? (
+            <ExecutiveAnalyticsListPanel title={ft("dashboard.topClientsTitle")} rtl={rtl} className="h-full">
+              <ul className="max-h-[min(52vh,440px)] space-y-3 overflow-y-auto overflow-x-hidden pe-1" role="list">
+                {topClients.length === 0 ? (
+                  <li className="py-8 text-center text-sm text-brand-metal">{ft("dashboard.noClients")}</li>
+                ) : (
+                  topClients.map((row, idx) => (
+                    <AnalyticsMetricRow
+                      key={`${row.clientFull}-${idx}`}
+                      layout="client"
+                      label={row.clientFull}
+                      value={ft("dashboard.productionOrdersCount", { n: row.totalOrders })}
+                      secondaryValue={
+                        typeof row.completionPct === "number"
+                          ? `${Math.round(row.completionPct)}%`
+                          : undefined
+                      }
+                      progress={typeof row.completionPct === "number" ? row.completionPct : undefined}
+                      progressClassName="bg-brand-wood"
+                      rtl={rtl}
+                    />
+                  ))
+                )}
+              </ul>
+            </ExecutiveAnalyticsListPanel>
+          ) : (
+            <div className="double-bezel-outer h-full min-w-0">
+              <div className="double-bezel-inner h-full p-4 sm:p-6 lg:p-8 min-w-0">
+                <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-muted-foreground sm:mb-6 lg:mb-8">
+                  {ft("dashboard.topClientsTitle")}
+                </h3>
+                <div className="w-full min-w-0 max-h-[min(52vh,440px)] overflow-y-auto overflow-x-hidden pe-1 -me-1">
+                  {topClients.length === 0 ? (
+                    <p className="py-8 text-center text-sm text-muted-foreground">{ft("dashboard.noClients")}</p>
+                  ) : (
+                    <ul className="space-y-5 pb-1 sm:space-y-6">
+                      {topClients.map((row, idx) => {
+                        const widthPct = (row.totalOrders / topClientsMaxOrders) * 100;
+                        return (
+                          <li key={`${row.clientFull}-${idx}`} className="min-w-0 list-none space-y-2.5 sm:space-y-3">
+                            <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-baseline sm:justify-between sm:gap-x-4">
+                              <p className="order-1 min-w-0 break-words text-sm font-medium leading-relaxed text-foreground">
+                                {row.clientFull}
+                              </p>
+                              <div className="order-2 shrink-0 text-xs tabular-nums text-muted-foreground sm:text-end">
+                                <span className="font-semibold text-foreground">{row.totalOrders}</span>{" "}
+                                {ft("dashboard.ordersUnit")}
+                                {typeof row.completionPct === "number" ? (
+                                  <span className="ms-2 opacity-90">
+                                    {ft("dashboard.completionPct", { pct: Math.round(row.completionPct) })}
+                                  </span>
+                                ) : null}
+                              </div>
+                            </div>
+                            <div className="h-3 w-full overflow-hidden rounded-full bg-muted/45 ring-1 ring-border/35 sm:h-3.5" dir="rtl" aria-hidden>
+                              <div
+                                className="h-full rounded-full transition-[width] duration-500 ease-out"
+                                style={{
+                                  width: `${widthPct}%`,
+                                  background: "oklch(64% 0.13 28)",
+                                  minWidth: row.totalOrders > 0 ? "6px" : undefined,
+                                }}
+                              />
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </motion.div>
-
         {/* Status Distribution - Metal */}
         <motion.div variants={cardMotion} className="double-bezel-outer md:col-span-3 lg:col-span-3 row-span-2 min-w-0">
           <div className="double-bezel-inner h-full p-4 sm:p-6 lg:p-8 min-w-0">
@@ -555,7 +591,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
             </div>
             {metalStatusData.length > 0 && (
               <div className="mt-4 pt-3 border-t border-foreground/10">
-                <PieBulletLegend items={metalStatusData.map(({ name, fill, value }) => ({ name, fill, value }))} />
+                <PieBulletLegend rtl={rtl} items={metalStatusData.map(({ name, fill, value }) => ({ name, fill, value }))} />
               </div>
             )}
           </div>
@@ -595,7 +631,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
             </div>
             {woodenStatusData.length > 0 && (
               <div className="mt-4 pt-3 border-t border-foreground/10">
-                <PieBulletLegend items={woodenStatusData.map(({ name, fill, value }) => ({ name, fill, value }))} />
+                <PieBulletLegend rtl={rtl} items={woodenStatusData.map(({ name, fill, value }) => ({ name, fill, value }))} />
               </div>
             )}
           </div>
@@ -618,7 +654,12 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
               rows={metalDeptRows}
               isLoading={loadingMetalStages}
               barColor="oklch(58% 0.14 28)"
+              progressClassName="bg-brand-metal"
               emptyLabel={ft("dashboard.noLoadData")}
+              embedded={embedded}
+              rtl={rtl}
+              pressureWipLabel={(n) => ft("dashboard.pressureWip", { n: Math.round(n) })}
+              pressureDoneLabel={(n) => ft("dashboard.pressureDone", { n: Math.round(n) })}
             />
           </motion.div>
           <motion.div variants={cardMotion}>
@@ -628,7 +669,12 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
               rows={woodenDeptRows}
               isLoading={loadingWoodenStages}
               barColor="oklch(55% 0.12 250)"
+              progressClassName="bg-brand-wood"
               emptyLabel={ft("dashboard.noLoadData")}
+              embedded={embedded}
+              rtl={rtl}
+              pressureWipLabel={(n) => ft("dashboard.pressureWip", { n: Math.round(n) })}
+              pressureDoneLabel={(n) => ft("dashboard.pressureDone", { n: Math.round(n) })}
             />
           </motion.div>
         </div>
@@ -650,7 +696,12 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
               rows={metalMachineRows}
               isLoading={loadingMetalStages}
               barColor="oklch(52% 0.16 28)"
+              progressClassName="bg-brand-metal"
               emptyLabel={ft("dashboard.noLoadData")}
+              embedded={embedded}
+              rtl={rtl}
+              pressureWipLabel={(n) => ft("dashboard.pressureWip", { n: Math.round(n) })}
+              pressureDoneLabel={(n) => ft("dashboard.pressureDone", { n: Math.round(n) })}
             />
           </motion.div>
           <motion.div variants={cardMotion}>
@@ -660,31 +711,53 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
               rows={woodenMachineRows}
               isLoading={loadingWoodenStages}
               barColor="oklch(50% 0.14 250)"
+              progressClassName="bg-brand-wood"
               emptyLabel={ft("dashboard.noLoadData")}
+              embedded={embedded}
+              rtl={rtl}
+              pressureWipLabel={(n) => ft("dashboard.pressureWip", { n: Math.round(n) })}
+              pressureDoneLabel={(n) => ft("dashboard.pressureDone", { n: Math.round(n) })}
             />
           </motion.div>
         </div>
       </motion.div>
 
       {/* Global Summary */}
-      <motion.div variants={cardMotion} className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 border-t border-foreground/5">
-        <div className="text-center space-y-2">
-          <div className="text-5xl font-bold text-accent tabular-nums">
-            {Math.round(((stats?.metalCompletedOrders || 0) + (stats?.woodenCompletedOrders || 0)) /
-              Math.max(1, (stats?.metalTotalOrders || 0) + (stats?.woodenTotalOrders || 0)) * 100)}%
+      <motion.div variants={cardMotion} className={cn("pt-8", !embedded && "border-t border-foreground/5")}>
+        <div className={cn(embedded && "glass-panel p-4 sm:p-6")}>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+            <div className="text-center space-y-2">
+              <div className={cn("font-bold tabular-nums", embedded ? "text-4xl text-brand-luxury sm:text-5xl" : "text-5xl text-accent")}>
+                {Math.round(
+                  ((stats?.metalCompletedOrders || 0) + (stats?.woodenCompletedOrders || 0)) /
+                    Math.max(1, (stats?.metalTotalOrders || 0) + (stats?.woodenTotalOrders || 0)) *
+                    100,
+                )}
+                %
+              </div>
+              <div className={embedded ? dashboardAnalyticsSubtitleClass(rtl) : "text-xs font-bold uppercase tracking-widest text-muted-foreground"}>
+                {ft("dashboard.overallEfficiency")}
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <div className={cn("font-bold tabular-nums", embedded ? "text-4xl text-brand-luxury sm:text-5xl" : "text-5xl text-foreground")}>
+                {stats?.metalCompletedOrders || 0}
+              </div>
+              <div className={embedded ? dashboardAnalyticsSubtitleClass(rtl) : "text-xs font-bold uppercase tracking-widest text-muted-foreground"}>
+                {ft("dashboard.metalReady")}
+              </div>
+            </div>
+            <div className="text-center space-y-2">
+              <div className={cn("font-bold tabular-nums", embedded ? "text-4xl text-brand-luxury sm:text-5xl" : "text-5xl text-foreground")}>
+                {stats?.woodenCompletedOrders || 0}
+              </div>
+              <div className={embedded ? dashboardAnalyticsSubtitleClass(rtl) : "text-xs font-bold uppercase tracking-widest text-muted-foreground"}>
+                {ft("dashboard.woodReady")}
+              </div>
+            </div>
           </div>
-          <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{ft("dashboard.overallEfficiency")}</div>
-        </div>
-        <div className="text-center space-y-2">
-          <div className="text-5xl font-bold text-foreground tabular-nums">{stats?.metalCompletedOrders || 0}</div>
-          <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{ft("dashboard.metalReady")}</div>
-        </div>
-        <div className="text-center space-y-2">
-          <div className="text-5xl font-bold text-foreground tabular-nums">{stats?.woodenCompletedOrders || 0}</div>
-          <div className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{ft("dashboard.woodReady")}</div>
         </div>
       </motion.div>
-
       {/* Workforce Widget */}
       {empStats && (
         <motion.div variants={cardMotion} className="grid gap-8 md:grid-cols-12 pt-8 border-t border-foreground/5">
@@ -693,6 +766,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
             title={ft("dashboard.workforceTitle")}
             icon={Users}
             value={empStats.total || 0}
+            valueSuffix={embedded ? ft("dashboard.employeeUnit") : undefined}
             subtitle={ft("dashboard.departmentsCount", { n: empStats.departments?.length || 0 })}
           />
           <motion.div variants={cardMotion} className="double-bezel-outer md:col-span-8">
@@ -705,7 +779,10 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
                   <PieChart>
                     <Pie
                       data={(empStats.departments || []).map((d: any, i: number) => ({
-                        name: d.departmentName || d.departmentId,
+                        name: formatDepartmentDisplayName(
+                          String(d.departmentName || d.departmentId || "—"),
+                          d.departmentId,
+                        ),
                         value: d.count,
                         fill: PIE_COLORS[i % PIE_COLORS.length],
                       }))}
@@ -729,8 +806,13 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
               {(empStats.departments || []).length > 0 && (
                 <div className="mt-4 pt-3 border-t border-foreground/10">
                   <PieBulletLegend
+                    rtl={rtl}
+                    columns={2}
                     items={(empStats.departments || []).map((d: { departmentName?: string; departmentId?: string; count?: number }, i: number) => ({
-                      name: String(d.departmentName || d.departmentId || "—"),
+                      name: formatDepartmentDisplayName(
+                        String(d.departmentName || d.departmentId || "—"),
+                        d.departmentId,
+                      ),
                       fill: PIE_COLORS[i % PIE_COLORS.length],
                       value: d.count ?? 0,
                     }))}

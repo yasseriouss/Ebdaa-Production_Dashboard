@@ -193,3 +193,39 @@ html[data-theme="executive"] .nav-item-active {
 html[data-theme="executive"] .stat-card {
   @apply rounded-xl hover:shadow-[0_12px_32px_-18px_rgba(0,0,0,0.12)];
 }
+
+.news-ticker-viewport {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.news-ticker-viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.news-ticker-viewport:hover .news-ticker-track {
+  animation-play-state: paused;
+}
+
+.news-ticker-track {
+  animation: news-ticker-scroll var(--news-ticker-duration, 56s) linear infinite;
+}
+
+@keyframes news-ticker-scroll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .news-ticker-track {
+    animation: none;
+  }
+
+  .news-ticker-viewport {
+    overflow: hidden;
+  }
+}

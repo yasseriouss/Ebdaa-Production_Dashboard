@@ -1,5 +1,5 @@
 import React from "react";
-import { Languages, BookOpen } from "lucide-react";
+import { BookOpen } from "lucide-react";
 import {
   AnimatePresence,
   MotionConfig,
@@ -7,8 +7,8 @@ import {
 } from "framer-motion";
 import { Link, useLocation } from "wouter";
 import { BrandLogo } from "../brand/BrandLogo";
-import { RouteCoach } from "../coaching/RouteCoach";
 import { Sidebar } from "./Sidebar";
+import { SystemNewsTicker } from "./SystemNewsTicker";
 import { AuthHeaderLinks } from "./AuthHeaderLinks";
 import { useDirection } from "../../lib/useDirection";
 import { cn } from "../../lib/cn";
@@ -19,7 +19,7 @@ const pageEase = [0.22, 1, 0.36, 1] as const;
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { direction, toggle } = useDirection();
-  const { t } = useTranslation();
+  const { t, locale } = useTranslation();
   const [location] = useLocation();
   const rtl = direction === "rtl";
 
@@ -35,6 +35,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       >
         <Sidebar />
         <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden">
+          <SystemNewsTicker />
           <motion.header
             layout={false}
             initial={{ opacity: 0, y: -10 }}
@@ -78,15 +79,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={toggle}
                 aria-label={t("layout.toggleDirAria")}
-                className="industrial-btn"
+                className="industrial-btn min-w-[3rem] justify-center px-3"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 480, damping: 26 }}
               >
-                <Languages className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">
-                  {direction === "ltr" ? t("layout.switchToRtl") : t("layout.switchToLtr")}
-                </span>
+                <span className="font-bold tracking-wide">{locale === "ar" ? "EN" : "AR"}</span>
               </motion.button>
               <AuthHeaderLinks />
             </div>
@@ -95,7 +93,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             className="flex-1 min-h-0 w-full px-4 pt-4 pb-8 sm:px-6 sm:pt-6 sm:pb-10 md:px-8 md:pt-8 md:pb-12 lg:px-10 lg:pb-14 max-w-[1680px] mx-auto"
             role="main"
           >
-            <RouteCoach />
             <AnimatePresence mode="wait">
               <motion.div
                 key={location}

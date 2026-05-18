@@ -1,17 +1,7 @@
 ﻿import { useMemo } from "react";
 import { useDashboardTab } from "../hooks/useDashboardTab";
-import { Link } from "wouter";
-import {
-  AlertTriangle,
-  BarChart3,
-  BookOpen,
-  CalendarRange,
-  Clock,
-  Cpu,
-  Factory,
-  Shield,
-  Trees,
-} from "lucide-react";
+import { ArabicText } from "../components/brand/ArabicText";
+import { BarChart3, Cpu, Factory, Trees } from "lucide-react";
 import {
   Area,
   AreaChart,
@@ -23,7 +13,6 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { ArabicText } from "../components/brand/ArabicText";
 import { AnalyticsMetricRow } from "../components/dashboard/AnalyticsMetricRow";
 import { DashboardAnalyticsPanel } from "../components/dashboard/DashboardAnalyticsPanel";
 import { DashboardSectionHeader } from "../components/dashboard/DashboardSectionHeader";
@@ -154,97 +143,6 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <header
-        className="flex flex-col gap-4 border-b border-brand-border pb-6"
-        dir={rtl ? "rtl" : "ltr"}
-        lang={rtl ? "ar" : "en"}
-      >
-        <div className="min-w-0">
-          <h2
-            className={cn(
-              "text-3xl font-bold",
-              rtl ? "font-arabic normal-case tracking-tight" : "tracking-tighter uppercase",
-            )}
-          >
-            {t("dashboard.commandCenter")}
-          </h2>
-          <p
-            className={cn(
-              "mt-1 text-sm font-medium text-brand-metal",
-              rtl && "font-arabic",
-            )}
-          >
-            <span>{t("dashboard.subtitlePrimary")}</span>
-            {!rtl ? (
-              <>
-                <span className="mx-2 text-brand-border">|</span>
-                <ArabicText className="inline text-sm">{t("dashboard.subtitleSecondary")}</ArabicText>
-              </>
-            ) : null}
-          </p>
-        </div>
-        <div
-          className={cn(
-            "flex flex-wrap gap-2 border-t border-brand-border/60 pt-4",
-            rtl && "font-arabic",
-          )}
-        >
-          <button type="button" className="industrial-btn">
-            <Clock className="h-4 w-4" aria-hidden />
-            <span>{t("dashboard.shiftOn")}</span>
-          </button>
-          <button
-            type="button"
-            className="industrial-btn border-brand-wood/50 bg-brand-wood/10 text-brand-wood"
-          >
-            <AlertTriangle className="h-4 w-4" aria-hidden />
-            <span>{t("dashboard.bottleneck", { stage: bottleneck.stage })}</span>
-          </button>
-        </div>
-      </header>
-
-      <nav
-        className="glass-panel flex flex-wrap items-center gap-2 p-3 sm:p-4"
-        aria-label={t("dashboard.ebdaaHub")}
-        dir={rtl ? "rtl" : "ltr"}
-        lang={rtl ? "ar" : "en"}
-      >
-        <span
-          className={cn(
-            "me-1 text-[10px] font-bold text-brand-metal",
-            rtl ? "font-arabic normal-case" : "uppercase tracking-widest",
-          )}
-        >
-          {t("dashboard.ebdaaHub")}
-        </span>
-        <Link
-          href="/admin/permissions"
-          className="industrial-btn gap-1.5 border-brand-success/40 bg-brand-success/5 px-3 py-1.5 text-[10px] text-brand-success"
-        >
-          <Shield className="h-3 w-3" aria-hidden />
-          <ArabicText className="text-[10px]">{t("nav.permissionsAdmin")}</ArabicText>
-        </Link>
-        <Link href="/about-system" className="industrial-btn gap-1.5 px-3 py-1.5 text-[10px]">
-          <BookOpen className="h-3 w-3" aria-hidden />
-          {t("dashboard.about")}
-        </Link>
-        <Link href="/equipment" className="industrial-btn gap-1.5 px-3 py-1.5 text-[10px]">
-          <Factory className="h-3 w-3" aria-hidden />
-          {t("dashboard.equipment")}
-        </Link>
-        <Link href="/planning" className="industrial-btn gap-1.5 px-3 py-1.5 text-[10px]">
-          <CalendarRange className="h-3 w-3" aria-hidden />
-          {t("dashboard.planningKpi")}
-        </Link>
-        <Link
-          href="/daily/wood"
-          className="industrial-btn gap-1.5 border-brand-wood/40 px-3 py-1.5 text-[10px] text-brand-wood"
-        >
-          <Trees className="h-3 w-3" aria-hidden />
-          {t("dashboard.dailyWood")}
-        </Link>
-      </nav>
-
       <DashboardViewTabs activeTab={activeTab} onTabChange={setDashboardTab} />
 
       {activeTab === "executive" ? (

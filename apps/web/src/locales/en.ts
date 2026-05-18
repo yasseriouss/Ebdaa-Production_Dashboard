@@ -25,6 +25,10 @@ export const en = {
   loader: {
     busy: "Loading, please wait",
   },
+  newsTicker: {
+    ariaLabel: "System news and tips",
+    badge: "Alerts & news",
+  },
   layout: {
     homeAria: "Home — dashboard",
     brandName: "Ebdaa",
@@ -56,6 +60,7 @@ export const en = {
     equipment: "Equipment",
     projectAnalytics: "Project Analytics",
     permissionsAdmin: "Permissions admin",
+    settings: "Settings",
     devToolsMap: "Dev tools map",
     metalFactory: "Metal Factory",
     woodFactory: "Wood Factory",
@@ -594,6 +599,10 @@ export const en = {
       activeOrders: "{{n}} active",
       avgCompletion: "{{pct}}% avg completion",
       loading: "Loading executive overview…",
+      employeeUnit: "employees",
+      productionOrdersCount: "{{n}} production orders",
+      pressureWip: "Load {{n}}",
+      pressureDone: "Done {{n}}",
     },
     workforce: {
       title: "Workforce",

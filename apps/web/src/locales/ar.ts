@@ -27,6 +27,10 @@ export const ar = {
   loader: {
     busy: "جاري التحميل، يرجى الانتظار",
   },
+  newsTicker: {
+    ariaLabel: "أخبار النظام والتلميحات",
+    badge: "إشعارات وأخبار",
+  },
   layout: {
     homeAria: "الصفحة الرئيسية — لوحة التحكم",
     brandName: "إبداع",
@@ -58,6 +62,7 @@ export const ar = {
     equipment: "سجل المعدات",
     projectAnalytics: "تحليلات المشاريع",
     permissionsAdmin: "توزيع الصلاحيات",
+    settings: "الإعدادات",
     devToolsMap: "خريطة أدوات التطوير",
     metalFactory: "مصنع المعادن",
     woodFactory: "مصنع الأخشاب",
@@ -592,6 +597,10 @@ export const ar = {
       activeOrders: "نشط {{n}}",
       avgCompletion: "إنجاز {{pct}}%",
       loading: "جاري تحميل الرؤية التنفيذية…",
+      employeeUnit: "موظف",
+      productionOrdersCount: "{{n}} أمر إنتاج",
+      pressureWip: "ضغط {{n}}",
+      pressureDone: "منجز {{n}}",
     },
     workforce: {
       title: "القوة البشرية",

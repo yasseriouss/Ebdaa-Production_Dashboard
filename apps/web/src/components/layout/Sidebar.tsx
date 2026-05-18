@@ -23,6 +23,7 @@ import {
   Waypoints,
   Factory,
   Shield,
+  Settings,
   LineChart,
   Building2,
   Users,
@@ -110,13 +111,6 @@ const NAV_DEF: NavEntry[] = [
   },
   {
     kind: "leaf",
-    id: "about",
-    labelKey: "nav.aboutTraining",
-    href: "/about-system",
-    icon: BookOpen,
-  },
-  {
-    kind: "leaf",
     id: "workflowRouting",
     labelKey: "nav.workflowRouting",
     href: "/workflow-routing",
@@ -160,11 +154,14 @@ const NAV_DEF: NavEntry[] = [
     icon: Activity,
   },
   {
-    kind: "leaf",
-    id: "permissions",
-    labelKey: "nav.permissionsAdmin",
-    href: "/admin/permissions",
-    icon: Shield,
+    kind: "group",
+    id: "settings",
+    labelKey: "nav.settings",
+    icon: Settings,
+    children: [
+      { id: "about", labelKey: "nav.aboutTraining", href: "/about-system", icon: BookOpen },
+      { id: "permissions", labelKey: "nav.permissionsAdmin", href: "/admin/permissions", icon: Shield },
+    ],
   },
   { kind: "leaf", id: "devmap", labelKey: "nav.devToolsMap", href: "/dev/tools", icon: Map },
 ];
