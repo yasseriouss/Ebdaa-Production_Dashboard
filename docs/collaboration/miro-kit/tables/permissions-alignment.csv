@@ -3,6 +3,6 @@ perm-db-auth-seed,schema-auth-rbac,lib/db Drizzle migrations seed
 perm-api-jwt-middleware,api-auth-middleware,login me JWT routes
 perm-web-guard-client,web-guard-routes,Sidebar routes effective-permissions
 perm-scope-queries-directory,scope-queries-directory,dataScopeFilter + req.auth capacity employees performance
-perm-scope-queries-production-hub,scope-queries-production-hub,pending row filter wood metal hub JSON
+perm-scope-queries-production-hub,scope-queries-production-hub,factoryDepartmentRowScopeWhere on wood metal hub when factory_id department_id set
 perm-audit-coverage-ui,audit-table-hook,audit_events UI /audit-log
 perm-performance-metrics,performance-metrics,/performance departments people scoped metrics

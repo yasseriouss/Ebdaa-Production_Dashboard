@@ -5,9 +5,6 @@ flowchart TB
     cap["capacity_services"]
     emp["employees_services"]
     perf["performance_services"]
-  end
-
-  subgraph pending [Route_permission_only_pending_row_labels]
     w["wooden_routes_services"]
     m["metal_routes_services"]
     fh["factoryHub_JSON_routes_services"]
@@ -16,6 +13,12 @@ flowchart TB
   auth --> cap
   auth --> emp
   auth --> perf
-  auth -.->|"not_yet_filtered_by_factory_department"| w
-  auth -.-> m
-  auth -.-> fh
+  auth --> w
+  auth --> m
+  auth --> fh
+
+  note["factoryDepartmentRowScopeWhere on factory_id and department_id columns"]
+
+  w -.-> note
+  m -.-> note
+  fh -.-> note

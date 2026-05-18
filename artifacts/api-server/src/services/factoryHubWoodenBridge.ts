@@ -1,6 +1,11 @@
 import { db } from "@workspace/db";
-import { woodenWorkOrdersTable } from "@workspace/db";
+import { woodenProductionStagesTable, woodenWorkOrdersTable } from "@workspace/db";
 import { and, eq, isNull } from "@workspace/db";
+import {
+  hubRoutingToLegacyStages,
+  parseHubRoutingFromPayload,
+  parseTotalRequiredFromPayload,
+} from "../lib/woodRoutingTranslator";
 import { WoodenService } from "./wooden.service";
 import type { RequestAuth } from "../lib/requestAuth";
 
@@ -61,9 +66,52 @@ export async function maybeSyncHubWoodOrderToWooden(payload: Record<string, unkn
     .limit(1);
 
   const found = rows[0];
+  let orderId: string;
   if (found) {
-    await WoodenService.updateOrder(found.id, body, auth);
+    const updated = await WoodenService.updateOrder(found.id, body, auth);
+    if (!updated) return;
+    orderId = found.id;
   } else {
-    await WoodenService.createOrder(body, auth);
+    const created = await WoodenService.createOrder(body, auth);
+    orderId = created.id;
+  }
+
+  await syncLegacyStagesFromHubPayload(orderId, payload);
+}
+
+async function syncLegacyStagesFromHubPayload(
+  woodenOrderId: string,
+  payload: Record<string, unknown>,
+): Promise<void> {
+  const routing = parseHubRoutingFromPayload(payload);
+  if (Object.keys(routing).length === 0) return;
+
+  const totalRequired = parseTotalRequiredFromPayload(payload);
+  const snapshots = hubRoutingToLegacyStages(routing, totalRequired);
+
+  const existing = await db
+    .select()
+    .from(woodenProductionStagesTable)
+    .where(
+      and(
+        eq(woodenProductionStagesTable.woodenOrderId, woodenOrderId),
+        isNull(woodenProductionStagesTable.deletedAt),
+      ),
+    );
+
+  const byName = new Map(existing.map((s) => [s.stageName, s]));
+
+  for (const snap of snapshots) {
+    const row = byName.get(snap.stageName);
+    if (row) {
+      await db
+        .update(woodenProductionStagesTable)
+        .set({
+          qtyDone: snap.qtyDone,
+          status: snap.status,
+          updatedAt: new Date().toISOString(),
+        })
+        .where(eq(woodenProductionStagesTable.id, row.id));
+    }
   }
 }

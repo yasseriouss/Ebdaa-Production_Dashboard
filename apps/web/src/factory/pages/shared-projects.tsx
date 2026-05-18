@@ -4,6 +4,7 @@ import { Progress } from "@factory/components/ui/progress";
 import { Badge } from "@factory/components/ui/badge";
 import { Factory, Boxes, AlertTriangle, Link2 } from "lucide-react";
 import { Link } from "wouter";
+import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 
 interface SharedProject {
   client: string;
@@ -40,14 +41,22 @@ const STATUS_COLORS: Record<string, string> = {
   "متوقف": "bg-destructive/20 text-destructive",
 };
 
-function ImpactAlert({ metalPct, woodenPct }: { metalPct: number; woodenPct: number }) {
+function ImpactAlert({
+  metalPct,
+  woodenPct,
+  ft,
+}: {
+  metalPct: number;
+  woodenPct: number;
+  ft: (key: string, params?: Record<string, string | number | undefined>) => string;
+}) {
   const gap = Math.abs(metalPct - woodenPct);
   if (gap <= 20) return null;
-  const lagging = metalPct < woodenPct ? "المصنع المعدني" : "المصنع الخشبي";
+  const lagging = metalPct < woodenPct ? ft("sharedProjects.metalPlant") : ft("sharedProjects.woodPlant");
   return (
     <div className="flex items-start gap-2 p-2.5 bg-destructive/10 border border-destructive/20 rounded-md text-xs text-destructive mt-3" data-testid="impact-alert">
       <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-      <span>تأثير: {lagging} متأخر بفارق {gap}% — قد يتأثر موعد التسليم النهائي للعميل</span>
+      <span>{ft("sharedProjects.impactAlert", { plant: lagging, gap: String(gap) })}</span>
     </div>
   );
 }
@@ -67,12 +76,13 @@ function OrderTimeline({ pct, label, color }: { pct: number; label: string; colo
 }
 
 export default function SharedProjects() {
+  const { ft } = useFactoryTranslation();
   const { data: projects, isLoading } = useListSharedProjects();
 
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <h1 className="text-3xl font-bold tracking-tight">المشاريع المشتركة</h1>
+        <h1 className="text-3xl font-bold tracking-tight">{ft("sharedProjects.title")}</h1>
         {[1, 2, 3].map(i => <Card key={i}><CardContent className="pt-6 h-48 animate-pulse bg-muted/20" /></Card>)}
       </div>
     );
@@ -83,18 +93,13 @@ export default function SharedProjects() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">المشاريع المشتركة</h1>
-        <p className="text-muted-foreground mt-1 max-w-3xl leading-relaxed">
-          عملاء يمتلكون أوامر شغل في المصنع المعدني والخشبي معاً.{" "}
-          <span className="text-foreground/85">
-            للعميل عدة مشاريع، وكل مشروع يضم عدة أوامر؛ هذه البطاقات تلخص الأثر المشترك على مستوى العميل بين المصنعين.
-          </span>
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">{ft("sharedProjects.title")}</h1>
+        <p className="text-muted-foreground mt-1 max-w-3xl leading-relaxed">{ft("sharedProjects.subtitle")}</p>
       </div>
 
       {typedProjects.length === 0 && (
         <div className="p-12 text-center text-muted-foreground border border-dashed rounded-lg" data-testid="no-shared-projects">
-          لا توجد مشاريع مشتركة حالياً
+          {ft("sharedProjects.empty")}
         </div>
       )}
 
@@ -120,7 +125,7 @@ export default function SharedProjects() {
               <OrderTimeline pct={project.woodenCompletionPct} label={`خشبي (${project.woodenOrderCount} أمر)`} color="bg-blue-500/70" />
             </div>
 
-            <ImpactAlert metalPct={project.metalCompletionPct} woodenPct={project.woodenCompletionPct} />
+            <ImpactAlert metalPct={project.metalCompletionPct} woodenPct={project.woodenCompletionPct} ft={ft} />
           </CardHeader>
 
           <CardContent className="pt-4">

@@ -9,7 +9,7 @@ perm-db-auth-seed,B_auth_seed,completed,lib/db/src/schema/authAudit.ts
 perm-api-jwt-middleware,B_JWT_RB_API,completed,artifacts/api-server routes auth middleware requirePermission
 perm-web-guard-client,B_web_guard,completed,apps/web PermissionContext Login api client Bearer
 perm-scope-queries-directory,C_scope_partial_done,completed,artifacts/api-server/src/lib/dataScopeFilter.ts capacity employees performance
-perm-scope-queries-production-hub,C_scope_row_filter_pending,pending,policy_need_factory_department_on_row wooden metal factory-hub services
+perm-scope-queries-production-hub,C_scope_row_filter_done,completed,factoryDepartmentRowScopeWhere on wooden metal factory-hub services
 perm-audit-coverage-ui,D_audit,completed,artifacts/api-server/src/services/audit.service.ts audit routes AuditLog.tsx
 perm-performance-metrics,E_performance,completed,performance routes PerformanceDepartments People
 meta-ebdaa-doc-nit,Z_parallel_doc_optional_anytime,completed,.cursor/plans/ebdaa_data_integration_plan_30980b69.plan.md

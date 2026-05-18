@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@factory/components/ui
 import { Skeleton } from "@factory/components/ui/skeleton";
 import { Input } from "@factory/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@factory/components/ui/select";
+import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 
 const STAGE_NAMES = [
   "الليزر","المقص","الكويل","البانش","مكابس و تكويع","المثقاب","التخليع","التنايات",
@@ -127,6 +128,7 @@ function OrderRow({ orderId, moNumber }: { orderId: number; moNumber: string }) 
 }
 
 export default function MetalProduction() {
+  const { ft } = useFactoryTranslation();
   const { data: summary, isLoading: loadingSummary } = useGetMetalStagesSummary();
   const { data: orders, isLoading: loadingOrders } = useListMetalOrders();
 
@@ -135,8 +137,8 @@ export default function MetalProduction() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">الإنتاج اليومي المعدني</h1>
-        <p className="text-muted-foreground mt-1">مراقبة وتحديث الإنتاج عبر 17 مرحلة — تعديل مباشر في الخلايا</p>
+        <h1 className="text-3xl font-bold tracking-tight">{ft("production.metalTitle")}</h1>
+        <p className="text-muted-foreground mt-1">{ft("production.metalSubtitle")}</p>
       </div>
 
       {/* Stage bottleneck heatmap */}

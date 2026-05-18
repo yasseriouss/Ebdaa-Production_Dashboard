@@ -6,6 +6,7 @@ import { Input } from "@factory/components/ui/input";
 import { Label } from "@factory/components/ui/label";
 import { Skeleton } from "@factory/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
+import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -71,6 +72,7 @@ function detectOverlaps(items: { id: string; startDate?: string; endDate?: strin
 }
 
 export default function Planning() {
+  const { ft } = useFactoryTranslation();
   const [factory, setFactory] = useState("all");
   const [projectFilter, setProjectFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -120,8 +122,8 @@ export default function Planning() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">التخطيط والجدولة</h1>
-        <p className="text-muted-foreground mt-1">مخطط Gantt ومخطط PERT مع تحديد تعارضات المواعيد</p>
+        <h1 className="text-3xl font-bold tracking-tight">{ft("planning.title")}</h1>
+        <p className="text-muted-foreground mt-1">{ft("planning.subtitle")}</p>
       </div>
 
       {/* Gantt Chart */}
