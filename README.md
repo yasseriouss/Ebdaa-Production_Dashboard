@@ -171,10 +171,6 @@ pnpm run typecheck
 - قسّم PRs: API · DB · UI.
 - قاعدة البيانات المعتمدة: **SQLite/LibSQL** — Postgres عبر [docs/rfc-libsql-migration.md](docs/rfc-libsql-migration.md) وETL عند الحاجة فقط.
 
-## نشر Replit
-
-[`.replit`](.replit) — وحدات Node 24، Python 3.11، Postgres 16 (جانبي). ملخص: [replit.md](replit.md).
-
 ## الترخيص
 
 MIT (انظر [package.json](package.json)).
