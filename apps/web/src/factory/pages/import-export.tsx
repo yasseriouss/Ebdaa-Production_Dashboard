@@ -11,6 +11,7 @@ import {
 import { Upload, Download, FileText, CheckCircle2, XCircle, FileSpreadsheet, AlertTriangle } from "lucide-react";
 import { useToast } from "@factory/hooks/use-toast";
 import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
+import { downloadPdfFromApiExport } from "../../lib/pdf";
 
 const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
 
@@ -87,22 +88,41 @@ function ImportCard({
 }
 
 function ExportCard({ title, endpoint, filename }: { title: string; endpoint: string; filename: string }) {
+  const { toast } = useToast();
   const [busy, setBusy] = useState(false);
-  const doExport = async (format: "xlsx" | "pdf") => {
+  const [pdfBusy, setPdfBusy] = useState(false);
+
+  const doExportXlsx = async () => {
     setBusy(true);
     try {
-      const r = await fetch(`${BASE}${endpoint}?format=${format}`);
+      const r = await fetch(`${BASE}${endpoint}?format=xlsx`);
       const blob = await r.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `${filename}.${format === "xlsx" ? "xlsx" : "pdf"}`;
+      a.download = `${filename}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
     } finally {
       setBusy(false);
+    }
+  };
+
+  const doExportPdf = async () => {
+    setPdfBusy(true);
+    try {
+      await downloadPdfFromApiExport({
+        endpoint,
+        title,
+        filename,
+      });
+      toast({ title: "تم تصدير PDF" });
+    } catch {
+      toast({ title: "فشل تصدير PDF", variant: "destructive" });
+    } finally {
+      setPdfBusy(false);
     }
   };
   return (
@@ -115,11 +135,11 @@ function ExportCard({ title, endpoint, filename }: { title: string; endpoint: st
         <CardDescription className="text-xs">تصدير جميع البيانات إلى ملف</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
-        <Button className="w-full" variant="outline" disabled={busy} onClick={() => doExport("xlsx")} data-testid={`btn-export-xlsx-${filename}`}>
+        <Button className="w-full" variant="outline" disabled={busy} onClick={() => void doExportXlsx()} data-testid={`btn-export-xlsx-${filename}`}>
           <FileText className="ml-2 h-4 w-4" />
           تصدير Excel (.xlsx)
         </Button>
-        <Button className="w-full" variant="outline" disabled={busy} onClick={() => doExport("pdf")} data-testid={`btn-export-pdf-${filename}`}>
+        <Button className="w-full" variant="outline" disabled={pdfBusy} onClick={() => void doExportPdf()} data-testid={`btn-export-pdf-${filename}`}>
           <FileText className="ml-2 h-4 w-4" />
           تصدير PDF (.pdf)
         </Button>

@@ -34,7 +34,8 @@ import { ConfirmDialog } from "../components/ui/Dialog";
 import { Select } from "../components/ui/Select";
 import { useToast } from "../components/ui/Toast";
 import { useDebouncedValue } from "../lib/useDebouncedValue";
-import { downloadCsv, rowsToCsv } from "../lib/csv";
+import { downloadCsv, rowsToCsv, type CsvColumn } from "../lib/csv";
+import { downloadTablePdf, rowsToTableData } from "../lib/pdf";
 import {
   WOOD_DEPARTMENT_OPTIONS,
   WOOD_STAGE_LABELS,
@@ -503,24 +504,41 @@ export default function WoodOrders() {
     }
   };
 
+  const woodExportColumns: CsvColumn<WoodWorkOrder>[] = [
+    { header: t("pages.woodOrders.csvWorkOrder"), accessor: (r) => r.work_order_id },
+    { header: t("pages.woodOrders.csvProject"), accessor: (r) => r.project_name },
+    { header: t("pages.woodOrders.csvClient"), accessor: (r) => r.client ?? "" },
+    { header: t("pages.woodOrders.csvProduct"), accessor: (r) => r.product_name },
+    { header: t("pages.woodOrders.csvTotal"), accessor: (r) => r.quantities.total_required },
+    { header: t("pages.woodOrders.csvCompleted"), accessor: (r) => r.quantities.completed },
+    { header: t("pages.woodOrders.csvRemaining"), accessor: (r) => r.quantities.remaining },
+    { header: t("pages.woodOrders.csvDelivery"), accessor: (r) => r.dates.delivery_date },
+    { header: t("pages.woodOrders.csvPriority"), accessor: (r) => r.priority ?? "Normal" },
+    {
+      header: t("pages.woodOrders.csvStatus"),
+      accessor: (r) => statusFromCompletion(completionPercent(r.quantities)),
+    },
+  ];
+
   const handleBulkExport = (rows: WoodWorkOrder[]) => {
-    const csv = rowsToCsv(rows, [
-      { header: t("pages.woodOrders.csvWorkOrder"), accessor: (r) => r.work_order_id },
-      { header: t("pages.woodOrders.csvProject"), accessor: (r) => r.project_name },
-      { header: t("pages.woodOrders.csvClient"), accessor: (r) => r.client ?? "" },
-      { header: t("pages.woodOrders.csvProduct"), accessor: (r) => r.product_name },
-      { header: t("pages.woodOrders.csvTotal"), accessor: (r) => r.quantities.total_required },
-      { header: t("pages.woodOrders.csvCompleted"), accessor: (r) => r.quantities.completed },
-      { header: t("pages.woodOrders.csvRemaining"), accessor: (r) => r.quantities.remaining },
-      { header: t("pages.woodOrders.csvDelivery"), accessor: (r) => r.dates.delivery_date },
-      { header: t("pages.woodOrders.csvPriority"), accessor: (r) => r.priority ?? "Normal" },
-      {
-        header: t("pages.woodOrders.csvStatus"),
-        accessor: (r) => statusFromCompletion(completionPercent(r.quantities)),
-      },
-    ]);
+    const csv = rowsToCsv(rows, woodExportColumns);
     downloadCsv(`wood-work-orders-${new Date().toISOString().slice(0, 10)}`, csv);
     toast.info(t("pages.woodOrders.exportRows", { n: String(rows.length) }));
+  };
+
+  const handleBulkExportPdf = async (rows: WoodWorkOrder[]) => {
+    try {
+      const { headers, rows: data } = rowsToTableData(rows, woodExportColumns);
+      await downloadTablePdf({
+        title: t("pages.woodOrders.title"),
+        headers,
+        rows: data,
+        filename: `wood-work-orders-${new Date().toISOString().slice(0, 10)}`,
+      });
+      toast.info(t("pages.woodOrders.exportRows", { n: String(rows.length) }));
+    } catch {
+      toast.error(t("pages.dailyProduction.exportPdfFail"));
+    }
   };
 
   return (
@@ -590,6 +608,7 @@ export default function WoodOrders() {
         table={table}
         onBulkDelete={(rows) => setPendingDelete(rows.map((r) => r.work_order_id))}
         onBulkExport={handleBulkExport}
+        onBulkExportPdf={(rows) => void handleBulkExportPdf(rows)}
         extraActions={[
           {
             label: t("pages.woodOrders.bulkSetStatus"),

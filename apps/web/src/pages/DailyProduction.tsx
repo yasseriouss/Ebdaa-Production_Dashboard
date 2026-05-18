@@ -15,6 +15,7 @@ import {
   openDailySheetPrint,
   type DailySheetRow,
 } from "../lib/dailySheet";
+import { downloadDailySheetPdf } from "../lib/pdf";
 import { completionPercent, statusFromCompletion, type WoodWorkOrder } from "../data/types";
 
 type FactoryKind = "wood" | "metal";
@@ -46,7 +47,7 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
   const headerSecondary =
     factory === "wood" ? t("pages.dailyProduction.woodArabic") : t("pages.dailyProduction.metalArabic");
 
-  const handleExport = (kind: "html" | "xls" | "print") => {
+  const handleExport = async (kind: "html" | "xls" | "print" | "pdf") => {
     const params = {
       factory_id: factoryData.factory_id,
       factory_name: factoryData.name,
@@ -58,6 +59,14 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
     if (kind === "html") downloadDailySheetHtml(params);
     if (kind === "xls") downloadDailySheetXls(params);
     if (kind === "print") openDailySheetPrint(params);
+    if (kind === "pdf") {
+      try {
+        await downloadDailySheetPdf(params);
+      } catch {
+        toast.error(t("pages.dailyProduction.exportPdfFail"));
+        return;
+      }
+    }
     toast.success(
       t("pages.dailyProduction.toastGenerated", { dept: departmentName, n: String(tasks.length) }),
     );
@@ -142,11 +151,19 @@ export default function DailyProduction({ factory }: { factory: FactoryKind }) {
             </button>
             <button
               type="button"
-              onClick={() => handleExport("print")}
+              onClick={() => void handleExport("print")}
               className="industrial-btn border-brand-wood/60 text-brand-wood"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>{t("pages.dailyProduction.exportPrint")}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleExport("pdf")}
+              className="industrial-btn border-brand-luxury/50 text-brand-luxury"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>{t("pages.dailyProduction.exportPdf")}</span>
             </button>
             <button type="button" onClick={() => handleExport("html")} className="industrial-btn">
               <Download className="w-3.5 h-3.5" />

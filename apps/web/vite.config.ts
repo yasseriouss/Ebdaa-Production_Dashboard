@@ -8,6 +8,14 @@ const apiProxyTarget =
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: ["@react-pdf/renderer"],
+  },
+  build: {
+    commonjsOptions: {
+      transformMixedEsModules: true,
+    },
+  },
   resolve: {
     alias: {
       "@factory": path.resolve(__dirname, "src/factory"),

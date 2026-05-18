@@ -1,5 +1,5 @@
 import type { Table } from "@tanstack/react-table";
-import { Download, Trash2, X } from "lucide-react";
+import { Download, FileText, Trash2, X } from "lucide-react";
 import { cn } from "../../lib/cn";
 import { useTranslation } from "../../context/I18nContext";
 
@@ -18,11 +18,13 @@ export function DataTableBulkBar<T>({
   table,
   onBulkDelete,
   onBulkExport,
+  onBulkExportPdf,
   extraActions,
 }: {
   table: Table<T>;
   onBulkDelete?: (rows: T[]) => void;
   onBulkExport?: (rows: T[]) => void;
+  onBulkExportPdf?: (rows: T[]) => void;
   extraActions?: BulkAction[];
 }) {
   const { t } = useTranslation();
@@ -52,6 +54,17 @@ export function DataTableBulkBar<T>({
         >
           <Download className="w-3.5 h-3.5" />
           <span>{t("dataTable.exportCsv")}</span>
+        </button>
+      )}
+
+      {onBulkExportPdf && (
+        <button
+          type="button"
+          className="industrial-btn border-brand-luxury/40 text-brand-luxury"
+          onClick={() => onBulkExportPdf(data)}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>{t("dataTable.exportPdf")}</span>
         </button>
       )}
 

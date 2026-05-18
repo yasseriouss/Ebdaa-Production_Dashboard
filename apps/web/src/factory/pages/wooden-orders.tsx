@@ -17,9 +17,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@factory/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@factory/components/ui/select";
 import { Link } from "wouter";
-import { Search, Pencil, Trash2, ExternalLink, FileSpreadsheet, FileText, SquarePen } from "lucide-react";
+import { Search, Pencil, Trash2, ExternalLink, FileSpreadsheet, FileText, SquarePen, Loader2 } from "lucide-react";
 import { useToast } from "@factory/hooks/use-toast";
 import { WOODEN_ORDER_STATUSES, getWoodenStatusBadgeClass } from "@factory/data/woodenOrderStatuses";
+import { buildOrdersExportQuery, downloadPdfFromApiExport } from "../../lib/pdf";
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
 
@@ -188,6 +189,7 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editOrder, setEditOrder] = useState<WoodenOrder | null>(null);
   const [deleteId, setDeleteId] = useState<string | number | null>(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
   const [tableEditMode, setTableEditMode] = useState(false);
   const [rowDrafts, setRowDrafts] = useState<
     Record<string, { subProject: string; status: string; client: string }>
@@ -206,7 +208,23 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
   });
 
   const excelExportUrl = buildWoodenExportUrl("xlsx", { search, statusFilter, dateFrom, dateTo });
-  const pdfExportUrl = buildWoodenExportUrl("pdf", { search, statusFilter, dateFrom, dateTo });
+
+  const handlePdfExport = async () => {
+    setPdfBusy(true);
+    try {
+      await downloadPdfFromApiExport({
+        endpoint: "/export/wooden-orders",
+        query: buildOrdersExportQuery({ search, statusFilter, dateFrom, dateTo }),
+        title: "أوامر المصنع الخشبي",
+        filename: "wooden-orders",
+      });
+      toast({ title: "تم تصدير PDF" });
+    } catch {
+      toast({ title: "فشل تصدير PDF", variant: "destructive" });
+    } finally {
+      setPdfBusy(false);
+    }
+  };
 
   const WOODEN_STATUS_OPTIONS = [...WOODEN_ORDER_STATUSES];
 
@@ -261,11 +279,14 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
               تصدير Excel
             </a>
           </Button>
-          <Button variant="outline" asChild data-testid="btn-export-wooden-pdf">
-            <a href={pdfExportUrl} download>
-              <FileText className="ml-2 h-4 w-4" />
-              تصدير PDF
-            </a>
+          <Button
+            variant="outline"
+            disabled={pdfBusy}
+            onClick={() => void handlePdfExport()}
+            data-testid="btn-export-wooden-pdf"
+          >
+            {pdfBusy ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileText className="ml-2 h-4 w-4" />}
+            تصدير PDF
           </Button>
         </div>
       </div>
