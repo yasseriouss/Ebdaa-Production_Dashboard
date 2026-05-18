@@ -1,7 +1,8 @@
 import { expect, test } from "@playwright/test";
+import { gotoApp } from "./helpers";
 
 test("language toggle changes sidebar label on classic dashboard", async ({ page }) => {
-  await page.goto("/");
+  await gotoApp(page, "/");
   const toggle = page.getByRole("button", { name: /switch language direction/i }).first();
   if ((await toggle.count()) === 0) {
     test.skip(true, "language toggle not found in header");

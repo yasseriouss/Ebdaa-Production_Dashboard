@@ -1,18 +1,34 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:5173";
+const packageDir = path.dirname(fileURLToPath(import.meta.url));
+const viteCli = path.resolve(packageDir, "node_modules/vite/bin/vite.js");
+
+/** CI runs `build` first; preview is faster and more stable than dev for E2E. */
+const usePreview = !!process.env.CI || process.env.PLAYWRIGHT_USE_PREVIEW === "1";
+const port = usePreview ? 4173 : 5173;
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
+
+const viteEntry = viteCli.replace(/\\/g, "/");
+const webServerCommand = usePreview
+  ? `node ${viteEntry} preview --host 127.0.0.1 --port ${port} --strictPort`
+  : `node ${viteEntry} --host 127.0.0.1 --port ${port} --strictPort`;
 
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers: 1,
+  timeout: 60_000,
+  expect: { timeout: 20_000 },
   reporter: [["list"], ["html", { open: "never" }]],
   use: {
     baseURL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    navigationTimeout: 60_000,
   },
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
@@ -20,9 +36,9 @@ export default defineConfig({
   webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER
     ? undefined
     : {
-        command: "pnpm run dev --host 127.0.0.1 --port 5173",
+        command: webServerCommand,
         url: baseURL,
         reuseExistingServer: !process.env.CI,
-        timeout: 120_000,
+        timeout: 180_000,
       },
 });
