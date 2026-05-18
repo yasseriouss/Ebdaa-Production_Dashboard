@@ -7,11 +7,11 @@ import { useExecutiveDashboardData } from "../hooks/useExecutiveDashboardData";
 import type { StageSummary, CapacityMachineRow } from "@workspace/api-client-react";
 import { PieBulletLegend } from "@factory/components/PieBulletLegend";
 import { LoadPressureCard } from "@factory/components/LoadPressureCard";
+import { WorkforceDepartmentChart } from "@factory/components/WorkforceDepartmentChart";
 import { Skeleton } from "@factory/components/ui/skeleton";
 import { Factory, Boxes, AlertTriangle, CheckCircle2, Users } from "lucide-react";
 import { motion } from "framer-motion";
 import { cn } from "@factory/lib/utils";
-import { formatDepartmentDisplayName } from "../../lib/departmentDisplayName";
 import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 import { useDirection } from "../../lib/useDirection";
 import {
@@ -53,14 +53,6 @@ const WOODEN_STATUS_COLORS: Record<string, string> = {
   "Delivered": "oklch(65% 0.15 140)",
   "Production": "oklch(65% 0.15 250)",
 };
-
-const PIE_COLORS = [
-  "oklch(65% 0.15 250)", 
-  "oklch(65% 0.15 140)", 
-  "oklch(75% 0.15 80)", 
-  "oklch(60% 0.15 30)", 
-  "oklch(60% 0.15 280)"
-];
 
 const MF_ID = "MF-001";
 const WF_ID = "WF-001";
@@ -428,17 +420,16 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
         </header>
       ) : null}
 
-      {/* Bento Grid Layout */}
-      <div
-        className={cn(
-          "grid auto-rows-[minmax(160px,auto)] grid-cols-2 md:grid-cols-6 lg:grid-cols-12",
-          embedded ? "gap-4 sm:gap-5" : "gap-8",
-        )}
-      >
-        
-        {/* Major KPI - Metal */}
+      {/* Bento — explicit rows so KPI / backlog / clients do not compete in auto-placement */}
+      <div className={cn("space-y-4 sm:space-y-5", !embedded && "space-y-8")}>
+        <motion.div
+          className={cn(
+            "grid auto-rows-[minmax(160px,auto)] grid-cols-2 md:grid-cols-6 lg:grid-cols-12",
+            embedded ? "gap-4 sm:gap-5" : "gap-8",
+          )}
+        >
         <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-4 row-span-1"
+          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-4"
           title={ft("dashboard.metalOrdersTitle")}
           icon={Factory}
           value={stats?.metalTotalOrders || 0}
@@ -447,7 +438,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
 
         {/* Major KPI - Wooden */}
         <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-4 row-span-1"
+          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-4"
           title={ft("dashboard.woodenOrdersTitle")}
           icon={Boxes}
           value={stats?.woodenTotalOrders || 0}
@@ -456,36 +447,41 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
 
         {/* Highlight KPI - Shared Projects */}
         <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="col-span-2 min-w-0 md:col-span-2 lg:col-span-4 row-span-1 bg-accent/5"
+          className="col-span-2 min-w-0 md:col-span-6 lg:col-span-4 bg-accent/5"
           title={ft("dashboard.sharedProjectsTitle")}
           icon={CheckCircle2}
           value={stats?.sharedProjectsCount || 0}
           subtitle={ft("dashboard.sharedProjectsSubtitle")}
         />
+        </motion.div>
 
-        {/* Overdue Alerts - Metal */}
-        <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-3 row-span-1"
-          title={ft("dashboard.metalBacklogTitle")}
-          icon={AlertTriangle}
-          value={stats?.metalBacklogTotal || 0}
-          subtitle={ft("dashboard.stoppedOrders", { n: stats?.metalOverdueOrders || 0 })}
-        />
+        <motion.div
+          className={cn(
+            "grid auto-rows-[minmax(160px,auto)] grid-cols-2 md:grid-cols-6 lg:grid-cols-12",
+            embedded ? "gap-4 sm:gap-5" : "gap-8",
+          )}
+        >
+          <ExecutiveCard embedded={embedded} rtl={rtl}
+            className="col-span-1 min-w-0 md:col-span-3 lg:col-span-4"
+            title={ft("dashboard.metalBacklogTitle")}
+            icon={AlertTriangle}
+            value={stats?.metalBacklogTotal || 0}
+            subtitle={ft("dashboard.stoppedOrders", { n: stats?.metalOverdueOrders || 0 })}
+          />
 
-        {/* Overdue Alerts - Wooden */}
-        <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-3 row-span-1"
-          title={ft("dashboard.woodenBacklogTitle")}
-          icon={AlertTriangle}
-          value={stats?.woodenBacklogTotal || 0}
-          subtitle={ft("dashboard.stoppedOrders", { n: stats?.woodenOverdueOrders || 0 })}
-        />
+          <ExecutiveCard embedded={embedded} rtl={rtl}
+            className="col-span-1 min-w-0 md:col-span-3 lg:col-span-4"
+            title={ft("dashboard.woodenBacklogTitle")}
+            icon={AlertTriangle}
+            value={stats?.woodenBacklogTotal || 0}
+            subtitle={ft("dashboard.stoppedOrders", { n: stats?.woodenOverdueOrders || 0 })}
+          />
+        </motion.div>
 
-        {/* Clients Analytics - Large Bento Piece */}
-        <motion.div variants={cardMotion} className="col-span-2 md:col-span-6 lg:col-span-6 row-span-2 min-w-0">
+        <motion.div variants={cardMotion} className="min-w-0 w-full">
           {embedded ? (
-            <ExecutiveAnalyticsListPanel title={ft("dashboard.topClientsTitle")} rtl={rtl} className="h-full">
-              <ul className="max-h-[min(52vh,440px)] space-y-3 overflow-y-auto overflow-x-hidden pe-1" role="list">
+            <ExecutiveAnalyticsListPanel title={ft("dashboard.topClientsTitle")} rtl={rtl}>
+              <ul className="space-y-3" role="list">
                 {topClients.length === 0 ? (
                   <li className="py-8 text-center text-sm text-brand-metal">{ft("dashboard.noClients")}</li>
                 ) : (
@@ -514,7 +510,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
                 <h3 className="mb-4 text-xs font-bold uppercase tracking-wider text-muted-foreground sm:mb-6 lg:mb-8">
                   {ft("dashboard.topClientsTitle")}
                 </h3>
-                <div className="w-full min-w-0 max-h-[min(52vh,440px)] overflow-y-auto overflow-x-hidden pe-1 -me-1">
+                <div className="w-full min-w-0">
                   {topClients.length === 0 ? (
                     <p className="py-8 text-center text-sm text-muted-foreground">{ft("dashboard.noClients")}</p>
                   ) : (
@@ -557,8 +553,16 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
             </div>
           )}
         </motion.div>
+
+        <motion.div
+          variants={cardMotion}
+          className={cn(
+            "grid auto-rows-[minmax(160px,auto)] grid-cols-2 md:grid-cols-6 lg:grid-cols-12",
+            embedded ? "gap-4 sm:gap-5" : "gap-8",
+          )}
+        >
         {/* Status Distribution - Metal */}
-        <motion.div variants={cardMotion} className="col-span-2 md:col-span-3 lg:col-span-3 row-span-2 min-w-0 double-bezel-outer">
+        <motion.div variants={cardMotion} className="col-span-2 md:col-span-3 lg:col-span-6 min-w-0 double-bezel-outer">
           <div className="double-bezel-inner h-full p-4 sm:p-6 lg:p-8 min-w-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-6 sm:mb-8">
               {ft("dashboard.metalStatusDistribution")}
@@ -598,7 +602,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
         </motion.div>
 
         {/* Status Distribution - Wooden */}
-        <motion.div variants={cardMotion} className="col-span-2 md:col-span-3 lg:col-span-3 row-span-2 min-w-0 double-bezel-outer">
+        <motion.div variants={cardMotion} className="col-span-2 md:col-span-3 lg:col-span-6 min-w-0 double-bezel-outer">
           <div className="double-bezel-inner h-full p-4 sm:p-6 lg:p-8 min-w-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-6 sm:mb-8">
               {ft("dashboard.woodenStatusDistribution")}
@@ -635,6 +639,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
               </div>
             )}
           </div>
+        </motion.div>
         </motion.div>
       </div>
 
@@ -760,66 +765,47 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
       </motion.div>
       {/* Workforce Widget */}
       {empStats && (
-        <motion.div variants={cardMotion} className="grid gap-8 md:grid-cols-12 pt-8 border-t border-foreground/5">
+        <motion.div
+          variants={cardMotion}
+          className={cn(
+            "flex flex-col pt-8 border-t border-foreground/5",
+            embedded ? "gap-4 sm:gap-5" : "gap-8",
+          )}
+        >
           <ExecutiveCard embedded={embedded} rtl={rtl}
-            className="md:col-span-4"
+            className="w-full min-w-0 shrink-0"
             title={ft("dashboard.workforceTitle")}
             icon={Users}
-            value={empStats.total || 0}
-            valueSuffix={embedded ? ft("dashboard.employeeUnit") : undefined}
-            subtitle={ft("dashboard.departmentsCount", { n: empStats.departments?.length || 0 })}
+            value={
+              <div className="flex w-full flex-wrap items-baseline gap-x-5 gap-y-1">
+                <span className="inline-flex items-baseline">
+                  <span className="text-3xl font-bold tabular-nums text-brand-luxury sm:text-4xl">
+                    {empStats.total || 0}
+                  </span>
+                  {embedded ? (
+                    <span className="ms-2 text-lg font-medium text-brand-metal sm:text-xl">
+                      {ft("dashboard.employeeUnit")}
+                    </span>
+                  ) : null}
+                </span>
+                <span className="inline-flex items-baseline gap-1.5">
+                  <span className="text-3xl font-bold tabular-nums text-[oklch(14%_0.02_50)] sm:text-4xl">
+                    {empStats.departments?.length || 0}
+                  </span>
+                  <span className="text-base font-bold leading-none text-[oklch(14%_0.02_50)] font-arabic">
+                    {ft("dashboard.departmentsWord")}
+                  </span>
+                </span>
+              </div>
+            }
           />
-          <motion.div variants={cardMotion} className="double-bezel-outer md:col-span-8">
-            <div className="double-bezel-inner h-full p-6">
+          <motion.div variants={cardMotion} className="double-bezel-outer w-full min-w-0">
+            <div className="double-bezel-inner h-full min-w-0 p-4 sm:p-6">
               <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-4">
                 {ft("dashboard.workforceDeptChart")}
               </h3>
-              <div className="h-[200px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={(empStats.departments || []).map((d: any, i: number) => ({
-                        name: formatDepartmentDisplayName(
-                          String(d.departmentName || d.departmentId || "—"),
-                          d.departmentId,
-                        ),
-                        value: d.count,
-                        fill: PIE_COLORS[i % PIE_COLORS.length],
-                      }))}
-                      dataKey="value"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={75}
-                      innerRadius={45}
-                      paddingAngle={3}
-                      stroke="none"
-                    >
-                      {(empStats.departments || []).map((_: any, i: number) => (
-                        <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ background: "oklch(99% 0.008 70)", border: "none", borderRadius: "12px", fontSize: "12px" }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-              {(empStats.departments || []).length > 0 && (
-                <div className="mt-4 pt-3 border-t border-foreground/10">
-                  <PieBulletLegend
-                    rtl={rtl}
-                    columns={2}
-                    items={(empStats.departments || []).map((d: { departmentName?: string; departmentId?: string; count?: number }, i: number) => ({
-                      name: formatDepartmentDisplayName(
-                        String(d.departmentName || d.departmentId || "—"),
-                        d.departmentId,
-                      ),
-                      fill: PIE_COLORS[i % PIE_COLORS.length],
-                      value: d.count ?? 0,
-                    }))}
-                  />
-                </div>
-              )}
-              <p className="text-[10px] text-muted-foreground mt-2">{ft("dashboard.workforcePrivacy")}</p>
+              <WorkforceDepartmentChart departments={empStats.departments || []} rtl={rtl} />
+              <p className="text-[10px] text-muted-foreground mt-3">{ft("dashboard.workforcePrivacy")}</p>
             </div>
           </motion.div>
         </motion.div>

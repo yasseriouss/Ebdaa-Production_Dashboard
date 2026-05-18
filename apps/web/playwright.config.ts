@@ -38,7 +38,8 @@ export default defineConfig({
     : {
         command: webServerCommand,
         url: baseURL,
-        reuseExistingServer: !process.env.CI,
+        /** If something already serves `baseURL` (e.g. leftover preview), reuse it; CI still starts when URL is down. */
+        reuseExistingServer: true,
         timeout: 180_000,
       },
 });

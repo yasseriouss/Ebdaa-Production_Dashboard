@@ -499,6 +499,7 @@ export const ROLE_PRESETS: {
     permissionKeys: [
       "dashboard:view",
       "dashboard:widgets",
+      "production:hub:view",
       "orders:wood:view",
       "orders:wood:write",
       "orders:metal:view",
@@ -543,6 +544,7 @@ export const ROLE_PRESETS: {
     labelEn: "Operator",
     permissionKeys: [
       "dashboard:view",
+      "production:hub:view",
       "orders:wood:view",
       "orders:wood:write",
       "orders:metal:view",

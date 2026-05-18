@@ -1,9 +1,10 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@factory/lib/utils";
 import { Factory, Boxes, Layers, Plus } from "lucide-react";
 import { Button } from "@factory/components/ui/button";
 import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
+import { useProductionHubUrlState } from "../hooks/useProductionHubUrlState";
 
 import MetalOrders, { type MetalOrdersHandle } from "./metal-orders";
 import MetalProduction from "./metal-production";
@@ -14,7 +15,6 @@ import SharedProjects from "./shared-projects";
 const executiveTransition = { type: "spring" as const, damping: 30, stiffness: 200, mass: 1 };
 
 type Tab = "wood" | "metal" | "both";
-type SubTab = "orders" | "production";
 
 const TAB_DEF: { id: Tab; labelKey: string; icon: typeof Factory }[] = [
   { id: "wood", labelKey: "productionHub.tabWood", icon: Boxes },
@@ -24,8 +24,7 @@ const TAB_DEF: { id: Tab; labelKey: string; icon: typeof Factory }[] = [
 
 export default function ProductionHub() {
   const { ft } = useFactoryTranslation();
-  const [tab, setTab] = useState<Tab>("wood");
-  const [subTab, setSubTab] = useState<SubTab>("orders");
+  const { tab, subTab, setTab, setSubTab } = useProductionHubUrlState();
   const woodenOrdersRef = useRef<WoodenOrdersHandle>(null);
   const metalOrdersRef = useRef<MetalOrdersHandle>(null);
 
@@ -51,7 +50,7 @@ export default function ProductionHub() {
           <button
             key={tabDef.id}
             type="button"
-            onClick={() => { setTab(tabDef.id); if (tabDef.id === "both") setSubTab("orders"); }}
+            onClick={() => setTab(tabDef.id)}
             className={cn(
               "flex items-center gap-2.5 px-4 sm:px-6 py-2.5 sm:py-3 rounded-2xl text-xs sm:text-sm font-bold transition-all duration-300",
               tab === tabDef.id ? "bg-accent text-white shadow-lg shadow-accent/20" : "bg-foreground/5 text-foreground hover:bg-foreground/10"

@@ -5,7 +5,11 @@ import { createClient } from "@libsql/client";
 import { drizzle } from "drizzle-orm/libsql";
 import * as schema from "./schema";
 import { getLibsqlUrl } from "./libsql-url";
-import { isAlreadyExistsMigrationError, stampMigrationsIfEmpty } from "./migrationRepair";
+import {
+  ensureFhWoodWorkOrdersScopeColumns,
+  isAlreadyExistsMigrationError,
+  stampMigrationsIfEmpty,
+} from "./migrationRepair";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,6 +21,7 @@ async function runMigrate() {
   const db = drizzle(client, { schema });
 
   let stamped = await stampMigrationsIfEmpty(client);
+  await ensureFhWoodWorkOrdersScopeColumns(client);
 
   const apply = async () => {
     await migrate(db, { migrationsFolder: migrationsPath });

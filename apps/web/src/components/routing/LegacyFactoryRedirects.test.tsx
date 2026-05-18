@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { ORDERS_METAL_LIST_REDIRECT, ORDERS_WOOD_LIST_REDIRECT } from "../../lib/canonicalRoutes";
 
 /** Mirrors LegacyFactoryRedirects target paths for regression tests. */
 export function legacyRedirectTarget(pathname: string): string | null {
-  if (pathname === "/metal/orders") return "/orders/metal";
+  if (pathname === "/metal/orders") return ORDERS_METAL_LIST_REDIRECT;
   const metalDetail = /^\/metal\/orders\/(.+)$/.exec(pathname);
   if (metalDetail) return `/orders/metal/${metalDetail[1]}`;
-  if (pathname === "/wooden/orders") return "/orders/wood";
+  if (pathname === "/wooden/orders") return ORDERS_WOOD_LIST_REDIRECT;
   const woodDetail = /^\/wooden\/orders\/(.+)$/.exec(pathname);
   if (woodDetail) return `/orders/wood/${woodDetail[1]}`;
   if (pathname === "/projects") return "/projects/hub";
@@ -16,9 +17,9 @@ export function legacyRedirectTarget(pathname: string): string | null {
 
 describe("legacy factory URL redirects", () => {
   it("maps metal and wood order list and detail paths", () => {
-    expect(legacyRedirectTarget("/metal/orders")).toBe("/orders/metal");
+    expect(legacyRedirectTarget("/metal/orders")).toBe(ORDERS_METAL_LIST_REDIRECT);
     expect(legacyRedirectTarget("/metal/orders/abc-1")).toBe("/orders/metal/abc-1");
-    expect(legacyRedirectTarget("/wooden/orders")).toBe("/orders/wood");
+    expect(legacyRedirectTarget("/wooden/orders")).toBe(ORDERS_WOOD_LIST_REDIRECT);
     expect(legacyRedirectTarget("/wooden/orders/wo-9")).toBe("/orders/wood/wo-9");
   });
 

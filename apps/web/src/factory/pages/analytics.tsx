@@ -17,6 +17,7 @@ import {
   Pie,
   Cell,
 } from "recharts";
+import { DashboardOperationalAnalytics } from "../../components/DashboardOperationalAnalytics";
 
 const PIE_TOOLTIP_STYLE = {
   background: "oklch(99% 0.008 70)",
@@ -112,6 +113,8 @@ export default function Analytics() {
       lang="ar"
     >
       <h1 className="text-3xl font-bold tracking-tight text-start">الإحصائيات والتحليلات</h1>
+
+      <DashboardOperationalAnalytics />
 
       {/* KPI summary row */}
       <div className="grid gap-4 md:grid-cols-4">

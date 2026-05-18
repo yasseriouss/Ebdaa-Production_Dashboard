@@ -1,16 +1,18 @@
 import { expect, test } from "@playwright/test";
+import { gotoApp } from "./helpers";
 
-test("redirects /wooden/orders to /orders/wood", async ({ page }) => {
-  await page.goto("/wooden/orders");
-  await expect(page).toHaveURL(/\/orders\/wood\/?$/);
+test("redirects /wooden/orders to production hub (wood orders)", async ({ page }) => {
+  await gotoApp(page, "/wooden/orders");
+  await expect(page).toHaveURL(/\/production/);
 });
 
-test("redirects /metal/orders to /orders/metal", async ({ page }) => {
-  await page.goto("/metal/orders");
-  await expect(page).toHaveURL(/\/orders\/metal\/?$/);
+test("redirects /metal/orders to production hub (metal orders)", async ({ page }) => {
+  await gotoApp(page, "/metal/orders");
+  await expect(page).toHaveURL(/\/production/);
+  await expect(page).toHaveURL(/factory=metal/);
 });
 
 test("redirects /projects to /projects/hub", async ({ page }) => {
-  await page.goto("/projects");
+  await gotoApp(page, "/projects");
   await expect(page).toHaveURL(/\/projects\/hub\/?$/);
 });

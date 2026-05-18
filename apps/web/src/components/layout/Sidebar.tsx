@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   LayoutDashboard,
-  Package,
   ClipboardCheck,
   Layers,
   Calendar,
@@ -61,16 +60,6 @@ const NAV_DEF: NavEntry[] = [
     labelKey: "nav.productionHub",
     href: "/production",
     icon: Factory,
-  },
-  {
-    kind: "group",
-    id: "productionOrders",
-    labelKey: "nav.groups.productionOrders",
-    icon: Package,
-    children: [
-      { id: "om", labelKey: "nav.metalFactory", href: "/orders/metal", icon: Cpu },
-      { id: "ow", labelKey: "nav.woodFactory", href: "/orders/wood", icon: Trees },
-    ],
   },
   { kind: "leaf", id: "departments", labelKey: "nav.departments", href: "/departments", icon: Building2 },
   {
@@ -237,7 +226,6 @@ export function Sidebar() {
   const [location] = useLocation();
   const { loading, unrestricted, keys } = usePermissions();
   const [expandedItems, setExpandedItems] = useState<string[]>([
-    "productionOrders",
     "dailyProduction",
     "projects",
     "analytics",

@@ -6,8 +6,6 @@ const SIDEBAR_HREFS = [
   "/",
   "/dashboard/factory",
   "/production",
-  "/orders/metal",
-  "/orders/wood",
   "/departments",
   "/daily/metal",
   "/daily/wood",
