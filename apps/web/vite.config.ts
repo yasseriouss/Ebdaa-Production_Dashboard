@@ -15,6 +15,19 @@ export default defineConfig({
     commonjsOptions: {
       transformMixedEsModules: true,
     },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes("node_modules")) return;
+          if (id.includes("recharts")) return "recharts";
+          if (id.includes("@react-pdf")) return "react-pdf";
+          if (id.includes("/xlsx/") || id.includes("\\xlsx\\")) return "xlsx";
+          if (id.includes("mermaid")) return "mermaid";
+          if (id.includes("framer-motion")) return "framer-motion";
+          if (id.includes("@workspace/api-client-react")) return "api-client";
+        },
+      },
+    },
   },
   resolve: {
     alias: {

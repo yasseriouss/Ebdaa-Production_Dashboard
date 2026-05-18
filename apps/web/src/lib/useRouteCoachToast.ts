@@ -3,6 +3,7 @@ import { useLocation } from "wouter";
 import { useToast } from "../components/ui/Toast";
 import { useTranslation } from "../context/I18nContext";
 import { coachingMatch } from "./coachingHints";
+import { pushNewsTickerEvent } from "./newsTickerFeed";
 
 /** One-shot route coaching toast per path per session (same as legacy RouteCoach). */
 export function useRouteCoachToast() {
@@ -20,6 +21,12 @@ export function useRouteCoachToast() {
     const msg = t(hint.toastKey);
     if (msg && msg !== hint.toastKey) {
       toast.push({ kind: "info", message: msg, durationMs: 6500 });
+      pushNewsTickerEvent({
+        id: `coach-toast-${hint.pathPrefix}`,
+        text: msg,
+        href: hint.pathPrefix,
+        occurredAt: Date.now(),
+      });
     }
   }, [hint, toast, toastStorageKey, t]);
 }

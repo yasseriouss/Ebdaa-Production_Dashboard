@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Executive = artifacts/factory-app (warm light, RTL-first). Industrial = dark factory floor. */
+/* Executive = warm light RTL-first (src/factory). Industrial = dark factory floor. */
 html[data-theme="executive"] {
   --theme-brand-black: oklch(96.5% 0.019 70);
   --theme-brand-elevated: oklch(99% 0.008 70);
@@ -209,6 +209,11 @@ html[data-theme="executive"] .stat-card {
 
 .news-ticker-track {
   animation: news-ticker-scroll var(--news-ticker-duration, 56s) linear infinite;
+  will-change: transform;
+}
+
+.news-ticker[dir="rtl"] .news-ticker-track {
+  animation-name: news-ticker-scroll-rtl;
 }
 
 @keyframes news-ticker-scroll {
@@ -220,12 +225,21 @@ html[data-theme="executive"] .stat-card {
   }
 }
 
+@keyframes news-ticker-scroll-rtl {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(50%, 0, 0);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .news-ticker-track {
     animation: none;
   }
 
   .news-ticker-viewport {
-    overflow: hidden;
+    overflow-x: auto;
   }
 }

@@ -431,14 +431,14 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
       {/* Bento Grid Layout */}
       <div
         className={cn(
-          "grid auto-rows-[minmax(160px,auto)] md:grid-cols-6 lg:grid-cols-12",
+          "grid auto-rows-[minmax(160px,auto)] grid-cols-2 md:grid-cols-6 lg:grid-cols-12",
           embedded ? "gap-4 sm:gap-5" : "gap-8",
         )}
       >
         
         {/* Major KPI - Metal */}
         <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="md:col-span-3 lg:col-span-4 row-span-1"
+          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-4 row-span-1"
           title={ft("dashboard.metalOrdersTitle")}
           icon={Factory}
           value={stats?.metalTotalOrders || 0}
@@ -447,7 +447,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
 
         {/* Major KPI - Wooden */}
         <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="md:col-span-3 lg:col-span-4 row-span-1"
+          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-4 row-span-1"
           title={ft("dashboard.woodenOrdersTitle")}
           icon={Boxes}
           value={stats?.woodenTotalOrders || 0}
@@ -456,7 +456,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
 
         {/* Highlight KPI - Shared Projects */}
         <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="md:col-span-2 lg:col-span-4 row-span-1 bg-accent/5"
+          className="col-span-2 min-w-0 md:col-span-2 lg:col-span-4 row-span-1 bg-accent/5"
           title={ft("dashboard.sharedProjectsTitle")}
           icon={CheckCircle2}
           value={stats?.sharedProjectsCount || 0}
@@ -465,7 +465,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
 
         {/* Overdue Alerts - Metal */}
         <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="md:col-span-3 lg:col-span-3 row-span-1"
+          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-3 row-span-1"
           title={ft("dashboard.metalBacklogTitle")}
           icon={AlertTriangle}
           value={stats?.metalBacklogTotal || 0}
@@ -474,7 +474,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
 
         {/* Overdue Alerts - Wooden */}
         <ExecutiveCard embedded={embedded} rtl={rtl}
-          className="md:col-span-3 lg:col-span-3 row-span-1"
+          className="col-span-1 min-w-0 md:col-span-3 lg:col-span-3 row-span-1"
           title={ft("dashboard.woodenBacklogTitle")}
           icon={AlertTriangle}
           value={stats?.woodenBacklogTotal || 0}
@@ -482,7 +482,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
         />
 
         {/* Clients Analytics - Large Bento Piece */}
-        <motion.div variants={cardMotion} className="md:col-span-6 lg:col-span-6 row-span-2 min-w-0">
+        <motion.div variants={cardMotion} className="col-span-2 md:col-span-6 lg:col-span-6 row-span-2 min-w-0">
           {embedded ? (
             <ExecutiveAnalyticsListPanel title={ft("dashboard.topClientsTitle")} rtl={rtl} className="h-full">
               <ul className="max-h-[min(52vh,440px)] space-y-3 overflow-y-auto overflow-x-hidden pe-1" role="list">
@@ -558,7 +558,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
           )}
         </motion.div>
         {/* Status Distribution - Metal */}
-        <motion.div variants={cardMotion} className="double-bezel-outer md:col-span-3 lg:col-span-3 row-span-2 min-w-0">
+        <motion.div variants={cardMotion} className="col-span-2 md:col-span-3 lg:col-span-3 row-span-2 min-w-0 double-bezel-outer">
           <div className="double-bezel-inner h-full p-4 sm:p-6 lg:p-8 min-w-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-6 sm:mb-8">
               {ft("dashboard.metalStatusDistribution")}
@@ -598,7 +598,7 @@ export default function Dashboard({ embedded = false }: FactoryDashboardProps) {
         </motion.div>
 
         {/* Status Distribution - Wooden */}
-        <motion.div variants={cardMotion} className="double-bezel-outer md:col-span-3 lg:col-span-3 row-span-2 min-w-0">
+        <motion.div variants={cardMotion} className="col-span-2 md:col-span-3 lg:col-span-3 row-span-2 min-w-0 double-bezel-outer">
           <div className="double-bezel-inner h-full p-4 sm:p-6 lg:p-8 min-w-0">
             <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-6 sm:mb-8">
               {ft("dashboard.woodenStatusDistribution")}

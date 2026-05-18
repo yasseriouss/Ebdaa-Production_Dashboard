@@ -1,4 +1,3 @@
-import * as XLSX from "xlsx";
 import type { FactoryId } from "../../data/types";
 import type { AnalysisLineItem, AnalysisPart, WorkOrderAnalysisSession } from "./types";
 import { uid } from "../../data/projectDraft";
@@ -67,6 +66,7 @@ export async function extractFromSpreadsheet(file: File, factoryHint: FactoryId)
   hints: string;
   preview: string[][];
 }> {
+  const XLSX = await import("xlsx");
   const buf = await file.arrayBuffer();
   const wb = XLSX.read(buf, { type: "array" });
   const sheet = wb.Sheets[wb.SheetNames[0]];

@@ -1,5 +1,4 @@
 import React from "react";
-import { BookOpen } from "lucide-react";
 import {
   AnimatePresence,
   MotionConfig,
@@ -113,16 +112,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             className="shrink-0 border-t border-brand-border px-4 py-4 sm:px-6 md:px-8 lg:px-10 max-w-[1680px] mx-auto w-full bg-brand-black/90 backdrop-blur-sm flex flex-wrap items-center justify-center gap-x-4 gap-y-2"
             role="contentinfo"
           >
-            <Link
-              href="/about-system"
-              className={cn(
-                "industrial-btn py-2 px-4 text-[11px] no-underline justify-center",
-                rtl ? "font-arabic normal-case tracking-normal" : "uppercase tracking-wider",
-              )}
-            >
-              <BookOpen className="w-3.5 h-3.5" />
-              {t("layout.footerAbout")}
-            </Link>
             <p
               className={cn(
                 "text-[10px] sm:text-[11px] text-brand-metal leading-relaxed text-center max-w-xl",

@@ -1,11 +1,23 @@
-import { useMemo } from "react";
+import { useLayoutEffect, useRef, useSyncExternalStore } from "react";
 import { Link } from "wouter";
 import { cn } from "../../lib/cn";
 import { buildNewsTickerItems } from "../../lib/newsTickerItems";
+import {
+  getNewsTickerEvent,
+  getNewsTickerFeedSorted,
+  pushNewsTickerEvent,
+  seedNewsTickerEvents,
+  subscribeNewsTickerFeed,
+  type NewsTickerFeedItem,
+} from "../../lib/newsTickerFeed";
 import { useRouteCoachToast } from "../../lib/useRouteCoachToast";
 import { useWoodBottleneckStage } from "../../lib/useWoodBottleneckStage";
 import { useTranslation } from "../../context/I18nContext";
 import { useDirection } from "../../lib/useDirection";
+
+function useNewsTickerFeedItems(): NewsTickerFeedItem[] {
+  return useSyncExternalStore(subscribeNewsTickerFeed, getNewsTickerFeedSorted, getNewsTickerFeedSorted);
+}
 
 function TickerChip({
   item,
@@ -39,24 +51,58 @@ function TickerChip({
   return <span className={className}>{content}</span>;
 }
 
+function TickerSegment({
+  items,
+  rtl,
+  segmentKey,
+  hidden,
+}: {
+  items: NewsTickerFeedItem[];
+  rtl: boolean;
+  segmentKey: string;
+  hidden?: boolean;
+}) {
+  return (
+    <div
+      className="news-ticker-segment flex shrink-0 items-center gap-5 px-2"
+      aria-hidden={hidden || undefined}
+    >
+      {items.map((item, index) => (
+        <TickerChip key={`${segmentKey}-${item.id}-${index}`} item={item} rtl={rtl} />
+      ))}
+    </div>
+  );
+}
+
 export function SystemNewsTicker() {
   const { t } = useTranslation();
   const { direction } = useDirection();
   const rtl = direction === "rtl";
   const bottleneckStage = useWoodBottleneckStage();
+  const items = useNewsTickerFeedItems();
+  const prevBottleneckRef = useRef(bottleneckStage);
 
   useRouteCoachToast();
 
-  const items = useMemo(
-    () => buildNewsTickerItems(t, bottleneckStage),
-    [t, bottleneckStage],
-  );
+  useLayoutEffect(() => {
+    const built = buildNewsTickerItems(t, bottleneckStage);
+    const staticItems = built.filter((item) => item.id !== "bottleneck");
+    seedNewsTickerEvents(staticItems);
+    const bottleneck = built.find((item) => item.id === "bottleneck");
+    if (bottleneck) {
+      const stageChanged = prevBottleneckRef.current !== bottleneckStage;
+      const existing = getNewsTickerEvent("bottleneck");
+      pushNewsTickerEvent({
+        ...bottleneck,
+        occurredAt: stageChanged ? Date.now() : (existing?.occurredAt ?? Date.now()),
+      });
+      prevBottleneckRef.current = bottleneckStage;
+    }
+  }, [t, bottleneckStage]);
 
   const durationSec = Math.max(48, items.length * 9);
 
   if (items.length === 0) return null;
-
-  const loopItems = [...items, ...items];
 
   return (
     <div
@@ -84,13 +130,11 @@ export function SystemNewsTicker() {
           aria-live="polite"
         >
           <div
-            className="news-ticker-track flex w-max items-center gap-5 px-2 will-change-transform"
-            dir="ltr"
+            className="news-ticker-track flex w-max will-change-transform"
             style={{ ["--news-ticker-duration" as string]: `${durationSec}s` }}
           >
-            {loopItems.map((item, index) => (
-              <TickerChip key={`${item.id}-${index}`} item={item} rtl={rtl} />
-            ))}
+            <TickerSegment items={items} rtl={rtl} segmentKey="a" />
+            <TickerSegment items={items} rtl={rtl} segmentKey="b" hidden />
           </div>
         </div>
       </div>

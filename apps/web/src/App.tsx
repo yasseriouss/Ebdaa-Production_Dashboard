@@ -2,25 +2,27 @@ import { Redirect, Route, Switch } from "wouter";
 import { BrandLogo } from "./components/brand/BrandLogo";
 import { Layout } from "./components/layout/Layout";
 import { LegacyFactoryRedirects } from "./components/routing/LegacyFactoryRedirects";
-import { RequirePermission } from "./components/routing/RequirePermission";
 import { ToastProvider } from "./components/ui/Toast";
 import { useTranslation } from "./context/I18nContext";
 import { guardedRoute } from "./lib/guardedRoute";
-import Dashboard from "./pages/Dashboard";
-import ProjectAnalytics from "./pages/ProjectAnalytics";
-import NewProject from "./pages/NewProject";
-import WorkOrderAnalysis from "./pages/WorkOrderAnalysis";
-import DailyProduction from "./pages/DailyProduction";
-import AboutSystem from "./pages/AboutSystem";
-import WorkflowRoutingMapPage from "./pages/WorkflowRoutingMap";
-import EquipmentRegistry from "./pages/EquipmentRegistry";
-import PermissionsAdmin from "./pages/PermissionsAdmin";
-import Login from "./pages/Login";
-import Departments from "./pages/Departments";
-import AuditLog from "./pages/AuditLog";
-import PerformanceDepartments from "./pages/PerformanceDepartments";
-import PerformancePeople from "./pages/PerformancePeople";
-import DevToolsMap from "./pages/DevToolsMap";
+import {
+  AboutSystemPage,
+  AuditLogPage,
+  DailyMetalPage,
+  DailyWoodPage,
+  DashboardPage,
+  DepartmentsPage,
+  DevToolsMapPage,
+  EquipmentRegistryPage,
+  LoginPage,
+  NewProjectPage,
+  PerformanceDepartmentsPage,
+  PerformancePeoplePage,
+  PermissionsAdminPage,
+  ProjectAnalyticsPage,
+  WorkOrderAnalysisPage,
+  WorkflowRoutingMapRoute,
+} from "./pages/AppPages";
 import {
   AnalyticsPage,
   ImportExportPage,
@@ -38,22 +40,6 @@ import {
 
 const G = guardedRoute;
 
-function DailyMetalPage() {
-  return (
-    <RequirePermission path="/daily/metal">
-      <DailyProduction factory="metal" />
-    </RequirePermission>
-  );
-}
-
-function DailyWoodPage() {
-  return (
-    <RequirePermission path="/daily/wood">
-      <DailyProduction factory="wood" />
-    </RequirePermission>
-  );
-}
-
 function NotFoundPage() {
   const { t } = useTranslation();
   return (
@@ -70,15 +56,15 @@ function App() {
       <Layout>
         <LegacyFactoryRedirects />
         <Switch>
-          <Route path="/" component={G("/", Dashboard)} />
+          <Route path="/" component={DashboardPage} />
           <Route path="/dashboard/classic">
             <Redirect to="/" />
           </Route>
-          <Route path="/login" component={Login} />
-          <Route path="/departments" component={G("/departments", Departments)} />
-          <Route path="/audit-log" component={G("/audit-log", AuditLog)} />
-          <Route path="/performance/departments" component={G("/performance/departments", PerformanceDepartments)} />
-          <Route path="/performance/people" component={G("/performance/people", PerformancePeople)} />
+          <Route path="/login" component={LoginPage} />
+          <Route path="/departments" component={DepartmentsPage} />
+          <Route path="/audit-log" component={AuditLogPage} />
+          <Route path="/performance/departments" component={PerformanceDepartmentsPage} />
+          <Route path="/performance/people" component={PerformancePeoplePage} />
 
           <Route path="/production" component={G("/production", ProductionHubPage)} />
 
@@ -92,25 +78,25 @@ function App() {
 
           <Route path="/projects/joint" component={G("/projects/joint", SharedProjectsPage)} />
           <Route path="/projects/hub" component={G("/projects/hub", ProjectsHubPage)} />
-          <Route path="/projects/new" component={G("/projects/new", NewProject)} />
-          <Route path="/projects/work-order-analysis" component={G("/projects/work-order-analysis", WorkOrderAnalysis)} />
+          <Route path="/projects/new" component={NewProjectPage} />
+          <Route path="/projects/work-order-analysis" component={WorkOrderAnalysisPage} />
 
           <Route path="/workforce" component={G("/workforce", WorkforcePage)} />
           <Route path="/import-export" component={G("/import-export", ImportExportPage)} />
 
           <Route path="/planning" component={G("/planning", PlanningPage)} />
-          <Route path="/about-system" component={G("/about-system", AboutSystem)} />
-          <Route path="/workflow-routing" component={G("/workflow-routing", WorkflowRoutingMapPage)} />
-          <Route path="/equipment" component={G("/equipment", EquipmentRegistry)} />
+          <Route path="/about-system" component={AboutSystemPage} />
+          <Route path="/workflow-routing" component={WorkflowRoutingMapRoute} />
+          <Route path="/equipment" component={EquipmentRegistryPage} />
 
           <Route path="/analytics" component={G("/analytics", AnalyticsPage)} />
           <Route path="/analytics/wood" component={G("/analytics/wood", AnalyticsPage)} />
           <Route path="/analytics/metal" component={G("/analytics/metal", AnalyticsPage)} />
-          <Route path="/project-analytics" component={G("/project-analytics", ProjectAnalytics)} />
+          <Route path="/project-analytics" component={ProjectAnalyticsPage} />
 
-          <Route path="/admin/permissions" component={G("/admin/permissions", PermissionsAdmin)} />
+          <Route path="/admin/permissions" component={PermissionsAdminPage} />
 
-          <Route path="/dev/tools" component={G("/dev/tools", DevToolsMap)} />
+          <Route path="/dev/tools" component={DevToolsMapPage} />
           <Route path="/dev/project-atlas" component={G("/dev/project-atlas", ProjectAtlasPage)} />
 
           <Route component={NotFoundPage} />

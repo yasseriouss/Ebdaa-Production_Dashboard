@@ -1,5 +1,3 @@
-import * as XLSX from "xlsx";
-
 export type ParsedSheetTable = {
   headers: string[];
   rows: string[][];
@@ -12,7 +10,8 @@ function cellToString(value: unknown): string {
 }
 
 /** Reads the first worksheet; row 0 = Arabic headers, data from row 2+ (skips English key row). */
-export function parseFirstSheetFromXlsx(buffer: ArrayBuffer): ParsedSheetTable {
+export async function parseFirstSheetFromXlsx(buffer: ArrayBuffer): Promise<ParsedSheetTable> {
+  const XLSX = await import("xlsx");
   const wb = XLSX.read(buffer, { type: "array" });
   const sheetName = wb.SheetNames[0];
   if (!sheetName) return { headers: [], rows: [] };

@@ -23,7 +23,7 @@ export async function downloadPdfFromApiExport(options: ApiPdfExportOptions): Pr
   }
 
   const buffer = await res.arrayBuffer();
-  const table = trimTableForPdf(parseFirstSheetFromXlsx(buffer), options.maxColumns ?? 12);
+  const table = trimTableForPdf(await parseFirstSheetFromXlsx(buffer), options.maxColumns ?? 12);
 
   if (!table.headers.length) {
     throw new Error("No export data");

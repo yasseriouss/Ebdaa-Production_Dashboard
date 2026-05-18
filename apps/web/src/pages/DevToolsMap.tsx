@@ -50,7 +50,7 @@ const API_TRY: ApiLink[] = [
 const REPO_ROOTS = [
   { path: "apps/web", ar: "هذه الواجهة (Vite + React)" },
   { path: "artifacts/api-server", ar: "خادم Express / REST" },
-  { path: "artifacts/factory-app", ar: "واجهة مصنع بديلة" },
+  { path: "apps/web/src/factory", ar: "شاشات المصنع (مدمجة)" },
   { path: "lib/db", ar: "Drizzle + مخطط + ترحيلات" },
   { path: "lib/api-spec/openapi.yaml", ar: "عقد OpenAPI" },
   { path: "lib/api-zod", ar: "مخططات Zod مُولَّدة" },
@@ -64,7 +64,6 @@ const REPO_ROOTS = [
 const PNPM_HINTS = [
   "pnpm --filter @workspace/api-server dev  (مع PORT=8787)",
   "pnpm --filter web dev",
-  "pnpm --filter @workspace/factory-app dev",
   "pnpm --filter @workspace/db run migrate",
   "pnpm --filter @workspace/db run rebuild-snapshots",
   "pnpm --filter @workspace/api-spec run codegen",

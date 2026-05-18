@@ -1,12 +1,15 @@
-import { pdf } from "@react-pdf/renderer";
-import { ensurePdfFonts } from "./fonts";
-import { TableReportDocument, type TableReportProps } from "./TableReportDocument";
+import type { TableReportProps } from "./TableReportDocument";
 
 export type DownloadTablePdfOptions = TableReportProps & {
   filename: string;
 };
 
 export async function downloadTablePdf(options: DownloadTablePdfOptions): Promise<void> {
+  const [{ pdf }, { ensurePdfFonts }, { TableReportDocument }] = await Promise.all([
+    import("@react-pdf/renderer"),
+    import("./fonts"),
+    import("./TableReportDocument"),
+  ]);
   ensurePdfFonts();
   const { filename, ...docProps } = options;
   const blob = await pdf(<TableReportDocument {...docProps} />).toBlob();

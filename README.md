@@ -1,22 +1,82 @@
-# مصنع البيانات — نظام إبداع (ENCID Factory Data Hub)
+# مصنع البيانات — ENCID Factory Data Hub
 
-مستودع **pnpm workspaces** لإدارة مصنعين (معدني وخشبي): أوامر عمل، مراحل إنتاج، مشاريع مشتركة، تخطيط، تحليلات، واستيراد/تصدير. الواجهة **RTL** بالعربية مع دعم مصطلحات إنجليزية حيث يلزم في الكود.
+مستودع **pnpm workspaces** لإدارة مصنعين (معدني وخشبي): أوامر عمل، مراحل إنتاج، مشاريع مشتركة، تخطيط، تحليلات، واستيراد/تصدير. الواجهة **RTL** بالعربية مع دعم الإنجليزية عبر نظام i18n مخصّص.
 
 ## البنية السريعة
 
 | المكوّن | المسار | الوصف |
 |--------|--------|--------|
-| **واجهة الإنتاج الموحّدة** | `apps/web` | React 19 + Vite + Wouter + i18n/RTL (يشمل شاشات `factory-app` المدمجة تحت `src/factory`) |
-| واجهة legacy (مهملة) | `artifacts/factory-app` | نُقلت ميزاتها إلى `apps/web` — لا تُستخدم للإنتاج |
-| الـ API | `artifacts/api-server` | Express 5، طبقة controllers ← services، اتصال عبر `@workspace/db` |
-| قاعدة البيانات | `lib/db` | **Drizzle ORM** + **SQLite عبر LibSQL** (`@libsql/client`) |
-| العقد API | `lib/api-spec`، `lib/api-zod`، `lib/api-client-react` | OpenAPI + Zod + React Query (Orval) |
+| **واجهة الإنتاج** | `apps/web` | React 19 + Vite 8 + Wouter + TanStack Query + Tailwind v4 |
+| **شاشات المصنع** | `apps/web/src/factory` | لوحة تنفيذية، أوامر، إنتاج، مشاريع — داخل `FactorySurface` (shadcn/Radix) |
+| **الـ API** | `artifacts/api-server` | Express 5، controllers ← services، Drizzle عبر `@workspace/db` |
+| **قاعدة البيانات** | `lib/db` | **Drizzle ORM** + **SQLite عبر LibSQL** (`@libsql/client`) |
+| **عقد API** | `lib/api-spec`، `lib/api-zod`، `lib/api-client-react` | OpenAPI + Zod + React Query (Orval) |
+| **سكربتات** | `scripts` | ETL من Postgres → LibSQL عند الحاجة |
 
-تفاصيل أعمق: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) و [docs/DATABASE.md](docs/DATABASE.md).
+تفاصيل أعمق: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) و [docs/DATABASE.md](docs/DATABASE.md).  
+مصفوفة دمج المسارات: [docs/FACTORY_WEB_MERGE_PARITY.md](docs/FACTORY_WEB_MERGE_PARITY.md).
+
+## التقنيات المستخدمة (ملخّص)
+
+### أدوات المستودع
+
+- **pnpm workspaces** · **TypeScript** · **Prettier** · **tsx** · **esbuild** (بناء API)
+- **GitHub Actions** — CI: build + Vitest + Playwright ([`.github/workflows/web.yml`](.github/workflows/web.yml))
+
+### الواجهة (`apps/web`)
+
+| الفئة | التقنيات |
+|--------|-----------|
+| أساس | React 19، Vite 8، Wouter |
+| بيانات | TanStack React Query v5، `@workspace/api-client-react` (Orval) |
+| UI | Tailwind CSS v4، Radix UI، shadcn/ui (نمط)، CVA، Lucide |
+| رسوم / حركة | Recharts، Framer Motion، Mermaid |
+| نماذج / تحقق | React Hook Form، Zod |
+| i18n | `I18nContext` + `DirectionContext` (عربي/إنجليزي، RTL/LTR) |
+| ثيم | سمتان: تنفيذية (فاتح) / صناعية (داكن) — `data-theme` + OKLCH |
+| اختبارات | Vitest، Testing Library، Playwright |
+
+### الخلفية (`artifacts/api-server`)
+
+Express 5 · Drizzle ORM · Zod · LibSQL · **jose** (JWT) · Pino · Multer · pdfkit/pdf-lib · xlsx
+
+### قاعدة البيانات
+
+SQLite (LibSQL) · Drizzle Kit (generate / push / migrate) · drizzle-zod
+
+### عقود API
+
+OpenAPI 3 → **Orval** → hooks React Query + مخططات Zod
+
+### حزم جانبية (ليست الواجهة الرئيسية)
+
+| المسار | ملاحظة |
+|--------|--------|
+| `artifacts/factory-app` | **مهمل** — دُمج في `apps/web/src/factory` |
+| `artifacts/ebdaa-slides` | عروض React + Vite |
+| `Data/off/factory-wood-dashboard` | Next.js 16 (تجريبي/منفصل) |
+
+## لوحة التحكم الموحّدة (`/`)
+
+الصفحة الرئيسية تجمع واجهة ENCID ولوحة المصنع التنفيذية:
+
+| التبويب / القسم | المحتوى |
+|-----------------|----------|
+| **الرؤية التنفيذية** (`#executive`) | KPIs مباشرة من API، توزيع الحالات، عملاء، ضغط أقسام/ماكينات — تحميل كسول عبر `ExecutiveDashboardSection` |
+| **تحليلات التشغيل** (`#operational`) | مؤشرات أسبوعية، مراحل، حمل أقسام (fixtures + factory-hub حيث يلزم) |
+
+**آخر التحديثات (واجهة):**
+
+- دمج `/dashboard/factory` → `/#executive` على الصفحة الرئيسية
+- تبويبان (تنفيذي / تشغيلي) مع مزامنة الهاش (`#executive` · `#operational`)
+- إرشادات الأقسام عبر أيقونة ⓘ قابلة للطي (`SectionGuidance` / `DashboardSectionHeader`)
+- ربط توكن JWT لعميل Orval عند الإقلاع (`setupGeneratedApiClient` في `main.tsx`)
+- حالات خطأ وإعادة محاولة للرؤية التنفيذية عند فشل API (`ExecutiveDataStatus`)
+- بطاقات KPI مدمجة تستخدم `stat-card` داخل الثيم الصناعي/التنفيذي
 
 ## المتطلبات
 
-- Node.js 24+ (متوافق مع إعداد Replit في [.replit](.replit))
+- **Node.js** 22+ (CI) — 24+ موصى به ([`.replit`](.replit))
 - [pnpm](https://pnpm.io/)
 
 ## إعداد البيئة
@@ -29,9 +89,13 @@ cp .env.example .env
 
 2. المتغيرات الأساسية (انظر [.env.example](.env.example)):
 
-- **`LIBSQL_URL`** أو **`SQLITE_FILE`** — موقع قاعدة SQLite (افتراضيًا ملف `local.db` في جذر المستودع إن لم تُضبط).
-- **`PORT`** — مطلوب لتشغيل **كلٍ من** الـ API وواجهة Vite.
-- **`VITE_API_PROXY_TARGET`** — (اختياري) بروكسي Vite لـ `/api` أثناء التطوير؛ الافتراضي `http://127.0.0.1:8787`.
+| المتغير | الغرض |
+|---------|--------|
+| `LIBSQL_URL` / `SQLITE_FILE` | موقع SQLite (افتراضي `local.db` في الجذر) |
+| `PORT` | منفذ API (افتراضي **8787**) |
+| `VITE_API_PROXY_TARGET` | هدف بروكسي Vite لـ `/api` في التطوير |
+| `JWT_SECRET` | مصادقة API (انظر `artifacts/api-server/.env.example`) |
+| `VITE_OFFLINE_UNRESTRICTED` | (تطوير) تعطيل إرفاق Bearer عند الحاجة |
 
 ## أوامر التشغيل اليومية
 
@@ -41,23 +105,21 @@ cp .env.example .env
 pnpm install
 ```
 
-**تشغيل الـ API** (يستمع على `PORT`؛ الافتراضي **8787** إن لم تُضبط `PORT`):
+**تشغيل الـ API** (افتراضي **8787**):
 
 ```bash
 pnpm --filter @workspace/api-server run dev
 ```
 
-**تشغيل الواجهة الموحّدة:**
+**تشغيل الواجهة:**
 
 ```bash
 pnpm --filter web run dev
 ```
 
-يفتح عادةً على **http://localhost:5173**. يوجّه [apps/web/vite.config.ts](apps/web/vite.config.ts) طلبات `/api` إلى **`VITE_API_PROXY_TARGET`** (افتراضيًا **http://127.0.0.1:8787**). شغّل الـ API على نفس المنفذ أو غيّر المتغير.
+يفتح عادةً **http://localhost:5173**. طلبات `/api` تُوجَّه إلى `VITE_API_PROXY_TARGET` (افتراضي `http://127.0.0.1:8787`) — شغّل الـ API قبل فتح تبويب **الرؤية التنفيذية**.
 
-مصفوفة دمج المسارات: [docs/FACTORY_WEB_MERGE_PARITY.md](docs/FACTORY_WEB_MERGE_PARITY.md).
-
-**توليد أنواع العميل من OpenAPI:**
+**توليد عميل API من OpenAPI:**
 
 ```bash
 pnpm --filter @workspace/api-spec run codegen
@@ -70,47 +132,48 @@ pnpm --filter @workspace/db run generate
 pnpm --filter @workspace/db run push
 ```
 
-**الترحيلات SQL (عند وجود مجلد `lib/db/drizzle`):**
+**الترحيلات SQL:**
 
 ```bash
 pnpm --filter @workspace/db run migrate
 ```
 
-**سكربت ETL من Postgres إلى SQLite/LibSQL:**
+**اختبارات الواجهة:**
 
 ```bash
-# جاف: يعرض أعداد الصفوف فقط (لا يكتب)
+pnpm --filter web run test          # Vitest
+pnpm --filter web run test:e2e     # Playwright
+pnpm --filter web run build
+```
+
+**ETL من Postgres → LibSQL:**
+
+```bash
+# جاف — أعداد فقط
 $env:SOURCE_DATABASE_URL="postgresql://..."   # PowerShell
 pnpm --filter @workspace/scripts run etl:pg-to-libsql
 
-# تنفيذ فعلي بعد التأكد من المخطط والنسخ الاحتياطي
+# تنفيذ فعلي
 $env:ETL_APPLY="1"
-# اختياري — يفرغ جداول الهدف المدعومة قبل الإدخال (خطير)
-# $env:ETL_WIPE_SQLITE="1"
 pnpm --filter @workspace/scripts run etl:pg-to-libsql
 ```
 
-المتغيرات: `SOURCE_DATABASE_URL` (مصدر Postgres)، `ETL_APPLY`، `ETL_WIPE_SQLITE`، وهدف الكتابة عبر `LIBSQL_URL` / `SQLITE_FILE` (انظر [.env.example](.env.example) و [docs/DATABASE.md](docs/DATABASE.md)).
-
-## التحقق من الأنواع (الجذر)
+## التحقق من الأنواع
 
 ```bash
 pnpm run typecheck
 ```
 
-## استقرار العمل والدمج (قرار موصى به)
+## استقرار العمل والدمج
 
-- **الاستقرار أولاً:** اجعل الفرع الحالي يمرّ بـ `pnpm run typecheck` ثم قسّم التغييرات إلى طلبات سحب صغيرة (API، قاعدة بيانات، واجهة) بدل دفعة واحدة ضخمة.
-- **استراتيجية قاعدة البيانات:** المصدر المعتمد للتطبيق هو **SQLite/LibSQL** محليًا؛ أي Postgres سابق يُعالَج عبر [docs/rfc-libsql-migration.md](docs/rfc-libsql-migration.md) وسكربت [ETL](#مسار-التوسع-قاعدة-البيانات) عند الحاجة فقط.
-- **توليد العقود:** بعد تغييرات الـ API، شغّل `pnpm --filter @workspace/api-spec run codegen` قبل الدمج إذا تأثرت واجهات العميل.
+- مرّر `pnpm run typecheck` و`pnpm --filter web run build` قبل الدمج.
+- بعد تغييرات OpenAPI: `pnpm --filter @workspace/api-spec run codegen`.
+- قسّم PRs: API · DB · UI.
+- قاعدة البيانات المعتمدة: **SQLite/LibSQL** — Postgres عبر [docs/rfc-libsql-migration.md](docs/rfc-libsql-migration.md) وETL عند الحاجة فقط.
 
 ## نشر Replit
 
-إعدادات المنفذ والوحدات: [.replit](.replit). ملخص قديم موجّه للمطورين: [replit.md](replit.md).
-
-## مسار التوسع (قاعدة بيانات)
-
-للانتقال من Postgres/SaaS إلى ملف محلي ثم Turso لاحقًا، راجع [docs/rfc-libsql-migration.md](docs/rfc-libsql-migration.md).
+[`.replit`](.replit) — وحدات Node 24، Python 3.11، Postgres 16 (جانبي). ملخص: [replit.md](replit.md).
 
 ## الترخيص
 
