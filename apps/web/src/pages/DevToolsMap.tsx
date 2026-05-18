@@ -16,8 +16,9 @@ const APP_ROUTES: AppLink[] = [
   { path: "/", ar: "لوحة التحكم", en: "Dashboard" },
   { path: "/login", ar: "تسجيل الدخول", en: "Login" },
   { path: "/departments", ar: "الأقسام", en: "Departments" },
-  { path: "/orders/metal", ar: "أوامر المعدن", en: "Metal orders" },
-  { path: "/orders/wood", ar: "أوامر الخشب", en: "Wood orders" },
+  { path: "/production", ar: "مركز الإنتاج (أوامر معدن/خشب)", en: "Production hub (metal/wood orders)" },
+  { path: "/orders/metal", ar: "أوامر المعدن (إعادة توجيه → مركز الإنتاج)", en: "Metal orders (redirect → production hub)" },
+  { path: "/orders/wood", ar: "أوامر الخشب (إعادة توجيه → مركز الإنتاج)", en: "Wood orders (redirect → production hub)" },
   { path: "/daily/metal", ar: "إنتاج يومي — معدن", en: "Daily production · metal" },
   { path: "/daily/wood", ar: "إنتاج يومي — خشب", en: "Daily production · wood" },
   { path: "/projects/joint", ar: "مشاريع مشتركة", en: "Joint projects" },
@@ -62,7 +63,7 @@ const REPO_ROOTS = [
 ] as const;
 
 const PNPM_HINTS = [
-  "pnpm --filter @workspace/api-server dev  (مع PORT=8787)",
+  "pnpm --filter @workspace/api-server dev  (مع PORT=8788)",
   "pnpm --filter web dev",
   "pnpm --filter @workspace/db run migrate",
   "pnpm --filter @workspace/db run rebuild-snapshots",
@@ -119,7 +120,7 @@ export default function DevToolsMap() {
         </div>
         <p className="text-xs text-brand-metal">
           في التطوير، Vite يوجّه <code className="rounded bg-brand-border px-1">/api</code> إلى{" "}
-          <code className="rounded bg-brand-border px-1">127.0.0.1:8787</code> (انظر{" "}
+          <code className="rounded bg-brand-border px-1">127.0.0.1:8788</code> (انظر{" "}
           <code className="rounded bg-brand-border px-1">vite.config.ts</code>).
         </p>
         <ul className="space-y-2">
@@ -177,10 +178,10 @@ export default function DevToolsMap() {
             <span className="text-brand-metal">— هذه الصفحة (افتراضي Vite)</span>
           </li>
           <li>
-            <a href="http://127.0.0.1:8787/api/healthz" className="text-brand-wood hover:underline">
-              http://127.0.0.1:8787/api/healthz
+            <a href="http://127.0.0.1:8788/api/healthz" className="text-brand-wood hover:underline">
+              http://127.0.0.1:8788/api/healthz
             </a>{" "}
-            <span className="text-brand-metal">— API مباشرة (PORT=8787)</span>
+            <span className="text-brand-metal">— API مباشرة (PORT=8788)</span>
           </li>
         </ul>
       </section>

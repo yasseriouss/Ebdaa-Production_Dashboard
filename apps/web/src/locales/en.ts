@@ -73,6 +73,7 @@ export const en = {
     perfDepartments: "Perf · departments",
     perfPeople: "Perf · people",
     productionHub: "Production hub",
+    productionHubDetail: "Canonical entry for metal/wood order lists, shop-floor production, and shared projects",
     importExport: "Import & export",
     workforce: "Workforce",
     projectsHub: "Projects hub",
@@ -217,7 +218,7 @@ export const en = {
       subtitle: "Metal factory — data source",
       contractHint:
         "Contract path: GET /api/metal/orders on the API server. No fh_metal_* hub layer yet; the legacy SQLite model stays the HTTP contract.",
-      loadFail: "Failed to load orders — Is the API running on port 8787?",
+      loadFail: "Failed to load orders — Is the API running on port 8788?",
       notesFor: "Notes for order",
       colMo: "MO",
       colProject: "Project",
@@ -265,7 +266,7 @@ export const en = {
     },
     permissions: {
       loadError:
-        "Could not load permission data. Ensure the API server is running on port 8787 and /api/auth is reachable.",
+        "Could not load permission data. Ensure the API server is running on port 8788 and /api/auth is reachable.",
       title: "Permissions matrix",
       subtitle:
         "Role and user permission distribution — all system modules can be customized from the catalog below.",
@@ -476,6 +477,11 @@ export const en = {
     operationalSectionSubtitle: "Weekly trends, stage throughput, and department load (reference data)",
     jumpToExecutive: "Executive overview",
     jumpToOperational: "Operational analytics",
+    executiveOnlyHint:
+      "Home shows the live executive overview. Operational charts and reference throughput views are on Analytics.",
+    operationalRelocatedHint:
+      "Weekly productivity, wood stage throughput, and department load (fixtures + hub data where applicable).",
+    backToExecutiveHome: "Back to executive home",
     sectionNavLabel: "Dashboard sections",
     guidanceToggle: "Show or hide guidance",
     productivityIndex: "Productivity Index",
@@ -560,7 +566,7 @@ export const en = {
       metalOrdersTitle: "Metal plant orders",
       woodenOrdersTitle: "Wood plant orders",
       sharedProjectsTitle: "Shared projects",
-      sharedProjectsSubtitle: "Clients across both plants",
+      sharedProjectsSubtitle: "Projects shared between the wood and metal plants",
       metalBacklogTitle: "Metal backlog",
       woodenBacklogTitle: "Wood backlog",
       stoppedOrders: "Stopped: {{n}} orders",
@@ -581,8 +587,14 @@ export const en = {
         "Each row is a machine from the task table with its department; metal WIP matches stages by task name; wood WIP is split across machines in linked departments.",
       workforceTitle: "Workforce WF-001",
       workforceDeptChart: "Employees by department",
+      workforceDeptColRank: "#",
+      workforceDeptColName: "Department",
+      workforceDeptColCount: "Count",
+      workforceDeptColShare: "Share",
+      workforceDeptTotal: "Total",
       workforcePrivacy: "Personal data — local use only",
       departmentsCount: "{{n}} departments",
+      departmentsWord: "departments",
       totalLabel: "Total",
       loadByDept: "Workload distribution — departments",
       loadByMachines: "Workload distribution — stations & machines",
@@ -591,7 +603,7 @@ export const en = {
       woodReady: "Wood units ready",
       loadError: "Could not load executive overview",
       loadErrorHint:
-        "Ensure the API server is running (port 8787) and you are signed in. Without a connection, figures may show as zero or empty.",
+        "Ensure the API server is running (port 8788) and you are signed in. Without a connection, figures may show as zero or empty.",
       partialError: "Some data sources are unavailable",
       partialErrorHint: "Load and machine metrics may be incomplete; headline KPIs may still be current.",
       retry: "Retry",

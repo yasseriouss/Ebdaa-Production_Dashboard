@@ -4,7 +4,7 @@ import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 
 const apiProxyTarget =
-  process.env.VITE_API_PROXY_TARGET?.trim() || "http://127.0.0.1:8787";
+  process.env.VITE_API_PROXY_TARGET?.trim() || "http://127.0.0.1:8788";
 
 export default defineConfig({
   plugins: [react(), tailwindcss()],
