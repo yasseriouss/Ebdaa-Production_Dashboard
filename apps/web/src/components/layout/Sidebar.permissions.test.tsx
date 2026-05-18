@@ -32,15 +32,15 @@ const SAMPLE_NAV: NavEntry[] = [
   {
     kind: "group",
     children: [
-      { href: "/orders/metal" },
-      { href: "/orders/wood" },
+      { href: "/production" },
+      { href: "/analytics" },
     ],
   },
 ];
 
 describe("sidebar permission gating", () => {
   it("hides import-export when import_export:import is missing", () => {
-    const keys = new Set(["orders:metal:view", "orders:wood:view"]);
+    const keys = new Set(["production:hub:view", "analytics:multi:view"]);
     const visible = filterNav(SAMPLE_NAV, keys);
     expect(visible.some((e) => e.kind === "leaf" && e.href === "/import-export")).toBe(false);
   });

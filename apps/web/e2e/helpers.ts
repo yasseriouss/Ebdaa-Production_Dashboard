@@ -12,3 +12,13 @@ export async function waitExecutiveDashboard(page: Page) {
   await gotoApp(page, "/#executive");
   await expect(page.locator("#executive-overview-heading")).toBeVisible({ timeout: 30_000 });
 }
+
+/** Two rAF ticks so responsive layout / charts can settle before measuring overflow. */
+export async function settleLayout(page: Page) {
+  await page.evaluate(
+    () =>
+      new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+      }),
+  );
+}

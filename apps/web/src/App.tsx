@@ -1,10 +1,12 @@
 import { Redirect, Route, Switch } from "wouter";
 import { BrandLogo } from "./components/brand/BrandLogo";
 import { Layout } from "./components/layout/Layout";
+import { GuardedRedirect } from "./components/routing/GuardedRedirect";
 import { LegacyFactoryRedirects } from "./components/routing/LegacyFactoryRedirects";
 import { ToastProvider } from "./components/ui/Toast";
 import { useTranslation } from "./context/I18nContext";
 import { guardedRoute } from "./lib/guardedRoute";
+import { ORDERS_METAL_LIST_REDIRECT, ORDERS_WOOD_LIST_REDIRECT } from "./lib/canonicalRoutes";
 import {
   AboutSystemPage,
   AuditLogPage,
@@ -27,7 +29,6 @@ import {
   AnalyticsPage,
   ImportExportPage,
   MetalOrderDetailPage,
-  MetalOrdersPage,
   PlanningPage,
   ProductionHubPage,
   ProjectAtlasPage,
@@ -35,7 +36,6 @@ import {
   SharedProjectsPage,
   WorkforcePage,
   WoodenOrderDetailPage,
-  WoodenOrdersPage,
 } from "./pages/factory/FactoryPages";
 
 const G = guardedRoute;
@@ -43,7 +43,7 @@ const G = guardedRoute;
 function NotFoundPage() {
   const { t } = useTranslation();
   return (
-    <div className="flex flex-col items-center justify-center gap-6 min-h-[60vh]">
+    <div data-testid="not-found" className="flex flex-col items-center justify-center gap-6 min-h-[60vh]">
       <BrandLogo className="h-14 w-auto max-w-[200px] object-contain opacity-80" />
       <h2 className="text-2xl font-bold text-brand-error tracking-tight text-center">{t("notFound.title")}</h2>
     </div>
@@ -68,9 +68,13 @@ function App() {
 
           <Route path="/production" component={G("/production", ProductionHubPage)} />
 
-          <Route path="/orders/metal" component={G("/orders/metal", MetalOrdersPage)} />
+          <Route path="/orders/metal">
+            <GuardedRedirect path="/orders/metal" to={ORDERS_METAL_LIST_REDIRECT} />
+          </Route>
           <Route path="/orders/metal/:id" component={G("/orders/metal", MetalOrderDetailPage)} />
-          <Route path="/orders/wood" component={G("/orders/wood", WoodenOrdersPage)} />
+          <Route path="/orders/wood">
+            <GuardedRedirect path="/orders/wood" to={ORDERS_WOOD_LIST_REDIRECT} />
+          </Route>
           <Route path="/orders/wood/:id" component={G("/orders/wood", WoodenOrderDetailPage)} />
 
           <Route path="/daily/metal" component={DailyMetalPage} />

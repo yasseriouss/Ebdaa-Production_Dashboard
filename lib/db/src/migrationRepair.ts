@@ -107,3 +107,21 @@ export async function stampMigrationsIfEmpty(client: LibsqlClient): Promise<bool
   console.warn(`[migrate] Repaired __drizzle_migrations: stamped ${entry.tag} (index ${idx})`);
   return true;
 }
+
+/** Adds scope columns when `fh_wood_work_orders` predates migration 0006. */
+export async function ensureFhWoodWorkOrdersScopeColumns(client: LibsqlClient): Promise<void> {
+  const tables = await tableNames(client);
+  if (!tables.has("fh_wood_work_orders")) return;
+  if (!(await tableHasColumn(client, "fh_wood_work_orders", "factory_id"))) {
+    await client.execute(
+      "ALTER TABLE `fh_wood_work_orders` ADD `factory_id` text REFERENCES `factories`(`id`)",
+    );
+    console.warn("[migrate] Repaired fh_wood_work_orders: added factory_id");
+  }
+  if (!(await tableHasColumn(client, "fh_wood_work_orders", "department_id"))) {
+    await client.execute(
+      "ALTER TABLE `fh_wood_work_orders` ADD `department_id` text REFERENCES `departments`(`id`)",
+    );
+    console.warn("[migrate] Repaired fh_wood_work_orders: added department_id");
+  }
+}

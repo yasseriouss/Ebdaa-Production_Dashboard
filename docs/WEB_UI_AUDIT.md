@@ -6,12 +6,12 @@ Last reviewed: 2026-05-17. Track status: **open** | **decided** | **fixed**.
 
 | Path | UI source | API client | Permission key | i18n | Responsive notes | Status |
 |------|-----------|------------|----------------|------|----------------|--------|
-| `/` | ENCID `Dashboard` + embedded factory executive (`#executive`) | fixtures + api-client-react | `dashboard:view` | OK + factory.* | flex sidebar; executive lazy-loaded | fixed |
+| `/` | ENCID `Dashboard` executive only; `#operational` → `/analytics` | api-client-react (executive) | `dashboard:view` | OK + factory.* | flex sidebar; executive lazy-loaded | fixed |
 | `/login` | ENCID | apiJson | — | OK | OK | OK |
-| `/production` | factory hub | api-client-react | `production:hub:view` | fixed | tabs, tables | fixed |
-| `/orders/metal` | ENCID list | fixtures/api | `orders:metal:view` | OK | DataTable | OK |
+| `/production` | factory hub (URL `factory` / `view`) | api-client-react | `production:hub:view` | fixed | tabs, tables | fixed |
+| `/orders/metal` | redirect → `/production?factory=metal&view=orders` | — | `orders:metal:view` | OK | — | fixed |
 | `/orders/metal/:id` | factory detail | api-client-react | `orders:metal:view` | fixed | OK | fixed |
-| `/orders/wood` | ENCID list | hooks | `orders:wood:view` | OK | Kanban/table | OK |
+| `/orders/wood` | redirect → `/production` | — | `orders:wood:view` | OK | — | fixed |
 | `/orders/wood/:id` | factory detail | api-client-react | `orders:wood:view` | fixed | OK | fixed |
 | `/daily/*` | ENCID | mixed | `daily:*:view` | OK | OK | OK |
 | `/projects/joint` | redirect | — | `projects:joint:view` | OK | — | fixed redirect hub |
@@ -19,8 +19,8 @@ Last reviewed: 2026-05-17. Track status: **open** | **decided** | **fixed**.
 | `/projects/new` | ENCID | — | `projects:new:view` | OK | OK | OK |
 | `/workforce` | factory | api-client-react | `workforce:view` | fixed (header/KPIs) | OK | fixed |
 | `/import-export` | factory | api-client-react | `import_export:import` | fixed | cards stack | fixed |
-| `/planning` | ENCID PlanningKpi | fixtures | `planning:view` | OK | OK | OK |
-| `/analytics/*` | ENCID | fixtures | `analytics:*` | OK | charts | OK |
+| `/planning` | factory planning | api-client-react | `planning:view` | OK | OK | OK |
+| `/analytics/*` | factory + embedded `DashboardOperationalAnalytics` | API + fixtures | `analytics:*` | OK | charts | fixed |
 | `/admin/permissions` | ENCID | api | `admin:permissions:view` | OK | OK | OK |
 | `/dev/tools` | ENCID | — | `admin:permissions:view` | OK | OK | fixed |
 | `/dashboard/classic` | redirect → `/` | — | `dashboard:view` | — | — | fixed |
@@ -32,8 +32,8 @@ Last reviewed: 2026-05-17. Track status: **open** | **decided** | **fixed**.
 | Issue | Decision | Status |
 |-------|----------|--------|
 | Wood detail modal vs `/orders/wood/:id` | **Canonical:** route; list navigates to `:id` | fixed |
-| Metal list duplicate (ENCID vs production hub) | Hub = operational; sidebar list = ENCID table | decided |
-| `/` factory vs ENCID Dashboard | Merged: live executive at `/#executive` on home; operational charts below | fixed |
+| Metal list duplicate (ENCID vs production hub) | **Canonical:** `/production`; `/orders/{metal,wood}` redirect | fixed |
+| `/` factory vs ENCID Dashboard | Home = executive live only; operational block → `/analytics` | fixed |
 | `/projects/joint` placeholder | Redirect to `/projects/hub` | fixed |
 | Dual Toast systems | Factory hook bridges to ENCID Toast | fixed |
 | Route permission sidebar-only | `RequirePermission` route guard | fixed |
@@ -49,6 +49,7 @@ Test at 360×812, 768×1024, 1280×720, 1920×1080:
 - [x] `/production` — tabs wrap; responsive padding
 - [x] `/import-export` — responsive spacing
 - [ ] Modals/dialogs fully visible (manual spot-check)
+- [x] Home `#operational` hash redirects to `/analytics`
 
 ## Automated tests
 

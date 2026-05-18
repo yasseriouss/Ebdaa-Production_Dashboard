@@ -58,17 +58,21 @@ OpenAPI 3 → **Orval** → hooks React Query + مخططات Zod
 
 ## لوحة التحكم الموحّدة (`/`)
 
-الصفحة الرئيسية تجمع واجهة ENCID ولوحة المصنع التنفيذية:
+الصفحة الرئيسية تعرض **الرؤية التنفيذية** فقط (بيانات حية من API):
 
-| التبويب / القسم | المحتوى |
-|-----------------|----------|
-| **الرؤية التنفيذية** (`#executive`) | KPIs مباشرة من API، توزيع الحالات، عملاء، ضغط أقسام/ماكينات — تحميل كسول عبر `ExecutiveDashboardSection` |
-| **تحليلات التشغيل** (`#operational`) | مؤشرات أسبوعية، مراحل، حمل أقسام (fixtures + factory-hub حيث يلزم) |
+| القسم | المحتوى |
+|--------|---------|
+| **الرؤية التنفيذية** | KPIs مباشرة من API، توزيع الحالات، عملاء، ضغط أقسام/ماكينات — تحميل كسول عبر `ExecutiveDashboardSection` |
+| **تحليلات التشغيل** (مرجع + رسوم ثابتة جزئياً) | تُعرض في **`/analytics`** (بما فيها الكتل المنقولة من تبويب «تشغيلي» السابق على الصفحة الرئيسية) |
+
+قوائم أوامر المعدن/الخشب: المدخل الموحّد **`/production`** (مع استعلام `factory` / `view`). عناوين `/orders/metal` و`/orders/wood` تعيد التوجيه إلى مركز الإنتاج مع الحفاظ على صلاحيات `orders:*:view`.
+
+**إعداد API للتطوير:** انسخ [`artifacts/api-server/.env.example`](artifacts/api-server/.env.example) إلى **`artifacts/api-server/.env`** (ليس جذر المستودع فقط) قبل `pnpm --filter @workspace/api-server run dev`.
 
 **آخر التحديثات (واجهة):**
 
 - دمج `/dashboard/factory` → `/#executive` على الصفحة الرئيسية
-- تبويبان (تنفيذي / تشغيلي) مع مزامنة الهاش (`#executive` · `#operational`)
+- إزالة تبويب التشغيلي من الصفحة الرئيسية؛ `#operational` يعيد التوجيه إلى `/analytics`
 - إرشادات الأقسام عبر أيقونة ⓘ قابلة للطي (`SectionGuidance` / `DashboardSectionHeader`)
 - ربط توكن JWT لعميل Orval عند الإقلاع (`setupGeneratedApiClient` في `main.tsx`)
 - حالات خطأ وإعادة محاولة للرؤية التنفيذية عند فشل API (`ExecutiveDataStatus`)
@@ -92,7 +96,7 @@ cp .env.example .env
 | المتغير | الغرض |
 |---------|--------|
 | `LIBSQL_URL` / `SQLITE_FILE` | موقع SQLite (افتراضي `local.db` في الجذر) |
-| `PORT` | منفذ API (افتراضي **8787**) |
+| `PORT` | منفذ API (افتراضي **8788**) |
 | `VITE_API_PROXY_TARGET` | هدف بروكسي Vite لـ `/api` في التطوير |
 | `JWT_SECRET` | مصادقة API (انظر `artifacts/api-server/.env.example`) |
 | `VITE_OFFLINE_UNRESTRICTED` | (تطوير) تعطيل إرفاق Bearer عند الحاجة |
@@ -105,7 +109,7 @@ cp .env.example .env
 pnpm install
 ```
 
-**تشغيل الـ API** (افتراضي **8787**):
+**تشغيل الـ API** (افتراضي **8788**):
 
 ```bash
 pnpm --filter @workspace/api-server run dev
@@ -117,7 +121,7 @@ pnpm --filter @workspace/api-server run dev
 pnpm --filter web run dev
 ```
 
-يفتح عادةً **http://localhost:5173**. طلبات `/api` تُوجَّه إلى `VITE_API_PROXY_TARGET` (افتراضي `http://127.0.0.1:8787`) — شغّل الـ API قبل فتح تبويب **الرؤية التنفيذية**.
+يفتح عادةً **http://localhost:5173**. طلبات `/api` تُوجَّه إلى `VITE_API_PROXY_TARGET` (افتراضي `http://127.0.0.1:8788`) — شغّل الـ API قبل فتح تبويب **الرؤية التنفيذية**.
 
 **توليد عميل API من OpenAPI:**
 

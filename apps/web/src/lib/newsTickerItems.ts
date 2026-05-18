@@ -1,5 +1,4 @@
 import { EBdaa_ROUTE_COACH_HINTS } from "./coachingHints";
-import { dashboardTabHash } from "./dashboardTab";
 import type { Translate } from "../context/I18nContext";
 
 export type NewsTickerItem = {
@@ -34,7 +33,7 @@ export function buildNewsTickerItems(
   items.push({
     id: "bottleneck",
     text: t("dashboard.bottleneck", { stage: bottleneckStage }),
-    href: dashboardTabHash("operational"),
+    href: "/analytics",
   });
 
   return items;

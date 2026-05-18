@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { gotoApp } from "./helpers";
+import { gotoApp, settleLayout } from "./helpers";
 
 const viewports = [
   { width: 375, height: 812, name: "mobile" },
@@ -14,6 +14,7 @@ for (const vp of viewports) {
     test(`no horizontal overflow on ${path} @ ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await gotoApp(page, path);
+      await settleLayout(page);
       const overflow = await page.evaluate(() => {
         const doc = document.documentElement;
         return doc.scrollWidth > doc.clientWidth + 2;

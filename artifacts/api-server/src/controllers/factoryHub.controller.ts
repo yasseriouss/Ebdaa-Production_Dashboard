@@ -10,6 +10,7 @@ import {
   UpdateFhAnalysisSessionParams,
   DeleteFhAnalysisSessionParams,
 } from "@workspace/api-zod";
+import { logger } from "../lib/logger";
 import { FactoryHubService } from "../services/factoryHub.service";
 
 function sendError(res: Response, status: number, message: string) {
@@ -22,6 +23,7 @@ export class FactoryHubController {
       const rows = await FactoryHubService.listWoodWorkOrders(req.auth);
       res.json(rows);
     } catch (error) {
+      logger.error({ err: error }, "listWoodWorkOrders failed");
       res.status(500).json({ error: "Failed to list wood work orders" });
     }
   }

@@ -5,10 +5,11 @@ import { cn } from "@factory/lib/utils"
 const Table = React.forwardRef<
   HTMLTableElement,
   React.HTMLAttributes<HTMLTableElement>
->(({ className, ...props }, ref) => (
-  <div className="relative w-full overflow-auto">
+>(({ className, dir, ...props }, ref) => (
+  <div className="relative w-full overflow-auto" dir={dir}>
     <table
       ref={ref}
+      dir={dir}
       className={cn("w-full caption-bottom text-sm", className)}
       {...props}
     />

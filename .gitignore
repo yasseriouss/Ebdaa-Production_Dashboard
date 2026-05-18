@@ -52,6 +52,12 @@ Thumbs.db
 .env
 .env.*.local
 
+# Local SQLite database (dev only)
+local.db
+
+# Database Excel exports (may contain password hashes)
+exports/*.xlsx
+
 lib/db/drizzle/.snapshot-build-temp.db
 lib/db/drizzle/.debug-tables.db
 lib/db/drizzle/.test-row.db

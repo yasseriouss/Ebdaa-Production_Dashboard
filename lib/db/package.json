@@ -19,7 +19,8 @@
     "seed-permissions": "tsx src/seedPermissions.ts",
     "export-permission-docs": "tsx src/exportPermissionDocs.ts",
     "seed": "tsx src/seed.ts",
-    "sync-department-names": "tsx src/syncDepartmentDisplayNames.ts"
+    "sync-department-names": "tsx src/syncDepartmentDisplayNames.ts",
+    "export-excel": "tsx src/exportAllToExcel.ts"
   },
   "dependencies": {
     "@libsql/client": "^0.17.3",

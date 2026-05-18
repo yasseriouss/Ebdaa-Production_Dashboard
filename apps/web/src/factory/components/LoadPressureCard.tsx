@@ -44,10 +44,7 @@ export function LoadPressureCard({
 
     return (
       <ExecutiveAnalyticsListPanel title={title} subtitle={subtitle} rtl={rtl}>
-        <ul
-          className="max-h-[min(420px,55vh)] space-y-3 overflow-y-auto overflow-x-hidden pe-1"
-          role="list"
-        >
+        <ul className="space-y-3" role="list">
           {rows.length === 0 ? (
             <li className="py-8 text-center text-sm text-brand-metal">{emptyLabel}</li>
           ) : (
@@ -89,7 +86,7 @@ export function LoadPressureCard({
       <div className="double-bezel-inner min-w-0 p-4 sm:p-6 lg:p-8">
         <h3 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{title}</h3>
         {subtitle ? <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground">{subtitle}</p> : null}
-        <div className="mt-4 max-h-[min(420px,55vh)] space-y-5 overflow-y-auto overflow-x-hidden pe-1 -me-0.5">
+        <div className="mt-4 space-y-5">
           {rows.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">{emptyLabel}</p>
           ) : (
