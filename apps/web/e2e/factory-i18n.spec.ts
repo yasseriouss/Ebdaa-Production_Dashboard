@@ -10,8 +10,7 @@ test("factory dashboard title follows locale", async ({ page }) => {
     .first();
   if ((await toggle.count()) === 0) test.skip(true, "language toggle not found");
   await toggle.click();
-  await page.waitForTimeout(400);
-  expect(await title.innerText()).not.toBe(arTitle);
+  await expect(title).not.toHaveText(arTitle, { timeout: 15_000 });
 });
 
 test("factory production hub title follows locale", async ({ page }) => {
@@ -27,8 +26,6 @@ test("factory production hub title follows locale", async ({ page }) => {
     test.skip(true, "language toggle not found");
   }
   await toggle.click();
-  await page.waitForTimeout(400);
-  const enTitle = await title.innerText();
-  expect(enTitle).not.toBe(arTitle);
-  expect(enTitle.length).toBeGreaterThan(0);
+  await expect(title).not.toHaveText(arTitle, { timeout: 15_000 });
+  expect((await title.innerText()).length).toBeGreaterThan(0);
 });
