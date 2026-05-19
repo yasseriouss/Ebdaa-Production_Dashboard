@@ -8,14 +8,21 @@ import {
   useImportWoodenOrders,
   useImportSheetsTemplate,
 } from "@workspace/api-client-react";
-import { Upload, Download, FileText, CheckCircle2, XCircle, FileSpreadsheet, AlertTriangle } from "lucide-react";
+import {
+  Upload, Download, FileText, CheckCircle2, XCircle, AlertTriangle,
+} from "lucide-react";
 import { useToast } from "@factory/hooks/use-toast";
 import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
-import { downloadPdfFromApiExport } from "../../lib/pdf";
+import { downloadPdfFromApiExport } from "../../lib/pdf/apiExport";
 
-const BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
+const BASE = import.meta.env.VITE_API_BASE_URL || "/api";
 
-type ImportResult = { success: boolean; rowsImported: number; rowsSkipped: number; errors: string[] };
+type ImportResult = {
+  success: boolean;
+  rowsImported: number;
+  rowsSkipped: number;
+  errors: string[];
+};
 
 function ImportCard({
   title,
@@ -32,6 +39,7 @@ function ImportCard({
   isPending: boolean;
   result: ImportResult | null;
 }) {
+  const { ft } = useFactoryTranslation();
   const ref = useRef<HTMLInputElement>(null);
   return (
     <Card>
@@ -61,7 +69,7 @@ function ImportCard({
           data-testid={`btn-import-${testId}`}
           onClick={() => ref.current?.click()}
         >
-          {isPending ? "جاري الاستيراد..." : "اختر ملف Excel للاستيراد"}
+          {isPending ? ft("importExport.importing") : ft("importExport.chooseExcel")}
         </Button>
         {result && (
           <div className={`rounded-lg p-3 text-sm space-y-2 ${result.success ? "bg-green-500/10 border border-green-500/30" : "bg-destructive/10 border border-destructive/30"}`}>
@@ -69,11 +77,11 @@ function ImportCard({
               {result.success
                 ? <CheckCircle2 className="h-4 w-4 text-green-500" />
                 : <XCircle className="h-4 w-4 text-destructive" />}
-              {result.success ? "اكتمل الاستيراد" : "فشل الاستيراد"}
+              {result.success ? ft("importExport.importDone") : ft("importExport.importFailed")}
             </div>
             <div className="flex gap-3 text-xs">
-              <span>مستورد: <Badge variant="secondary">{result.rowsImported}</Badge></span>
-              <span>متخطى: <Badge variant="outline">{result.rowsSkipped}</Badge></span>
+              <span>{ft("importExport.imported")}: <Badge variant="secondary">{result.rowsImported}</Badge></span>
+              <span>{ft("importExport.skipped")}: <Badge variant="outline">{result.rowsSkipped}</Badge></span>
             </div>
             {result.errors.length > 0 && (
               <div className="text-xs text-muted-foreground max-h-20 overflow-y-auto">
@@ -88,6 +96,7 @@ function ImportCard({
 }
 
 function ExportCard({ title, endpoint, filename }: { title: string; endpoint: string; filename: string }) {
+  const { ft } = useFactoryTranslation();
   const { toast } = useToast();
   const [busy, setBusy] = useState(false);
   const [pdfBusy, setPdfBusy] = useState(false);
@@ -118,9 +127,9 @@ function ExportCard({ title, endpoint, filename }: { title: string; endpoint: st
         title,
         filename,
       });
-      toast({ title: "تم تصدير PDF" });
+      toast({ title: ft("orders.toastPdfExported") });
     } catch {
-      toast({ title: "فشل تصدير PDF", variant: "destructive" });
+      toast({ title: ft("orders.toastPdfFailed"), variant: "destructive" });
     } finally {
       setPdfBusy(false);
     }
@@ -132,16 +141,16 @@ function ExportCard({ title, endpoint, filename }: { title: string; endpoint: st
           <Download className="h-4 w-4 text-primary" />
           {title}
         </CardTitle>
-        <CardDescription className="text-xs">تصدير جميع البيانات إلى ملف</CardDescription>
+        <CardDescription className="text-xs">{ft("importExport.exportAll")}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-2">
         <Button className="w-full" variant="outline" disabled={busy} onClick={() => void doExportXlsx()} data-testid={`btn-export-xlsx-${filename}`}>
           <FileText className="ml-2 h-4 w-4" />
-          تصدير Excel (.xlsx)
+          {ft("importExport.exportExcel")}
         </Button>
         <Button className="w-full" variant="outline" disabled={pdfBusy} onClick={() => void doExportPdf()} data-testid={`btn-export-pdf-${filename}`}>
           <FileText className="ml-2 h-4 w-4" />
-          تصدير PDF (.pdf)
+          {ft("importExport.exportPdf")}
         </Button>
       </CardContent>
     </Card>
@@ -153,22 +162,23 @@ type StageLogSectionResult = { sheetFound: boolean; rowsImported: number; rowsSk
 type TemplateResult = { success: boolean; metal: SectionResult; wooden: SectionResult; stageLog: StageLogSectionResult; errors?: string[] };
 
 function TemplateResultPanel({ res }: { res: TemplateResult }) {
+  const { ft } = useFactoryTranslation();
   const renderSection = (label: string, s: SectionResult) => (
     <div className="rounded-md border p-3 space-y-2">
       <div className="flex items-center justify-between">
         <span className="font-semibold text-sm">{label}</span>
         {s.sheetFound
-          ? <Badge variant="secondary">{s.rowsImported} مستورد</Badge>
-          : <Badge variant="outline" className="text-destructive">الورقة غير موجودة</Badge>}
+          ? <Badge variant="secondary">{s.rowsImported} {ft("importExport.imported")}</Badge>
+          : <Badge variant="outline" className="text-destructive">{ft("importExport.sheetNotFound")}</Badge>}
       </div>
       <div className="flex flex-wrap gap-2 text-xs">
-        <span>متخطى: <Badge variant="outline">{s.rowsSkipped}</Badge></span>
-        <span>مكرر: <Badge variant="outline">{s.duplicates.length}</Badge></span>
+        <span>{ft("importExport.skipped")}: <Badge variant="outline">{s.rowsSkipped}</Badge></span>
+        <span>{ft("importExport.duplicated")}: <Badge variant="outline">{s.duplicates.length}</Badge></span>
       </div>
       {s.duplicates.length > 0 && (
         <div className="text-xs">
           <div className="flex items-center gap-1 text-amber-600 mb-1">
-            <AlertTriangle className="h-3 w-3" /> أرقام مكررة (تم تخطيها للمراجعة):
+            <AlertTriangle className="h-3 w-3" /> {ft("importExport.duplicateAlert")}
           </div>
           <div className="max-h-20 overflow-y-auto font-mono text-[11px] text-muted-foreground">
             {s.duplicates.slice(0, 20).join("، ")}
@@ -189,20 +199,20 @@ function TemplateResultPanel({ res }: { res: TemplateResult }) {
         {res.success
           ? <CheckCircle2 className="h-4 w-4 text-green-500" />
           : <XCircle className="h-4 w-4 text-destructive" />}
-        {res.success ? "اكتمل استيراد القالب" : "فشل استيراد القالب"}
+        {res.success ? ft("importExport.templateImportDone") : ft("importExport.templateImportFailed")}
       </div>
       <div className="grid gap-2 md:grid-cols-3">
-        {renderSection("معدني (أوامر معدني)", res.metal)}
-        {renderSection("خشبي (أوامر خشبي)", res.wooden)}
+        {renderSection(ft("importExport.templateMetal"), res.metal)}
+        {renderSection(ft("importExport.templateWooden"), res.wooden)}
         <div className="rounded-md border p-3 space-y-2">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-sm">سجل المراحل (متابعة المراحل)</span>
+            <span className="font-semibold text-sm">{ft("importExport.templateStageLog")}</span>
             {res.stageLog.sheetFound
-              ? <Badge variant="secondary">{res.stageLog.rowsImported} مستورد</Badge>
-              : <Badge variant="outline" className="text-destructive">الورقة غير موجودة</Badge>}
+              ? <Badge variant="secondary">{res.stageLog.rowsImported} {ft("importExport.imported")}</Badge>
+              : <Badge variant="outline" className="text-destructive">{ft("importExport.sheetNotFound")}</Badge>}
           </div>
           <div className="flex flex-wrap gap-2 text-xs">
-            <span>متخطى: <Badge variant="outline">{res.stageLog.rowsSkipped}</Badge></span>
+            <span>{ft("importExport.skipped")}: <Badge variant="outline">{res.stageLog.rowsSkipped}</Badge></span>
           </div>
           {res.stageLog.errors && res.stageLog.errors.length > 0 && (
             <div className="text-[11px] text-destructive max-h-16 overflow-y-auto">
@@ -237,31 +247,31 @@ export default function ImportExport() {
         const total = r.metal.rowsImported + r.wooden.rowsImported + r.stageLog.rowsImported;
         const dups = r.metal.duplicates.length + r.wooden.duplicates.length;
         toast({
-          title: r.success ? "تم استيراد قالب الشيتس" : "فشل استيراد القالب",
-          description: `${total} صف مستورد (شامل سجل المراحل)، ${dups} مكرر`,
+          title: r.success ? ft("importExport.templateImportDone") : ft("importExport.templateImportFailed"),
+          description: ft("importExport.importDoneDesc", { total: String(total), dups: String(dups) }),
           variant: r.success ? "default" : "destructive",
         });
       },
-      onError: () => toast({ title: "فشل استيراد القالب", variant: "destructive" }),
+      onError: () => toast({ title: ft("importExport.templateImportFailed"), variant: "destructive" }),
     },
   });
 
   const metalMut = useImportMetalOrders({
     mutation: {
-      onSuccess: d => { setMetalRes(d as ImportResult); toast({ title: "تم استيراد الأوامر المعدنية" }); },
-      onError: () => toast({ title: "فشل الاستيراد", variant: "destructive" }),
+      onSuccess: d => { setMetalRes(d as ImportResult); toast({ title: ft("orders.toastUpdated") }); },
+      onError: () => toast({ title: ft("importExport.importFailed"), variant: "destructive" }),
     },
   });
   const dailyMut = useImportMetalDailyProduction({
     mutation: {
-      onSuccess: d => { setDailyRes(d as ImportResult); toast({ title: "تم استيراد الإنتاج اليومي" }); },
-      onError: () => toast({ title: "فشل الاستيراد", variant: "destructive" }),
+      onSuccess: d => { setDailyRes(d as ImportResult); toast({ title: ft("orders.toastUpdated") }); },
+      onError: () => toast({ title: ft("importExport.importFailed"), variant: "destructive" }),
     },
   });
   const woodenMut = useImportWoodenOrders({
     mutation: {
-      onSuccess: d => { setWoodenRes(d as ImportResult); toast({ title: "تم استيراد الأوامر الخشبية" }); },
-      onError: () => toast({ title: "فشل الاستيراد", variant: "destructive" }),
+      onSuccess: d => { setWoodenRes(d as ImportResult); toast({ title: ft("orders.toastUpdated") }); },
+      onError: () => toast({ title: ft("importExport.importFailed"), variant: "destructive" }),
     },
   });
 
@@ -273,65 +283,85 @@ export default function ImportExport() {
   };
 
   return (
-    <div className="space-y-6 sm:space-y-8 w-full min-w-0 max-w-full">
-      <div>
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">{ft("importExport.title")}</h1>
-        <p className="text-muted-foreground mt-1 text-sm sm:text-base">{ft("importExport.subtitle")}</p>
-      </div>
+    <div className="p-12 space-y-12">
+      <header className="space-y-2">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">{ft("importExport.title")}</h1>
+        <p className="text-muted-foreground font-medium max-w-2xl leading-relaxed">
+          {ft("importExport.subtitle")}
+        </p>
+      </header>
 
-      <section>
-        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Upload className="h-5 w-5 text-primary" />
-          {ft("importExport.importSection")}
-        </h2>
-
-        <Card className="mb-4 border-primary/40 bg-primary/5">
+      {/* Template Import */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-xl font-bold">{ft("importExport.templateTitle")}</h2>
+        </div>
+        <Card className="border-primary/20 bg-primary/[0.02]">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <FileSpreadsheet className="h-5 w-5 text-primary" />
-              {ft("importExport.templateTitle")}
-            </CardTitle>
-            <CardDescription className="text-xs">{ft("importExport.templateDesc")}</CardDescription>
+            <CardDescription>{ft("importExport.templateDesc")}</CardDescription>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="space-y-4">
             <input
               ref={templateRef}
               type="file"
               accept=".xlsx,.xls"
               className="hidden"
-              data-testid="file-sheets-template"
               onChange={e => {
                 const f = e.target.files?.[0];
-                if (f) { templateMut.mutate({ data: { file: f as Blob } }); e.target.value = ""; }
+                if (f) {
+                  templateMut.mutate({ data: { file: f as Blob } });
+                  e.target.value = "";
+                }
               }}
             />
             <Button
-              className="w-full"
+              className="w-full h-12 text-lg"
               disabled={templateMut.isPending}
-              data-testid="btn-import-sheets-template"
               onClick={() => templateRef.current?.click()}
             >
-              <Upload className="ml-2 h-4 w-4" />
+              <FileText className="ml-2 h-5 w-5" />
               {templateMut.isPending ? ft("importExport.importing") : ft("importExport.chooseTemplate")}
             </Button>
+
             {templateRes && <TemplateResultPanel res={templateRes} />}
           </CardContent>
         </Card>
+      </section>
 
-        <h3 className="text-sm font-semibold text-muted-foreground mb-3">{ft("importExport.advancedImport")}</h3>
-        <div className="grid gap-4 md:grid-cols-3">
-          <ImportCard title={ft("importExport.metalOrders")} description={ft("importExport.metalOrders")} testId="metal-orders" onImport={f => handle("metal", f)} isPending={metalMut.isPending} result={metalRes} />
-          <ImportCard title={ft("importExport.metalDaily")} description={ft("importExport.metalDaily")} testId="metal-daily" onImport={f => handle("daily", f)} isPending={dailyMut.isPending} result={dailyRes} />
-          <ImportCard title={ft("importExport.woodenOrders")} description={ft("importExport.woodenOrders")} testId="wooden-orders" onImport={f => handle("wooden", f)} isPending={woodenMut.isPending} result={woodenRes} />
+      <section className="space-y-6">
+        <h2 className="text-xl font-bold">{ft("importExport.importSection")}</h2>
+        <p className="text-sm text-muted-foreground">{ft("importExport.advancedImport")}</p>
+        <div className="grid gap-6 md:grid-cols-3">
+          <ImportCard
+            title={ft("importExport.metalOrders")}
+            description="Metal_orders_*.xlsx"
+            testId="metal"
+            onImport={f => handle("metal", f)}
+            isPending={metalMut.isPending}
+            result={metalRes}
+          />
+          <ImportCard
+            title={ft("importExport.metalDaily")}
+            description="Metal_daily_Production_*.xlsx"
+            testId="daily"
+            onImport={f => handle("daily", f)}
+            isPending={dailyMut.isPending}
+            result={dailyRes}
+          />
+          <ImportCard
+            title={ft("importExport.woodenOrders")}
+            description="wooden_orders_*.xlsx"
+            testId="wooden"
+            onImport={f => handle("wooden", f)}
+            isPending={woodenMut.isPending}
+            result={woodenRes}
+          />
         </div>
       </section>
 
-      <section>
-        <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
-          <Download className="h-5 w-5 text-primary" />
-          {ft("importExport.exportSection")}
-        </h2>
-        <div className="grid gap-4 md:grid-cols-2">
+      <section className="space-y-6">
+        <h2 className="text-xl font-bold">{ft("importExport.exportSection")}</h2>
+        <div className="grid gap-6 md:grid-cols-2">
           <ExportCard title={ft("importExport.exportMetal")} endpoint="/export/metal-orders" filename="metal-orders" />
           <ExportCard title={ft("importExport.exportWooden")} endpoint="/export/wooden-orders" filename="wooden-orders" />
         </div>

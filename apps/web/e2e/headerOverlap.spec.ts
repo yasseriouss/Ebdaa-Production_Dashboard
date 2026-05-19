@@ -1,5 +1,6 @@
 import { test, expect, type Page } from "@playwright/test";
 import { gotoApp, settleLayout } from "./helpers";
+import { overlapScenarios } from "./headerOverlap.config";
 
 async function freezeChromeMotion(page: Page) {
   await page.addStyleTag({
@@ -24,55 +25,34 @@ test.describe("header/sidebar chrome", () => {
     await page.emulateMedia({ reducedMotion: "reduce" });
   });
 
-  test("desktop RTL — sidebar expanded", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 720 });
-    await gotoApp(page, "/");
-    await waitChrome(page);
-    await settleLayout(page);
-    await freezeChromeMotion(page);
-    await expect(page.getByTestId("layout-header")).toHaveScreenshot("desktop-rtl-expanded-header.png", {
-      timeout: 60_000,
-    });
-    await expect(page.getByTestId("layout-sidebar")).toHaveScreenshot("desktop-rtl-expanded-sidebar.png", {
-      timeout: 60_000,
-    });
-  });
+  for (const scenario of overlapScenarios) {
+    test(scenario.name, async ({ page }) => {
+      await page.setViewportSize(scenario.viewport);
+      await gotoApp(page, scenario.route);
+      await waitChrome(page);
 
-  test("desktop RTL — sidebar collapsed", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 720 });
-    await gotoApp(page, "/");
-    await waitChrome(page);
-    await page.getByRole("button", { name: "طي القائمة" }).click();
-    await settleLayout(page);
-    await freezeChromeMotion(page);
-    await expect(page.getByTestId("layout-header")).toHaveScreenshot("desktop-rtl-collapsed-header.png", {
-      timeout: 60_000,
-    });
-    await expect(page.getByTestId("layout-sidebar")).toHaveScreenshot("desktop-rtl-collapsed-sidebar.png", {
-      timeout: 60_000,
-    });
-  });
+      if (scenario.sidebar === "collapsed") {
+        // Toggle sidebar if needed. Default is expanded.
+        // The button name might change based on locale, but let's assume Arabic for now as per previous spec.
+        await page.getByRole("button", { name: "طي القائمة" }).click();
+      }
 
-  test("desktop RTL — production hub", async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 720 });
-    await gotoApp(page, "/production");
-    await waitChrome(page);
-    await settleLayout(page);
-    await freezeChromeMotion(page);
-    await expect(page.getByTestId("layout-header")).toHaveScreenshot("desktop-rtl-production-header.png", {
-      timeout: 60_000,
-    });
-  });
+      await settleLayout(page);
+      await freezeChromeMotion(page);
 
-  test("mobile RTL — shell band", async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await gotoApp(page, "/");
-    await waitChrome(page);
-    await settleLayout(page);
-    await freezeChromeMotion(page);
-    await expect(page.getByTestId("layout-header")).toHaveScreenshot("mobile-rtl-header.png", {
-      timeout: 60_000,
-      maxDiffPixelRatio: 0.02,
+      // We use unnamed screenshots to let Playwright append project/platform info,
+      // ensuring unique baselines per CI matrix project.
+      await expect(page.getByTestId("layout-header")).toHaveScreenshot({
+        timeout: 60_000,
+        maxDiffPixelRatio: scenario.maxDiffPixelRatio,
+      });
+
+      // Sidebar check for desktop scenarios
+      if (scenario.viewport.width > 640) {
+        await expect(page.getByTestId("layout-sidebar")).toHaveScreenshot({
+          timeout: 60_000,
+        });
+      }
     });
-  });
+  }
 });

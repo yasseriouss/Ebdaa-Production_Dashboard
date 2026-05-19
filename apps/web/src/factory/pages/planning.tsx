@@ -7,6 +7,8 @@ import { Label } from "@factory/components/ui/label";
 import { Skeleton } from "@factory/components/ui/skeleton";
 import { AlertTriangle } from "lucide-react";
 import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
+import { useDirection } from "../../lib/useDirection";
+import { cn } from "@factory/lib/utils";
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -28,18 +30,18 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 const PERT_NODES = [
-  { id: "start", label: "بداية", x: 50, y: 150 },
-  { id: "laser", label: "الليزر", x: 180, y: 60 },
-  { id: "shear", label: "المقص", x: 180, y: 150 },
-  { id: "punch", label: "البانش", x: 180, y: 240 },
-  { id: "press", label: "مكابس", x: 320, y: 150 },
-  { id: "drill", label: "المثقاب", x: 320, y: 240 },
-  { id: "weld_co2", label: "لحام CO2", x: 460, y: 120 },
-  { id: "grind", label: "تجليخ", x: 460, y: 210 },
-  { id: "weld_brass", label: "لحام نحاس", x: 600, y: 150 },
-  { id: "paint", label: "الدهان", x: 720, y: 100 },
-  { id: "assemble", label: "التجميع", x: 720, y: 210 },
-  { id: "deliver", label: "التسليم", x: 850, y: 150 },
+  { id: "start", labelKey: "planning.pertStart", x: 50, y: 150 },
+  { id: "laser", labelKey: "planning.pertLaser", x: 180, y: 60 },
+  { id: "shear", labelKey: "planning.pertShear", x: 180, y: 150 },
+  { id: "punch", labelKey: "planning.pertPunch", x: 180, y: 240 },
+  { id: "press", labelKey: "planning.pertPress", x: 320, y: 150 },
+  { id: "drill", labelKey: "planning.pertDrill", x: 320, y: 240 },
+  { id: "weld_co2", labelKey: "planning.pertWeldCO2", x: 460, y: 120 },
+  { id: "grind", labelKey: "planning.pertGrind", x: 460, y: 210 },
+  { id: "weld_brass", labelKey: "planning.pertWeldBrass", x: 600, y: 150 },
+  { id: "paint", labelKey: "planning.pertPaint", x: 720, y: 100 },
+  { id: "assemble", labelKey: "planning.pertAssemble", x: 720, y: 210 },
+  { id: "deliver", labelKey: "planning.pertDeliver", x: 850, y: 150 },
 ];
 
 const PERT_EDGES = [
@@ -72,7 +74,9 @@ function detectOverlaps(items: { id: string; startDate?: string; endDate?: strin
 }
 
 export default function Planning() {
-  const { ft } = useFactoryTranslation();
+  const { ft, locale } = useFactoryTranslation();
+  const { direction } = useDirection();
+  const rtl = direction === "rtl";
   const [factory, setFactory] = useState("all");
   const [projectFilter, setProjectFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
@@ -87,9 +91,8 @@ export default function Planning() {
     { query: { queryKey: ["gantt", factory, dateFrom, dateTo] } }
   );
 
-  const allItems = ganttData || [];
-
   const items = useMemo(() => {
+    const allItems = ganttData || [];
     if (!projectFilter.trim()) return allItems;
     const q = projectFilter.trim().toLowerCase();
     return allItems.filter(i =>
@@ -97,7 +100,7 @@ export default function Planning() {
       (i.moNumber || "").toLowerCase().includes(q) ||
       (i.project || "").toLowerCase().includes(q)
     );
-  }, [allItems, projectFilter]);
+  }, [ganttData, projectFilter]);
 
   const overlappingIds = useMemo(() => detectOverlaps(items), [items]);
 
@@ -109,7 +112,8 @@ export default function Planning() {
   const getLeftPct = (dateStr: string) => {
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return 0;
-    return Math.max(0, ((d.getTime() - minDate.getTime()) / totalMs) * 100);
+    const pct = ((d.getTime() - minDate.getTime()) / totalMs) * 100;
+    return Math.max(0, pct);
   };
   const getWidthPct = (start: string, end: string) => {
     const s = new Date(start).getTime(); const e = new Date(end).getTime();
@@ -129,34 +133,34 @@ export default function Planning() {
       {/* Gantt Chart */}
       <Card>
         <CardHeader>
-          <CardTitle>مخطط Gantt - أوامر الشغل</CardTitle>
+          <CardTitle>{ft("planning.ganttTitle")}</CardTitle>
           {/* Filters */}
           <div className="flex flex-wrap gap-4 pt-3">
             <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0">المصنع</Label>
+              <Label className="text-xs shrink-0">{ft("planning.filterFactory")}</Label>
               <Select value={factory} onValueChange={setFactory} data-testid="select-factory-filter">
                 <SelectTrigger className="w-36 h-8 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">الكل</SelectItem>
-                  <SelectItem value="metal">المعدني</SelectItem>
-                  <SelectItem value="wooden">الخشبي</SelectItem>
+                  <SelectItem value="all">{ft("orders.all")}</SelectItem>
+                  <SelectItem value="metal">{ft("planning.legendMetal")}</SelectItem>
+                  <SelectItem value="wooden">{ft("planning.legendWood")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0">بحث</Label>
+              <Label className="text-xs shrink-0">{ft("planning.filterSearch")}</Label>
               <Input
                 value={projectFilter}
                 onChange={e => setProjectFilter(e.target.value)}
-                placeholder="عميل أو أمر..."
+                placeholder={ft("planning.filterSearchPlaceholder")}
                 className="w-40 h-8 text-xs"
                 data-testid="input-project-filter"
               />
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0">من تاريخ</Label>
+              <Label className="text-xs shrink-0">{ft("planning.filterDateFrom")}</Label>
               <Input
                 type="date"
                 value={dateFrom}
@@ -166,7 +170,7 @@ export default function Planning() {
               />
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-xs shrink-0">إلى تاريخ</Label>
+              <Label className="text-xs shrink-0">{ft("planning.filterDateTo")}</Label>
               <Input
                 type="date"
                 value={dateTo}
@@ -179,7 +183,7 @@ export default function Planning() {
           {overlappingIds.size > 0 && (
             <div className="flex items-center gap-2 mt-2 p-2 bg-destructive/10 border border-destructive/20 rounded text-xs text-destructive" data-testid="overlap-warning">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-              تنبيه: {overlappingIds.size} أمر بها تعارضات في المواعيد مع أوامر لنفس العميل
+              {ft("planning.overlapWarning", { n: String(overlappingIds.size) })}
             </div>
           )}
         </CardHeader>
@@ -187,24 +191,24 @@ export default function Planning() {
           {isLoading ? (
             <div className="space-y-2">{[...Array(6)].map((_, i) => <Skeleton key={i} className="h-8 w-full" />)}</div>
           ) : items.length === 0 ? (
-            <div className="py-16 text-center text-muted-foreground">لا توجد بيانات لعرضها</div>
+            <div className="py-16 text-center text-muted-foreground">{ft("planning.noData")}</div>
           ) : (
             <div className="overflow-x-auto" data-testid="gantt-chart">
               <div className="flex gap-4 mb-4 text-xs flex-wrap">
-                <div className="flex items-center gap-1.5"><span className="w-4 h-3 rounded bg-primary/50 inline-block" /> معدني</div>
-                <div className="flex items-center gap-1.5"><span className="w-4 h-3 rounded bg-blue-500/50 inline-block" /> خشبي</div>
-                <div className="flex items-center gap-1.5"><span className="w-4 h-3 rounded bg-destructive/50 inline-block" /> تعارض مواعيد</div>
-                <span className="text-muted-foreground">إجمالي: {items.length} أمر</span>
+                <div className="flex items-center gap-1.5"><span className="w-4 h-3 rounded bg-primary/50 inline-block" /> {ft("planning.legendMetal")}</div>
+                <div className="flex items-center gap-1.5"><span className="w-4 h-3 rounded bg-blue-500/50 inline-block" /> {ft("planning.legendWood")}</div>
+                <div className="flex items-center gap-1.5"><span className="w-4 h-3 rounded bg-destructive/50 inline-block" /> {ft("planning.legendOverlap")}</div>
+                <span className="text-muted-foreground">{ft("planning.totalOrders", { n: String(items.length) })}</span>
               </div>
               <div className="min-w-[900px]">
                 {/* Header: date labels */}
-                <div className="flex mb-1 pr-44">
+                <div className={cn("flex mb-1", rtl ? "pl-44" : "pr-44")}>
                   <div className="relative flex-1 h-6 border-b border-border">
                     {[0, 25, 50, 75, 100].map(pct => {
                       const d = new Date(minDate.getTime() + (pct / 100) * totalMs);
                       return (
-                        <span key={pct} className="absolute text-xs text-muted-foreground transform -translate-x-1/2" style={{ left: `${pct}%` }}>
-                          {d.toLocaleDateString("ar-EG", { month: "short", year: "2-digit" })}
+                        <span key={pct} className="absolute text-xs text-muted-foreground transform -translate-x-1/2" style={{ [rtl ? "right" : "left"]: `${pct}%` }}>
+                          {d.toLocaleDateString(locale === "ar" ? "ar-EG" : "en-US", { month: "short", year: "2-digit" })}
                         </span>
                       );
                     })}
@@ -213,9 +217,11 @@ export default function Planning() {
                 {/* Rows */}
                 {items.map((item) => {
                   const hasOverlap = overlappingIds.has(item.id);
+                  const left = getLeftPct(item.startDate ?? "");
+                  const width = getWidthPct(item.startDate ?? "", item.endDate ?? "");
                   return (
                     <div key={item.id} className="flex items-center gap-2 mb-1 group" data-testid={`gantt-row-${item.id}`}>
-                      <div className="w-44 shrink-0 text-xs text-right pr-2 truncate">
+                      <div className="w-44 shrink-0 text-xs text-start px-2 truncate">
                         <div className="font-medium truncate text-foreground/90">{item.moNumber}</div>
                         <div className="text-muted-foreground truncate text-[10px]">{item.client}</div>
                       </div>
@@ -223,12 +229,12 @@ export default function Planning() {
                         <div
                           className={`absolute h-full rounded transition-all ${hasOverlap ? "bg-destructive/60 ring-1 ring-destructive" : item.factory === "metal" ? "bg-primary/60" : "bg-blue-500/50"}`}
                           style={{
-                            left: `${getLeftPct(item.startDate ?? "")}%`,
-                            width: `${getWidthPct(item.startDate ?? "", item.endDate ?? "")}%`,
+                            [rtl ? "right" : "left"]: `${left}%`,
+                            width: `${width}%`,
                           }}
-                          title={`${item.moNumber} — ${item.completionPct}% مكتمل${hasOverlap ? " ⚠ تعارض" : ""}`}
+                          title={`${item.moNumber} — ${item.completionPct}% ${ft("planning.completedHint")}${hasOverlap ? ` ⚠ ${ft("planning.overlapHint")}` : ""}`}
                         >
-                          <div className="absolute h-full rounded bg-green-500/60" style={{ width: `${item.completionPct}%` }} />
+                          <div className={cn("absolute h-full rounded bg-green-500/60", rtl ? "right-0" : "left-0")} style={{ width: `${item.completionPct}%` }} />
                           <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white/90 px-1">
                             {item.completionPct}%
                           </span>
@@ -243,60 +249,57 @@ export default function Planning() {
             </div>
           )}
         </CardContent>
-      </Card>
-
-      {/* PERT Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>مخطط PERT - تسلسل مراحل المصنع المعدني (المسار الحرج)</CardTitle>
-        </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto" data-testid="pert-chart">
-            <svg width="950" height="320" viewBox="0 0 950 320" className="w-full">
-              <defs>
-                <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                  <polygon points="0 0, 8 3, 0 6" fill="hsl(var(--muted-foreground))" />
-                </marker>
-                <marker id="arrowhead-critical" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
-                  <polygon points="0 0, 8 3, 0 6" fill="#ef4444" />
-                </marker>
-              </defs>
-              {/* Critical path edges highlighted */}
-              {PERT_EDGES.map((e, i) => {
-                const from = nodeMap.get(e.from);
-                const to = nodeMap.get(e.to);
-                if (!from || !to) return null;
-                const isCritical = ["weld_co2", "grind", "weld_brass", "paint", "deliver"].includes(e.to);
-                return (
-                  <line key={i}
-                    x1={from.x + 80} y1={from.y + 16}
-                    x2={to.x} y2={to.y + 16}
-                    stroke={isCritical ? "#ef4444" : "hsl(var(--border))"}
-                    strokeWidth={isCritical ? "2" : "1.5"}
-                    markerEnd={isCritical ? "url(#arrowhead-critical)" : "url(#arrowhead)"}
-                  />
-                );
-              })}
-              {PERT_NODES.map(n => {
-                const isCritical = ["weld_co2", "grind", "weld_brass", "paint", "assemble", "deliver"].includes(n.id);
-                const isEndpoint = n.id === "start" || n.id === "deliver";
-                return (
-                  <g key={n.id} transform={`translate(${n.x},${n.y})`}>
-                    <rect width="80" height="32" rx="6"
-                      fill={isEndpoint ? "hsl(var(--primary))" : isCritical ? "rgba(239,68,68,0.2)" : "hsl(var(--card))"}
+          {/* PERT Chart */}
+          <div className="mt-8 space-y-4">
+            <h3 className="text-lg font-bold">{ft("planning.pertTitle")}</h3>
+            <div className="overflow-x-auto" data-testid="pert-chart">
+              <svg width="950" height="320" viewBox="0 0 950 320" className="w-full">
+                <defs>
+                  <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                    <polygon points="0 0, 8 3, 0 6" fill="hsl(var(--muted-foreground))" />
+                  </marker>
+                  <marker id="arrowhead-critical" markerWidth="8" markerHeight="6" refX="8" refY="3" orient="auto">
+                    <polygon points="0 0, 8 3, 0 6" fill="#ef4444" />
+                  </marker>
+                </defs>
+                {/* Critical path edges highlighted */}
+                {PERT_EDGES.map((e, i) => {
+                  const from = nodeMap.get(e.from);
+                  const to = nodeMap.get(e.to);
+                  if (!from || !to) return null;
+                  const isCritical = ["weld_co2", "grind", "weld_brass", "paint", "deliver"].includes(e.to);
+                  return (
+                    <line key={i}
+                      x1={rtl ? 950 - (from.x + 80) : from.x + 80} y1={from.y + 16}
+                      x2={rtl ? 950 - to.x : to.x} y2={to.y + 16}
                       stroke={isCritical ? "#ef4444" : "hsl(var(--border))"}
-                      strokeWidth={isCritical ? "2" : "1.5"} />
-                    <text x="40" y="20" textAnchor="middle"
-                      style={{ fontSize: 10, fontFamily: "Tajawal, sans-serif", fill: "hsl(var(--foreground))" }}>
-                      {n.label}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-            <div className="flex gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
-              <div className="flex items-center gap-1.5"><span className="w-6 h-0.5 bg-red-500 inline-block" /> المسار الحرج</div>
-              <div className="flex items-center gap-1.5"><span className="w-6 h-0.5 bg-muted-foreground inline-block" /> مسار ثانوي</div>
+                      strokeWidth={isCritical ? "2" : "1.5"}
+                      markerEnd={isCritical ? "url(#arrowhead-critical)" : "url(#arrowhead)"}
+                    />
+                  );
+                })}
+                {PERT_NODES.map(n => {
+                  const isCritical = ["weld_co2", "grind", "weld_brass", "paint", "assemble", "deliver"].includes(n.id);
+                  const isEndpoint = n.id === "start" || n.id === "deliver";
+                  return (
+                    <g key={n.id} transform={`translate(${rtl ? 950 - n.x - 80 : n.x},${n.y})`}>
+                      <rect width="80" height="32" rx="6"
+                        fill={isEndpoint ? "hsl(var(--primary))" : isCritical ? "rgba(239,68,68,0.2)" : "hsl(var(--card))"}
+                        stroke={isCritical ? "#ef4444" : "hsl(var(--border))"}
+                        strokeWidth={isCritical ? "2" : "1.5"} />
+                      <text x="40" y="20" textAnchor="middle"
+                        style={{ fontSize: 10, fontFamily: "Tajawal, sans-serif", fill: "hsl(var(--foreground))" }}>
+                        {ft(n.labelKey)}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+              <div className="flex gap-4 mt-2 text-xs text-muted-foreground flex-wrap">
+                <div className="flex items-center gap-1.5"><span className="w-6 h-0.5 bg-red-500 inline-block" /> {ft("planning.criticalPath")}</div>
+                <div className="flex items-center gap-1.5"><span className="w-6 h-0.5 bg-muted-foreground inline-block" /> {ft("planning.secondaryPath")}</div>
+              </div>
             </div>
           </div>
         </CardContent>

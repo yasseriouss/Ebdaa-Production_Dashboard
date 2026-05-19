@@ -54,13 +54,25 @@ export async function apiJson<T>(path: string, init?: RequestInit): Promise<T> {
     return undefined as T;
   }
   const text = await res.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
+  let data: unknown = null;
+  let isJson = false;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+      isJson = true;
+    } catch {
+      // Non-JSON response (e.g. Vercel's HTML rewrite fallback)
+    }
+  }
   if (!res.ok) {
     const msg =
-      data && typeof data === "object" && data !== null && "error" in data
+      isJson && data && typeof data === "object" && "error" in data
         ? String((data as { error: string }).error)
-        : res.statusText;
-    throw new ApiError(msg || "Request failed", res.status, data);
+        : res.statusText || `Request failed with status ${res.status}`;
+    throw new ApiError(msg || "Request failed", res.status, isJson ? data : { rawText: text });
+  }
+  if (text && !isJson) {
+    throw new ApiError("Response is not valid JSON", res.status, { rawText: text });
   }
   return data as T;
 }

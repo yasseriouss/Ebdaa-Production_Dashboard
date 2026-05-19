@@ -1,4 +1,5 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useMemo, useRef } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@factory/lib/utils";
 import {
@@ -70,11 +71,11 @@ interface ProjectGroup {
   statuses: Record<string, number>;
 }
 
-function groupProjects(metalOrders: any[], woodenOrders: any[]): ProjectGroup[] {
+function groupProjects(metalOrders: any[], woodenOrders: any[], t: (k: string) => string): ProjectGroup[] {
   const map = new Map<string, ProjectGroup>();
 
   for (const o of metalOrders) {
-    const key = (o.project || o.client || "غير محدد").trim();
+    const key = (o.project || o.client || t("projectsHub.unspecified")).trim();
     if (!map.has(key)) {
       map.set(key, {
         name: key, client: o.client || "", metalOrders: [], woodenOrders: [],
@@ -90,13 +91,13 @@ function groupProjects(metalOrders: any[], woodenOrders: any[]): ProjectGroup[] 
     g.totalQty += qty;
     g.totalDone += done;
     g.totalRemaining += parseFloat(String(o.backlogQty || 0));
-    const st = o.status || "لم يتم البدء";
+    const st = o.status || t("projectsHub.workflowNotStarted");
     g.statuses[st] = (g.statuses[st] || 0) + 1;
     if (!g.client && o.client) g.client = o.client;
   }
 
   for (const o of woodenOrders) {
-    const key = (o.subProject || o.client || "غير محدد").trim();
+    const key = (o.subProject || o.client || t("projectsHub.unspecified")).trim();
     if (!map.has(key)) {
       map.set(key, {
         name: key, client: o.client || "", metalOrders: [], woodenOrders: [],
@@ -111,7 +112,7 @@ function groupProjects(metalOrders: any[], woodenOrders: any[]): ProjectGroup[] 
     g.totalQty += qty;
     g.totalDone += done;
     g.totalRemaining += parseFloat(String(o.rem || 0));
-    const st = o.status || "لم يتم البدء";
+    const st = o.status || t("projectsHub.workflowNotStarted");
     g.statuses[st] = (g.statuses[st] || 0) + 1;
     if (!g.client && o.client) g.client = o.client;
   }
@@ -124,6 +125,7 @@ function groupProjects(metalOrders: any[], woodenOrders: any[]): ProjectGroup[] 
 }
 
 function ProjectDetail({ project }: { project: ProjectGroup }) {
+  const { ft } = useFactoryTranslation();
   const statusData = Object.entries(project.statuses).map(([name, value], i) => ({
     name, value, fill: PIE_COLORS[i % PIE_COLORS.length],
   }));
@@ -140,23 +142,23 @@ function ProjectDetail({ project }: { project: ProjectGroup }) {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <div className="text-center p-4 rounded-2xl bg-foreground/[0.03]">
             <div className="text-2xl font-bold tabular-nums">{project.totalOrders}</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">إجمالي الأوامر</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{ft("projectsHub.totalOrders")}</div>
           </div>
           <div className="text-center p-4 rounded-2xl bg-foreground/[0.03]">
             <div className="text-2xl font-bold tabular-nums text-green-500">{Math.round(project.totalDone)}</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">المنجز</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{ft("projectsHub.completed")}</div>
           </div>
           <div className="text-center p-4 rounded-2xl bg-foreground/[0.03]">
             <div className="text-2xl font-bold tabular-nums text-yellow-500">{Math.round(project.totalRemaining)}</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">المتبقي</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{ft("projectsHub.remaining")}</div>
           </div>
           <div className="text-center p-4 rounded-2xl bg-foreground/[0.03]">
             <div className="text-2xl font-bold tabular-nums text-blue-400">{project.metalOrders.length}</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">أوامر معدني</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{ft("projectsHub.metalOrdersCount")}</div>
           </div>
           <div className="text-center p-4 rounded-2xl bg-foreground/[0.03]">
             <div className="text-2xl font-bold tabular-nums text-amber-500">{project.woodenOrders.length}</div>
-            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">أوامر خشبي</div>
+            <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{ft("projectsHub.woodenOrdersCount")}</div>
           </div>
         </div>
 
@@ -181,7 +183,7 @@ function ProjectDetail({ project }: { project: ProjectGroup }) {
         <div className="grid md:grid-cols-2 gap-6">
           {project.metalOrders.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3 text-sm font-bold"><Factory className="h-4 w-4 text-blue-400" />أوامر المصنع المعدني</div>
+              <div className="flex items-center gap-2 mb-3 text-sm font-bold"><Factory className="h-4 w-4 text-blue-400" />{ft("projectsHub.metalOrdersTitle")}</div>
               <div className="space-y-2">
                 {project.metalOrders.map((o: any) => (
                   <Link key={o.id} href={`/orders/metal/${o.id}`} className="block p-3 rounded-xl bg-foreground/[0.02] hover:bg-foreground/[0.05] transition-colors border border-foreground/5">
@@ -201,7 +203,7 @@ function ProjectDetail({ project }: { project: ProjectGroup }) {
           )}
           {project.woodenOrders.length > 0 && (
             <div>
-              <div className="flex items-center gap-2 mb-3 text-sm font-bold"><Boxes className="h-4 w-4 text-amber-500" />أوامر المصنع الخشبي</div>
+              <div className="flex items-center gap-2 mb-3 text-sm font-bold"><Boxes className="h-4 w-4 text-amber-500" />{ft("projectsHub.woodenOrdersTitle")}</div>
               <div className="space-y-2">
                 {project.woodenOrders.map((o: any) => {
                   const qty = parseFloat(String(o.qty || 0));
@@ -249,12 +251,12 @@ function departmentsForFactory(ff: "metal" | "wooden") {
   return DEPARTMENT_OPTIONS.filter(d => d.factories.includes(k));
 }
 
-function newProductLine(defaultFactory: "metal" | "wooden"): ProductLine {
+function newProductLine(defaultFactory: "metal" | "wooden", t: (k: string) => string): ProductLine {
   return {
     id: crypto.randomUUID(),
     product: "",
     qty: 1,
-    unit: "قطعة",
+    unit: t("projectsHub.unitLabel") === "الوحدة" ? "قطعة" : "unit",
     lineFactory: defaultFactory,
     department: "UNASSIGNED",
     cutlist: [],
@@ -262,6 +264,7 @@ function newProductLine(defaultFactory: "metal" | "wooden"): ProductLine {
 }
 
 function NewProjectForm() {
+  const { ft } = useFactoryTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const csvInputRef = useRef<HTMLInputElement>(null);
@@ -276,22 +279,27 @@ function NewProjectForm() {
     client: "",
     subProject: "",
     orderDate: new Date().toISOString().split("T")[0],
-    status: "لم يتم البدء",
+    status: ft("projectsHub.workflowNotStarted"),
     notesGlobal: "",
   });
 
   const defaultLineFactory: "metal" | "wooden" =
     factoryMetal && !factoryWood ? "metal" : "wooden";
 
-  const [lines, setLines] = useState<ProductLine[]>(() => [newProductLine("wooden")]);
+  const [lines, setLines] = useState<ProductLine[]>(() => [newProductLine("wooden", ft)]);
 
-  useEffect(() => {
+  const [prevFactoryMetal, setPrevFactoryMetal] = useState(factoryMetal);
+  const [prevFactoryWood, setPrevFactoryWood] = useState(factoryWood);
+
+  if (factoryMetal !== prevFactoryMetal || factoryWood !== prevFactoryWood) {
+    setPrevFactoryMetal(factoryMetal);
+    setPrevFactoryWood(factoryWood);
     if (factoryMetal && !factoryWood) {
       setLines(prev => prev.map(l => ({ ...l, lineFactory: "metal" })));
     } else if (!factoryMetal && factoryWood) {
       setLines(prev => prev.map(l => ({ ...l, lineFactory: "wooden" })));
     }
-  }, [factoryMetal, factoryWood]);
+  }
 
   const createMetal = useCreateMetalOrder();
   const createWooden = useCreateWoodenOrder();
@@ -303,10 +311,10 @@ function NewProjectForm() {
       client: "",
       subProject: "",
       orderDate: new Date().toISOString().split("T")[0],
-      status: "لم يتم البدء",
+      status: ft("projectsHub.workflowNotStarted"),
       notesGlobal: "",
     });
-    setLines([newProductLine(defaultLineFactory)]);
+    setLines([newProductLine(defaultLineFactory, ft)]);
     setCutlistOpen({});
   }
 
@@ -349,7 +357,7 @@ function NewProjectForm() {
       qty: 1,
       dimensions: "",
       department: "UNASSIGNED",
-      workflowStatus: "لم يبدأ",
+      workflowStatus: ft("projectsHub.workflowNotStarted") as WorkflowStatus,
     };
     setLines(prev =>
       prev.map(l => (l.id !== lineId ? l : { ...l, cutlist: [...l.cutlist, blank] })),
@@ -370,17 +378,16 @@ function NewProjectForm() {
     const lower = file.name.toLowerCase();
     if (lower.endsWith(".xlsx") || lower.endsWith(".xls")) {
       toast({
-        title: "استخدم CSV من Excel",
-        description:
-          "في Excel: ملف ← حفظ باسم ← CSV UTF-8 (*.csv). ثم استورد الملف هنا (دعم .xlsx مباشر يتطلب تثبيت الحزمة xlsx على البيئة).",
+        title: ft("projectsHub.toastUseCsvTitle"),
+        description: ft("projectsHub.toastUseCsvDesc"),
         variant: "destructive",
       });
       return;
     }
     if (!lower.endsWith(".csv") && !lower.endsWith(".txt")) {
       toast({
-        title: "امتداد غير مدعوم",
-        description: "يُقبل ملف .csv أو .txt (جدول مفصول بفواصل أو تابات).",
+        title: ft("projectsHub.toastUnsupportedExt"),
+        description: ft("projectsHub.toastUnsupportedExtDesc"),
         variant: "destructive",
       });
       return;
@@ -391,8 +398,8 @@ function NewProjectForm() {
       const parsed = parseCutlistCsv(text);
       if (!parsed.length) {
         toast({
-          title: "لم يُعثر على صفوف",
-          description: "تأكد من وجود صف عناوين يحتوي كمية أو وصف أو كود قطعة.",
+          title: ft("projectsHub.toastNoRows"),
+          description: ft("projectsHub.toastNoRowsDesc"),
           variant: "destructive",
         });
         return;
@@ -400,32 +407,32 @@ function NewProjectForm() {
       setLines(prev =>
         prev.map(l => (l.id === lineId ? { ...l, cutlist: parsed } : l)),
       );
-      toast({ title: `تم استيراد ${parsed.length} صف من القطع` });
+      toast({ title: ft("projectsHub.toastImportSuccess", { n: parsed.length }) });
     } catch {
-      toast({ title: "فشل قراءة الملف", variant: "destructive" });
+      toast({ title: ft("projectsHub.toastReadFail"), variant: "destructive" });
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!factoryMetal && !factoryWood) {
-      toast({ title: "حدد مصنعاً واحداً على الأقل (خشبي و/أو معدني)", variant: "destructive" });
+      toast({ title: ft("projectsHub.toastSelectFactory"), variant: "destructive" });
       return;
     }
     if (!header.orderPrefix.trim()) {
-      toast({ title: "أدخل بادئة رقم الأمر", variant: "destructive" });
+      toast({ title: ft("projectsHub.toastEnterPrefix"), variant: "destructive" });
       return;
     }
     const validLines = lines.filter(l => l.product.trim() && l.qty > 0);
     if (!validLines.length) {
-      toast({ title: "أضف سطر منتج واحد على الأقل مع اسم وكمية", variant: "destructive" });
+      toast({ title: ft("projectsHub.toastAddLine"), variant: "destructive" });
       return;
     }
 
     for (const line of validLines) {
       const rf = resolveLineFactory(line);
       if (!rf) {
-        toast({ title: "تعارض في اختيار المصنع", variant: "destructive" });
+        toast({ title: ft("projectsHub.toastFactoryConflict"), variant: "destructive" });
         return;
       }
     }
@@ -478,14 +485,14 @@ function NewProjectForm() {
       await qc.invalidateQueries({ queryKey: getListMetalOrdersQueryKey() });
       await qc.invalidateQueries({ queryKey: getListWoodenOrdersQueryKey() });
       toast({
-        title: "تم إنشاء أوامر الشغل",
-        description: `معدني: ${mi} | خشبي: ${wi}`,
+        title: ft("projectsHub.toastCreated"),
+        description: ft("projectsHub.toastCreatedDesc", { mi: String(mi), wi: String(wi) }),
       });
       resetForm();
     } catch {
       toast({
-        title: "توقف الحفظ قبل اكتمال جميع الأسطر",
-        description: "راجع أرقام الأوامر (بادئة فريدة) أو اتصال الخادم.",
+        title: ft("projectsHub.toastPartialSave"),
+        description: ft("projectsHub.toastPartialSaveDesc"),
         variant: "destructive",
       });
     }
@@ -506,16 +513,14 @@ function NewProjectForm() {
 
       <div className="double-bezel-outer">
         <div className="double-bezel-inner p-8 space-y-6">
-          <h3 className="text-lg font-bold">إدخال مشروع / أوامر شغل جديدة</h3>
+          <h3 className="text-lg font-bold">{ft("projectsHub.newProjectTitle")}</h3>
           <p className="text-sm text-muted-foreground leading-relaxed">
-            حدد ارتباط المشروع بالمصنعين (يمكن اختيار الاثنين). أضف عدة منتجات بكميات مختلفة. لكل سطر يمكن
-            استيراد قائمة قطع (Cutlist) من ملف CSV مُصدَّر من Excel، ثم إسناد كل قطعة لقسم وتتبع حالة سير العمل
-            ضمن الملاحظات المحفوظة مع الأمر.
+            {ft("projectsHub.newProjectDesc")}
           </p>
 
           <div className="rounded-2xl border border-foreground/10 p-5 space-y-4 bg-foreground/[0.02]">
             <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-              المشروع يتبع أي مصنع؟
+              {ft("projectsHub.factorySelectLabel")}
             </Label>
             <div className="flex flex-wrap gap-6">
               <label className="flex items-center gap-2.5 cursor-pointer text-sm font-medium">
@@ -524,7 +529,7 @@ function NewProjectForm() {
                   onCheckedChange={v => setFactoryWood(!!v)}
                 />
                 <Boxes className="h-4 w-4 text-amber-500" />
-                المصنع الخشبي
+                {ft("projectsHub.woodFactory")}
               </label>
               <label className="flex items-center gap-2.5 cursor-pointer text-sm font-medium">
                 <Checkbox
@@ -532,7 +537,7 @@ function NewProjectForm() {
                   onCheckedChange={v => setFactoryMetal(!!v)}
                 />
                 <Factory className="h-4 w-4 text-blue-400" />
-                المصنع المعدني
+                {ft("projectsHub.metalFactory")}
               </label>
             </div>
           </div>
@@ -540,7 +545,7 @@ function NewProjectForm() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <div className="space-y-1.5 md:col-span-2">
               <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                بادئة رقم الأمر * (يُضاف لاحقاً -M01 / -W02 لكل سطر)
+                {ft("projectsHub.orderPrefixLabel")}
               </Label>
               <Input
                 value={header.orderPrefix}
@@ -549,14 +554,14 @@ function NewProjectForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">الحالة</Label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{ft("projectsHub.statusLabel")}</Label>
               <Select
                 value={header.status}
                 onValueChange={v => setHeader(h => ({ ...h, status: v }))}
               >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="لم يتم البدء">لم يتم البدء</SelectItem>
+                  <SelectItem value={ft("projectsHub.workflowNotStarted")}>{ft("projectsHub.workflowNotStarted")}</SelectItem>
                   <SelectItem value="تحت التصنيع">تحت التصنيع</SelectItem>
                   <SelectItem value="تم الانتهاء">تم الانتهاء</SelectItem>
                   <SelectItem value="تم التسليم">تم التسليم</SelectItem>
@@ -565,28 +570,28 @@ function NewProjectForm() {
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">العميل</Label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{ft("projectsHub.clientLabel")}</Label>
               <Input
                 value={header.client}
                 onChange={e => setHeader(h => ({ ...h, client: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">المشروع</Label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{ft("projectsHub.projectLabel")}</Label>
               <Input
                 value={header.project}
                 onChange={e => setHeader(h => ({ ...h, project: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">المشروع الفرعي (خشبي)</Label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{ft("projectsHub.subProjectWoodLabel")}</Label>
               <Input
                 value={header.subProject}
                 onChange={e => setHeader(h => ({ ...h, subProject: e.target.value }))}
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">تاريخ الأمر (خشبي)</Label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{ft("projectsHub.orderDateWoodLabel")}</Label>
               <Input
                 type="date"
                 value={header.orderDate}
@@ -594,7 +599,7 @@ function NewProjectForm() {
               />
             </div>
             <div className="space-y-1.5 md:col-span-3">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">ملاحظات عامة (تُنسخ لكل أمر)</Label>
+              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{ft("projectsHub.globalNotesLabel")}</Label>
               <Textarea
                 value={header.notesGlobal}
                 onChange={e => setHeader(h => ({ ...h, notesGlobal: e.target.value }))}
@@ -606,18 +611,18 @@ function NewProjectForm() {
 
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <h4 className="text-sm font-bold">المنتجات و أوامر الشغل</h4>
+              <h4 className="text-sm font-bold">{ft("projectsHub.productsSection")}</h4>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="rounded-xl"
                 onClick={() =>
-                  setLines(prev => [...prev, newProductLine(defaultLineFactory)])
+                  setLines(prev => [...prev, newProductLine(defaultLineFactory, ft)])
                 }
               >
                 <Plus className="ml-1.5 h-4 w-4" />
-                سطر منتج
+                {ft("projectsHub.addProductLine")}
               </Button>
             </div>
 
@@ -634,7 +639,7 @@ function NewProjectForm() {
                   >
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                        سطر {idx + 1}
+                        {ft("projectsHub.lineLabel", { n: idx + 1 })}
                       </span>
                       {lines.length > 1 && (
                         <Button
@@ -645,22 +650,22 @@ function NewProjectForm() {
                           onClick={() => setLines(prev => prev.filter(l => l.id !== line.id))}
                         >
                           <Trash2 className="h-4 w-4 ml-1" />
-                          حذف السطر
+                          {ft("projectsHub.deleteLine")}
                         </Button>
                       )}
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-3">
                       <div className="space-y-1.5 md:col-span-2">
-                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">المنتج *</Label>
+                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">{ft("projectsHub.productLabel")}</Label>
                         <Input
                           value={line.product}
                           onChange={e => updateLine(line.id, { product: e.target.value })}
-                          placeholder="اسم المنتج"
+                          placeholder={ft("projectsHub.productLabel").replace(" *", "")}
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">الكمية *</Label>
+                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">{ft("projectsHub.qtyLabel")}</Label>
                         <Input
                           type="number"
                           min={0}
@@ -672,7 +677,7 @@ function NewProjectForm() {
                         />
                       </div>
                       <div className="space-y-1.5">
-                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">الوحدة</Label>
+                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">{ft("projectsHub.unitLabel")}</Label>
                         <Input
                           value={line.unit}
                           onChange={e => updateLine(line.id, { unit: e.target.value })}
@@ -681,7 +686,7 @@ function NewProjectForm() {
                       </div>
                       {showLineFactory && (
                         <div className="space-y-1.5 md:col-span-2">
-                          <Label className="text-[10px] font-bold text-muted-foreground uppercase">المصنع للسطر *</Label>
+                          <Label className="text-[10px] font-bold text-muted-foreground uppercase">{ft("projectsHub.lineFactoryLabel")}</Label>
                           <Select
                             value={line.lineFactory}
                             onValueChange={v =>
@@ -690,14 +695,14 @@ function NewProjectForm() {
                           >
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="wooden">خشبي</SelectItem>
-                              <SelectItem value="metal">معدني</SelectItem>
+                              <SelectItem value="wooden">{ft("projectsHub.woodOption")}</SelectItem>
+                              <SelectItem value="metal">{ft("projectsHub.metalOption")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                       )}
                       <div className="space-y-1.5 md:col-span-2">
-                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">قسم الإسناد الرئيسي</Label>
+                        <Label className="text-[10px] font-bold text-muted-foreground uppercase">{ft("projectsHub.mainDeptLabel")}</Label>
                         <Select
                           value={line.department}
                           onValueChange={v => updateLine(line.id, { department: v })}
@@ -723,7 +728,7 @@ function NewProjectForm() {
                         onClick={() => triggerCsvForLine(line.id)}
                       >
                         <FileSpreadsheet className="ml-1.5 h-4 w-4" />
-                        استيراد Cutlist (CSV)
+                        {ft("projectsHub.importCutlist")}
                       </Button>
                       <Button
                         type="button"
@@ -732,7 +737,7 @@ function NewProjectForm() {
                         className="rounded-xl"
                         onClick={() => addEmptyCutlistPart(line.id)}
                       >
-                        + قطعة يدوياً
+                        {ft("projectsHub.addPartManual")}
                       </Button>
                       <Button
                         type="button"
@@ -744,7 +749,7 @@ function NewProjectForm() {
                         }
                       >
                         {open ? <ChevronUp className="ml-1 h-4 w-4" /> : <ChevronDown className="ml-1 h-4 w-4" />}
-                        القطع ({line.cutlist.length})
+                        {ft("projectsHub.partsCount", { n: line.cutlist.length })}
                       </Button>
                     </div>
 
@@ -753,12 +758,12 @@ function NewProjectForm() {
                         <table className="w-full text-sm min-w-[720px]">
                           <thead>
                             <tr className="border-b border-foreground/10 bg-foreground/[0.03] text-[10px] uppercase text-muted-foreground">
-                              <th className="text-right p-2 font-bold">كود</th>
-                              <th className="text-right p-2 font-bold">وصف</th>
-                              <th className="text-right p-2 font-bold w-20">كمية</th>
-                              <th className="text-right p-2 font-bold">أبعاد</th>
-                              <th className="text-right p-2 font-bold">قسم القطعة</th>
-                              <th className="text-right p-2 font-bold">سير العمل</th>
+                              <th className="text-right p-2 font-bold">{ft("projectsHub.colPartCode")}</th>
+                              <th className="text-right p-2 font-bold">{ft("projectsHub.colPartDesc")}</th>
+                              <th className="text-right p-2 font-bold w-20">{ft("projectsHub.colPartQty")}</th>
+                              <th className="text-right p-2 font-bold">{ft("projectsHub.colPartDim")}</th>
+                              <th className="text-right p-2 font-bold">{ft("projectsHub.colPartDept")}</th>
+                              <th className="text-right p-2 font-bold">{ft("projectsHub.colPartWorkflow")}</th>
                               <th className="w-10" />
                             </tr>
                           </thead>
@@ -766,7 +771,7 @@ function NewProjectForm() {
                             {line.cutlist.length === 0 ? (
                               <tr>
                                 <td colSpan={7} className="p-6 text-center text-muted-foreground text-xs">
-                                  لا توجد قطع بعد — استورد CSV أو أضف يدوياً
+                                  {ft("projectsHub.emptyParts")}
                                 </td>
                               </tr>
                             ) : (
@@ -828,7 +833,7 @@ function NewProjectForm() {
                                           department: e.target.value,
                                         })
                                       }
-                                      placeholder="كود أو اسم القسم"
+                                      placeholder={ft("projectsHub.deptPlaceholder")}
                                     />
                                   </td>
                                   <td className="p-1.5">
@@ -878,7 +883,7 @@ function NewProjectForm() {
             className="w-full md:w-auto px-12 h-12 rounded-2xl text-sm font-bold"
           >
             <Plus className="ml-2 h-4 w-4" />
-            {isPending ? "جاري الحفظ..." : "إنشاء كل أوامر الشغل"}
+            {isPending ? ft("projectsHub.saving") : ft("projectsHub.submitCreate")}
           </Button>
         </div>
       </div>
@@ -900,9 +905,10 @@ export default function ProjectsHub() {
   const projects = useMemo(() => {
     return groupProjects(
       Array.isArray(metalOrders) ? metalOrders : [],
-      Array.isArray(woodenOrders) ? woodenOrders : []
+      Array.isArray(woodenOrders) ? woodenOrders : [],
+      ft
     );
-  }, [metalOrders, woodenOrders]);
+  }, [metalOrders, woodenOrders, ft]);
 
   const filtered = useMemo(() => {
     return projects.filter(p => {
@@ -972,31 +978,31 @@ export default function ProjectsHub() {
             <div className="double-bezel-inner p-6">
               <div className="flex flex-wrap gap-4 items-end">
                 <div className="flex flex-col gap-1.5 min-w-[200px] flex-1">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">بحث</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{ft("projectsHub.filterSearch")}</label>
                   <div className="relative">
                     <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input placeholder="اسم المشروع أو العميل..." className="pr-9" value={search} onChange={e => setSearch(e.target.value)} />
+                    <Input placeholder={ft("projectsHub.filterSearchPlaceholder")} className="pr-9" value={search} onChange={e => setSearch(e.target.value)} />
                   </div>
                 </div>
                 <div className="flex flex-col gap-1.5 min-w-[150px]">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">الحالة</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{ft("projectsHub.filterStatus")}</label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">الكل</SelectItem>
+                      <SelectItem value="all">{ft("orders.all")}</SelectItem>
                       {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex flex-col gap-1.5 min-w-[150px]">
-                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">المصنع</label>
+                  <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider">{ft("projectsHub.filterFactory")}</label>
                   <Select value={factoryFilter} onValueChange={setFactoryFilter}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">الكل</SelectItem>
-                      <SelectItem value="metal">المعدني فقط</SelectItem>
-                      <SelectItem value="wooden">الخشبي فقط</SelectItem>
-                      <SelectItem value="both">المشترك</SelectItem>
+                      <SelectItem value="all">{ft("orders.all")}</SelectItem>
+                      <SelectItem value="metal">{ft("projectsHub.filterFactoryMetal")}</SelectItem>
+                      <SelectItem value="wooden">{ft("projectsHub.filterFactoryWood")}</SelectItem>
+                      <SelectItem value="both">{ft("projectsHub.filterFactoryBoth")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1009,19 +1015,19 @@ export default function ProjectsHub() {
             <div className="double-bezel-outer">
               <div className="double-bezel-inner p-5 text-center">
                 <div className="text-3xl font-bold tabular-nums">{filtered.length}</div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">مشاريع</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{ft("projectsHub.summaryProjects")}</div>
               </div>
             </div>
             <div className="double-bezel-outer">
               <div className="double-bezel-inner p-5 text-center">
                 <div className="text-3xl font-bold tabular-nums text-blue-400">{filtered.reduce((s, p) => s + p.metalOrders.length, 0)}</div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">أوامر معدني</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{ft("projectsHub.metalOrdersCount")}</div>
               </div>
             </div>
             <div className="double-bezel-outer">
               <div className="double-bezel-inner p-5 text-center">
                 <div className="text-3xl font-bold tabular-nums text-amber-500">{filtered.reduce((s, p) => s + p.woodenOrders.length, 0)}</div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">أوامر خشبي</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{ft("projectsHub.woodenOrdersCount")}</div>
               </div>
             </div>
             <div className="double-bezel-outer">
@@ -1029,7 +1035,7 @@ export default function ProjectsHub() {
                 <div className="text-3xl font-bold tabular-nums text-green-500">
                   {filtered.length > 0 ? Math.round(filtered.reduce((s, p) => s + p.completionPct, 0) / filtered.length) : 0}%
                 </div>
-                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">متوسط الإنجاز</div>
+                <div className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mt-1">{ft("projectsHub.summaryAvgCompletion")}</div>
               </div>
             </div>
           </div>
@@ -1040,7 +1046,7 @@ export default function ProjectsHub() {
               {[1, 2, 3].map(i => <Skeleton key={i} className="h-24 rounded-3xl" />)}
             </div>
           ) : filtered.length === 0 ? (
-            <div className="text-center p-12 text-muted-foreground border border-dashed rounded-2xl">لا توجد مشاريع مطابقة</div>
+            <div className="text-center p-12 text-muted-foreground border border-dashed rounded-2xl">{ft("projectsHub.noMatchingProjects")}</div>
           ) : (
             <div className="space-y-3">
               {filtered.map(project => {
@@ -1068,7 +1074,7 @@ export default function ProjectsHub() {
                             <span className="text-sm font-bold tabular-nums text-muted-foreground">{project.completionPct}%</span>
                             {project.totalRemaining > 0 && (
                               <span className="text-xs text-yellow-500 font-medium flex items-center gap-1">
-                                <AlertTriangle className="h-3 w-3" />متبقي: {Math.round(project.totalRemaining)}
+                                <AlertTriangle className="h-3 w-3" />{ft("projectsHub.remainingCount", { n: Math.round(project.totalRemaining) })}
                               </span>
                             )}
                           </div>
