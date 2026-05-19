@@ -45,7 +45,39 @@ jobs:
       - name: Install Playwright browsers
         run: pnpm --filter web exec playwright install chromium --with-deps
 
+      - name: Start API server
+        run: |
+          pnpm --filter @workspace/api-server run dev > artifacts/api-server/api-server.log 2>&1 &
+          echo "API_PID=$!" >> $GITHUB_ENV
+
+      - name: Start preview server for logs
+        run: |
+          pnpm --filter web run preview --port 4173 > apps/web/dev-server.log 2>&1 &
+          echo "SERVER_PID=$!" >> $GITHUB_ENV
+        # We start it manually to capture logs. Playwright will reuse this server.
+
+      - name: Wait for servers
+        run: sleep 5
+
+      - name: Check header overlap baselines
+        run: node apps/web/scripts/check-header-overlap-baselines.mjs
+        env:
+          CI: "true"
+
       - name: E2E tests
         run: pnpm --filter web run test:e2e
         env:
           CI: "true"
+          PLAYWRIGHT_USE_PREVIEW: "1"
+
+      - name: Upload logs and missing stems on failure
+        if: failure()
+        uses: actions/upload-artifact@b689ef1324f4b119de46c83b2a09aeff8ab85a47 # v4.6.0
+        with:
+          name: failure-diagnostics
+          path: |
+            apps/web/dev-server.log
+            artifacts/api-server/api-server.log
+            apps/web/missing-baselines.txt
+            apps/web/test-results/
+          if-no-files-found: warn

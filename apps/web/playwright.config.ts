@@ -34,7 +34,7 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 1,
   workers: 1,
   timeout: 60_000,
-  snapshotPathTemplate: "{testDir}/{testFileName}-snapshots/{arg}{ext}",
+  snapshotPathTemplate: "{testDir}/{testFileName}-snapshots/{arg}-{projectName}-{platform}{ext}",
   expect: {
     timeout: 20_000,
     toHaveScreenshot: {

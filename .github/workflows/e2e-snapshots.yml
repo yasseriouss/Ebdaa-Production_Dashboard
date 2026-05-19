@@ -10,11 +10,11 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.2
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v4.1.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4.1.0
         with:
           node-version: "22"
           cache: "pnpm"
@@ -33,7 +33,7 @@ jobs:
           CI: "true"
 
       - name: Upload snapshot artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: headerOverlap-snapshots
           path: apps/web/e2e/headerOverlap.spec.ts-snapshots/
