@@ -299,6 +299,7 @@ export function Sidebar() {
       ) : null}
 
       <motion.aside
+        data-testid="layout-sidebar"
         ref={asideRef}
         dir={rtl ? "rtl" : "ltr"}
         lang={rtl ? "ar" : "en"}

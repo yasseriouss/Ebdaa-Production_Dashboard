@@ -36,6 +36,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden">
           <SystemNewsTicker />
           <motion.header
+            data-testid="layout-header"
             layout={false}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
