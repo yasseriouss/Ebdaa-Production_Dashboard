@@ -78,7 +78,7 @@ export default function Workforce() {
           <Skeleton className="h-36 rounded-4xl sm:h-40" />
           <Skeleton className="h-36 rounded-4xl sm:h-40" />
         </div>
-        <Skeleton className="h-[min(55vw,16rem)] min-h-[12.5rem] w-full rounded-4xl" />
+        <Skeleton className="h-[min(55vw,16rem)] min-h-50 w-full rounded-4xl" />
       </div>
     );
   }
@@ -96,7 +96,7 @@ export default function Workforce() {
       </header>
 
       {/* KPI cards — scale with viewport and card bounds */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:gap-8 [&>*]:min-w-0">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 md:gap-8 *:min-w-0">
         <motion.div variants={itemVariants} className="double-bezel-outer">
           <div className="double-bezel-inner flex h-full min-h-[clamp(7.5rem,22vw,11rem)] flex-col justify-between gap-3 p-4 sm:p-5 md:p-6">
             <h3 className="text-[clamp(0.625rem,1.6vw,0.75rem)] font-bold uppercase leading-snug tracking-wider text-muted-foreground">
@@ -126,7 +126,7 @@ export default function Workforce() {
           <h2 className="shrink-0 border-b border-foreground/10 pb-3 text-sm font-bold tracking-wide text-foreground sm:text-base">
             {ft("workforce.deptChart")}
           </h2>
-          <div className="h-[min(55vw,14rem)] w-full min-h-[12.5rem] sm:h-[min(45vw,16rem)] sm:min-h-[14rem] md:h-[min(40vw,18rem)] md:min-h-[16rem]">
+          <div className="h-[min(55vw,14rem)] w-full min-h-50 sm:h-[min(45vw,16rem)] sm:min-h-56 md:h-[min(40vw,18rem)] md:min-h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart margin={{ top: 4, right: 4, bottom: 8, left: 4 }}>
                 <Pie

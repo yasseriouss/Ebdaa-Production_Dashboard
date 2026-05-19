@@ -282,7 +282,7 @@ export function Sidebar() {
       {flyout ? (
         <button
           type="button"
-          className="fixed inset-0 z-[45] cursor-default bg-black/25"
+          className="fixed inset-0 z-45 cursor-default bg-black/25"
           aria-label={t("nav.closeMenu")}
           onClick={() => setFlyout(null)}
         />
@@ -320,7 +320,7 @@ export function Sidebar() {
           <button
             type="button"
             onClick={toggleCollapsed}
-            className="flex h-8 w-8 items-center justify-center rounded-md text-brand-metal transition-colors hover:bg-brand-border hover:text-brand-luxury focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-wood"
+            className="flex h-8 w-8 items-center justify-center rounded-md text-brand-metal transition-colors hover:bg-brand-border hover:text-brand-luxury focus-visible:outline-2 focus-visible:outline-brand-wood"
             aria-expanded={!collapsed}
             title={collapsed ? t("nav.expandMenu") : t("nav.collapseMenu")}
           >
@@ -356,7 +356,7 @@ export function Sidebar() {
                         setFlyout((prev) => (prev?.key === item.id ? null : { key: item.id, rect: r }));
                       }}
                       className={cn(
-                        "mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-brand-border focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-wood",
+                        "mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-colors hover:bg-brand-border focus-visible:outline-2 focus-visible:outline-brand-wood",
                         flyout?.key === item.id ? "bg-brand-border text-brand-luxury" : "text-brand-metal hover:text-brand-luxury",
                       )}
                       title={label}
@@ -397,7 +397,7 @@ export function Sidebar() {
                   <Link
                     href={item.href}
                     className={cn(
-                      "mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-wood motion-reduce:active:scale-100",
+                      "mx-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-md transition-[background-color,color,transform] duration-200 ease-out hover:bg-brand-border active:scale-[0.99] focus-visible:outline-2 focus-visible:outline-brand-wood motion-reduce:active:scale-100",
                       isActive ? "nav-item-active text-brand-luxury" : "text-brand-metal hover:text-brand-luxury",
                     )}
                     title={label}
