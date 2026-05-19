@@ -11,7 +11,8 @@ if (process.env.NODE_ENV !== "production") {
   console.log("[DB] LibSQL initialized");
 }
 
-const client = createClient({ url });
+const authToken = process.env.LIBSQL_AUTH_TOKEN?.trim() || undefined;
+const client = createClient({ url, authToken });
 
 export const db = drizzle(client, { schema });
 

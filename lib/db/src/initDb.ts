@@ -3,7 +3,10 @@ import { drizzle } from "drizzle-orm/libsql";
 import { sql } from "drizzle-orm";
 import { getLibsqlUrl } from "./libsql-url";
 
-const client = createClient({ url: getLibsqlUrl() });
+const client = createClient({
+  url: getLibsqlUrl(),
+  authToken: process.env.LIBSQL_AUTH_TOKEN?.trim() || undefined,
+});
 const db = drizzle(client);
 
 const DDL = `

@@ -17,7 +17,10 @@ const migrationsPath = path.resolve(__dirname, "../drizzle");
 
 async function runMigrate() {
   console.log("Running migrations...");
-  const client = createClient({ url: getLibsqlUrl() });
+  const client = createClient({
+    url: getLibsqlUrl(),
+    authToken: process.env.LIBSQL_AUTH_TOKEN?.trim() || undefined,
+  });
   const db = drizzle(client, { schema });
 
   let stamped = await stampMigrationsIfEmpty(client);
