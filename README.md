@@ -175,6 +175,27 @@ pnpm run typecheck
 - قسّم PRs: API · DB · UI.
 - قاعدة البيانات المعتمدة: **SQLite/LibSQL** — Postgres عبر [docs/rfc-libsql-migration.md](docs/rfc-libsql-migration.md) وETL عند الحاجة فقط.
 
+## نشر Vercel (Factory Data Hub — `apps/web`)
+
+1. **Vercel → Project → Settings → General**
+   - **Root Directory:** `apps/web`
+   - **Framework:** Vite (من [`apps/web/vercel.json`](apps/web/vercel.json))
+2. **Environment variables** (Production + Preview):
+
+| المتغير | مثال | الغرض |
+|---------|------|--------|
+| `FDH_API_UPSTREAM` | `https://api.example.com` | بروكسي Edge لـ `/api/*` ([`apps/web/api/[...path].ts`](apps/web/api/[...path].ts)) |
+
+3. **نشر من Git:** ادفع إلى الفرع المتصل؛ البناء: `pnpm install` ثم `pnpm --filter web run build`، المخرجات `dist/`.
+
+4. **CLI (اختياري):** انسخ [`apps/web/vercel.project.json.example`](apps/web/vercel.project.json.example) إلى `apps/web/.vercel/project.json` ثم من جذر المستودع:
+
+```bash
+npx vercel deploy --cwd apps/web
+```
+
+> لا تضبط Root Directory على `Data/off/factory-floor-rtl` — ذلك مشروع Next.js قديم (لوحة أخشاب)، وليس `apps/web`.
+
 ## نشر Replit
 
 [`.replit`](.replit) — وحدات Node 24، Python 3.11، Postgres 16 (جانبي). ملخص: [replit.md](replit.md).

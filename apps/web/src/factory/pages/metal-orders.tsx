@@ -1,4 +1,4 @@
-import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
 import {
   useListMetalOrders,
   useCreateMetalOrder,
@@ -96,15 +96,20 @@ function OrderDialog({
   onClose: () => void;
   order: MetalOrder | null;
 }) {
-  const { ft } = useFactoryTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [form, setForm] = useState(() => (order ? metalOrderToForm(order) : { ...EMPTY_FORM }));
 
-  useEffect(() => {
-    if (!open) return;
-    setForm(order ? metalOrderToForm(order) : { ...EMPTY_FORM });
-  }, [open, order]);
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevOrder, setPrevOrder] = useState(order);
+
+  if (open !== prevOpen || order !== prevOrder) {
+    setPrevOpen(open);
+    setPrevOrder(order);
+    if (open) {
+      setForm(order ? metalOrderToForm(order) : { ...EMPTY_FORM });
+    }
+  }
   const create = useCreateMetalOrder({
     mutation: {
       onSuccess: () => {
