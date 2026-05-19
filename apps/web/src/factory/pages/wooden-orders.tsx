@@ -21,6 +21,7 @@ import { Search, Pencil, Trash2, ExternalLink, FileSpreadsheet, FileText, Square
 import { useToast } from "@factory/hooks/use-toast";
 import { WOODEN_ORDER_STATUSES, getWoodenStatusBadgeClass } from "@factory/data/woodenOrderStatuses";
 import { buildOrdersExportQuery, downloadPdfFromApiExport } from "../../lib/pdf";
+import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
 
@@ -110,6 +111,7 @@ function woodenOrderToForm(order: WoodenOrder) {
 }
 
 function WoodenDialog({ open, onClose, order }: { open: boolean; onClose: () => void; order: WoodenOrder | null }) {
+  const { ft } = useFactoryTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [form, setForm] = useState(() => (order ? woodenOrderToForm(order) : { ...EMPTY_FORM }));
@@ -121,20 +123,20 @@ function WoodenDialog({ open, onClose, order }: { open: boolean; onClose: () => 
 
   const create = useCreateWoodenOrder({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getListWoodenOrdersQueryKey() }); toast({ title: "تم إنشاء الأمر" }); onClose(); },
-      onError: () => toast({ title: "فشل الإنشاء", variant: "destructive" }),
+      onSuccess: () => { qc.invalidateQueries({ queryKey: getListWoodenOrdersQueryKey() }); toast({ title: ft("orders.toastCreated") }); onClose(); },
+      onError: () => toast({ title: ft("orders.toastCreateFailed"), variant: "destructive" }),
     },
   });
   const update = useUpdateWoodenOrder({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getListWoodenOrdersQueryKey() }); toast({ title: "تم التحديث" }); onClose(); },
-      onError: () => toast({ title: "فشل التحديث", variant: "destructive" }),
+      onSuccess: () => { qc.invalidateQueries({ queryKey: getListWoodenOrdersQueryKey() }); toast({ title: ft("orders.toastUpdated") }); onClose(); },
+      onError: () => toast({ title: ft("orders.toastUpdateFailed"), variant: "destructive" }),
     },
   });
 
   const f = (k: keyof typeof EMPTY_FORM, v: string | number) => setForm(prev => ({ ...prev, [k]: v }));
   const save = () => {
-    if (!form.orderNo || !form.product) { toast({ title: "يرجى ملء الحقول المطلوبة", variant: "destructive" }); return; }
+    if (!form.orderNo || !form.product) { toast({ title: ft("orders.toastRequiredFields"), variant: "destructive" }); return; }
     if (order) update.mutate({ id: order.id as unknown as number, data: form });
     else create.mutate({ data: form });
   };
@@ -142,20 +144,20 @@ function WoodenDialog({ open, onClose, order }: { open: boolean; onClose: () => 
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-lg" dir="rtl">
-        <DialogHeader><DialogTitle>{order ? "تعديل أمر الشغل الخشبي" : "أمر شغل خشبي جديد"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{order ? ft("orders.dialogEditWood") : ft("orders.dialogNewWood")}</DialogTitle></DialogHeader>
         <div className="grid grid-cols-2 gap-4 py-2">
-          <div className="space-y-1"><Label>رقم الأمر *</Label><Input value={form.orderNo} onChange={e => f("orderNo", e.target.value)} placeholder="WO-2025-XXX" data-testid="input-order-no" /></div>
-          <div className="space-y-1"><Label>الامتداد</Label><Input value={form.extension} onChange={e => f("extension", e.target.value)} data-testid="input-wooden-extension" /></div>
-          <div className="space-y-1"><Label>تاريخ الأمر</Label><Input type="date" value={form.orderDate} onChange={e => f("orderDate", e.target.value)} data-testid="input-wooden-order-date" /></div>
-          <div className="space-y-1"><Label>المنتج *</Label><Input value={form.product} onChange={e => f("product", e.target.value)} data-testid="input-wooden-product" /></div>
-          <div className="space-y-1"><Label>التصنيف</Label><Input value={form.category} onChange={e => f("category", e.target.value)} data-testid="input-wooden-category" /></div>
-          <div className="space-y-1"><Label>الوحدة</Label><Input value={form.uom} onChange={e => f("uom", e.target.value)} data-testid="input-wooden-uom" /></div>
-          <div className="space-y-1"><Label>العميل</Label><Input value={form.client} onChange={e => f("client", e.target.value)} data-testid="input-wooden-client" /></div>
-          <div className="space-y-1"><Label>المشروع الفرعي</Label><Input value={form.subProject} onChange={e => f("subProject", e.target.value)} data-testid="input-wooden-sub-project" /></div>
-          <div className="space-y-1"><Label>الكمية</Label><Input type="number" value={form.qty} onChange={e => f("qty", parseFloat(e.target.value) || 0)} min="0" data-testid="input-wooden-qty" /></div>
-          <div className="space-y-1"><Label>المنجز</Label><Input type="number" value={form.done} onChange={e => f("done", parseFloat(e.target.value) || 0)} min="0" data-testid="input-wooden-done" /></div>
-          <div className="space-y-1"><Label>المتبقي</Label><Input type="number" value={form.rem} onChange={e => f("rem", parseFloat(e.target.value) || 0)} min="0" data-testid="input-wooden-rem" /></div>
-          <div className="space-y-1"><Label>الحالة</Label>
+          <div className="space-y-1"><Label>{ft("orders.labelOrderNo")}</Label><Input value={form.orderNo} onChange={e => f("orderNo", e.target.value)} placeholder={ft("orders.placeholderOrderNoWood")} data-testid="input-order-no" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelExtension")}</Label><Input value={form.extension} onChange={e => f("extension", e.target.value)} data-testid="input-wooden-extension" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelOrderDate")}</Label><Input type="date" value={form.orderDate} onChange={e => f("orderDate", e.target.value)} data-testid="input-wooden-order-date" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelProduct")}</Label><Input value={form.product} onChange={e => f("product", e.target.value)} data-testid="input-wooden-product" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelCategory")}</Label><Input value={form.category} onChange={e => f("category", e.target.value)} data-testid="input-wooden-category" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelUnit")}</Label><Input value={form.uom} onChange={e => f("uom", e.target.value)} data-testid="input-wooden-uom" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelClient")}</Label><Input value={form.client} onChange={e => f("client", e.target.value)} data-testid="input-wooden-client" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelSubProject")}</Label><Input value={form.subProject} onChange={e => f("subProject", e.target.value)} data-testid="input-wooden-sub-project" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelQty")}</Label><Input type="number" value={form.qty} onChange={e => f("qty", parseFloat(e.target.value) || 0)} min="0" data-testid="input-wooden-qty" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelDone")}</Label><Input type="number" value={form.done} onChange={e => f("done", parseFloat(e.target.value) || 0)} min="0" data-testid="input-wooden-done" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelRemaining")}</Label><Input type="number" value={form.rem} onChange={e => f("rem", parseFloat(e.target.value) || 0)} min="0" data-testid="input-wooden-rem" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelStatus")}</Label>
             <Select value={form.status} onValueChange={v => f("status", v)}>
               <SelectTrigger data-testid="select-wooden-status"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -165,13 +167,13 @@ function WoodenDialog({ open, onClose, order }: { open: boolean; onClose: () => 
               </SelectContent>
             </Select>
           </div>
-          <div className="space-y-1"><Label>تاريخ البداية</Label><Input type="date" value={form.prodDateStart} onChange={e => f("prodDateStart", e.target.value)} data-testid="input-wooden-start-date" /></div>
-          <div className="space-y-1"><Label>تاريخ النهاية</Label><Input type="date" value={form.prodDateEnd} onChange={e => f("prodDateEnd", e.target.value)} data-testid="input-wooden-end-date" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelStartDate")}</Label><Input type="date" value={form.prodDateStart} onChange={e => f("prodDateStart", e.target.value)} data-testid="input-wooden-start-date" /></div>
+          <div className="space-y-1"><Label>{ft("orders.labelEndDate")}</Label><Input type="date" value={form.prodDateEnd} onChange={e => f("prodDateEnd", e.target.value)} data-testid="input-wooden-end-date" /></div>
         </div>
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>إلغاء</Button>
+          <Button variant="outline" onClick={onClose}>{ft("orders.cancel")}</Button>
           <Button onClick={save} disabled={create.isPending || update.isPending} data-testid="btn-save-wooden-order">
-            {create.isPending || update.isPending ? "جاري الحفظ..." : "حفظ"}
+            {create.isPending || update.isPending ? ft("orders.saving") : ft("orders.save")}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -180,6 +182,7 @@ function WoodenDialog({ open, onClose, order }: { open: boolean; onClose: () => 
 }
 
 const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrders(_props, ref) {
+  const { ft } = useFactoryTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -215,12 +218,12 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
       await downloadPdfFromApiExport({
         endpoint: "/export/wooden-orders",
         query: buildOrdersExportQuery({ search, statusFilter, dateFrom, dateTo }),
-        title: "أوامر المصنع الخشبي",
+        title: ft("orders.woodTitle"),
         filename: "wooden-orders",
       });
-      toast({ title: "تم تصدير PDF" });
+      toast({ title: ft("orders.toastPdfExported") });
     } catch {
-      toast({ title: "فشل تصدير PDF", variant: "destructive" });
+      toast({ title: ft("orders.toastPdfFailed"), variant: "destructive" });
     } finally {
       setPdfBusy(false);
     }
@@ -232,9 +235,9 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
     mutation: {
       onSuccess: () => {
         void qc.invalidateQueries({ queryKey: getListWoodenOrdersQueryKey() });
-        toast({ title: "تم حفظ التعديلات" });
+        toast({ title: ft("orders.toastSaved") });
       },
-      onError: () => toast({ title: "فشل حفظ الصف", variant: "destructive" }),
+      onError: () => toast({ title: ft("orders.toastSaveFailed"), variant: "destructive" }),
     },
   });
 
@@ -258,8 +261,8 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
 
   const del = useDeleteWoodenOrder({
     mutation: {
-      onSuccess: () => { qc.invalidateQueries({ queryKey: getListWoodenOrdersQueryKey() }); setDeleteId(null); toast({ title: "تم الحذف" }); },
-      onError: () => toast({ title: "فشل الحذف", variant: "destructive" }),
+      onSuccess: () => { qc.invalidateQueries({ queryKey: getListWoodenOrdersQueryKey() }); setDeleteId(null); toast({ title: ft("orders.toastDeleted") }); },
+      onError: () => toast({ title: ft("orders.toastDeleteFailed"), variant: "destructive" }),
     },
   });
 
@@ -267,16 +270,14 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">أوامر المصنع الخشبي</h1>
-          <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
-            كل أمر شغل يتبع مشروعاً (المشروع الفرعي في الجدول). العميل قد يملك عدة مشاريع، وكل مشروع عدة أوامر شغل.
-          </p>
+          <h1 className="text-3xl font-bold tracking-tight">{ft("orders.woodTitle")}</h1>
+          <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">{ft("orders.woodSubtitle")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Button variant="outline" asChild data-testid="btn-export-wooden">
             <a href={excelExportUrl} download>
               <FileSpreadsheet className="ml-2 h-4 w-4" />
-              تصدير Excel
+              {ft("orders.exportExcel")}
             </a>
           </Button>
           <Button
@@ -286,14 +287,14 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
             data-testid="btn-export-wooden-pdf"
           >
             {pdfBusy ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileText className="ml-2 h-4 w-4" />}
-            تصدير PDF
+            {ft("orders.exportPdf")}
           </Button>
         </div>
       </div>
 
       <div className="flex flex-wrap items-end gap-3">
         <div className="w-full sm:w-auto sm:max-w-[220px]">
-          <Label className="mb-1 block text-xs text-muted-foreground">وضع التعديل</Label>
+          <Label className="mb-1 block text-xs text-muted-foreground">{ft("orders.editMode")}</Label>
           <Button
             type="button"
             variant={tableEditMode ? "default" : "outline"}
@@ -321,30 +322,30 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
             data-testid="btn-wooden-table-edit-mode"
           >
             <SquarePen className="h-4 w-4 shrink-0" />
-            {tableEditMode ? "إيقاف التعديل في الجدول" : "تعديل في الجدول"}
+            {tableEditMode ? ft("orders.editModeOn") : ft("orders.editModeOff")}
           </Button>
         </div>
         <div className="relative w-full sm:w-72">
-          <Label className="mb-1 block text-xs text-muted-foreground">بحث</Label>
+          <Label className="mb-1 block text-xs text-muted-foreground">{ft("orders.search")}</Label>
           <Search className="absolute right-2.5 top-[34px] h-4 w-4 text-muted-foreground" />
-          <Input placeholder="بحث برقم الأمر أو العميل..." className="pr-9" value={search} onChange={e => setSearch(e.target.value)} data-testid="input-wooden-search" />
+          <Input placeholder={ft("orders.searchPlaceholder")} className="pr-9" value={search} onChange={e => setSearch(e.target.value)} data-testid="input-wooden-search" />
         </div>
         <div className="w-44">
-          <Label className="mb-1 block text-xs text-muted-foreground">الحالة</Label>
+          <Label className="mb-1 block text-xs text-muted-foreground">{ft("orders.status")}</Label>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger data-testid="select-wooden-status-filter"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">الكل</SelectItem>
+              <SelectItem value="all">{ft("orders.all")}</SelectItem>
               {WOODEN_STATUS_OPTIONS.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
         </div>
         <div className="w-40">
-          <Label className="mb-1 block text-xs text-muted-foreground">من تاريخ (للتصدير)</Label>
+          <Label className="mb-1 block text-xs text-muted-foreground">{ft("orders.dateFromExport")}</Label>
           <Input type="date" value={dateFrom} onChange={e => setDateFrom(e.target.value)} data-testid="input-wooden-date-from" />
         </div>
         <div className="w-40">
-          <Label className="mb-1 block text-xs text-muted-foreground">إلى تاريخ (للتصدير)</Label>
+          <Label className="mb-1 block text-xs text-muted-foreground">{ft("orders.dateToExport")}</Label>
           <Input type="date" value={dateTo} onChange={e => setDateTo(e.target.value)} data-testid="input-wooden-date-to" />
         </div>
         {(search || statusFilter !== "all" || dateFrom || dateTo) && (
@@ -354,7 +355,7 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
             onClick={() => { setSearch(""); setStatusFilter("all"); setDateFrom(""); setDateTo(""); }}
             data-testid="btn-wooden-clear-filters"
           >
-            مسح الفلاتر
+            {ft("orders.clearFilters")}
           </Button>
         )}
       </div>
@@ -363,23 +364,23 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="text-right">رقم الأمر</TableHead>
-              <TableHead className="text-right">العميل</TableHead>
-              <TableHead className="text-right">المشروع</TableHead>
-              <TableHead className="text-right">المنتج</TableHead>
-              <TableHead className="text-right">الكمية</TableHead>
-              <TableHead className="text-right">المنجز</TableHead>
-              <TableHead className="text-right min-w-[140px]">نسبة الإنجاز</TableHead>
-              <TableHead className="text-right">المتبقي</TableHead>
-              <TableHead className="text-right">الحالة</TableHead>
+              <TableHead className="text-right">{ft("orders.colOrderNo")}</TableHead>
+              <TableHead className="text-right">{ft("orders.colClient")}</TableHead>
+              <TableHead className="text-right">{ft("orders.colProject")}</TableHead>
+              <TableHead className="text-right">{ft("orders.colProduct")}</TableHead>
+              <TableHead className="text-right">{ft("orders.colQty")}</TableHead>
+              <TableHead className="text-right">{ft("orders.colDone")}</TableHead>
+              <TableHead className="text-right min-w-[140px]">{ft("orders.colProgress")}</TableHead>
+              <TableHead className="text-right">{ft("orders.colRemaining")}</TableHead>
+              <TableHead className="text-right">{ft("orders.colStatus")}</TableHead>
               <TableHead />
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow><TableCell colSpan={10} className="h-24 text-center text-muted-foreground">جاري التحميل...</TableCell></TableRow>
+              <TableRow><TableCell colSpan={10} className="h-24 text-center text-muted-foreground">{ft("orders.loading")}</TableCell></TableRow>
             ) : !Array.isArray(orders) || !orders.length ? (
-              <TableRow><TableCell colSpan={10} className="h-24 text-center text-muted-foreground">لا توجد أوامر</TableCell></TableRow>
+              <TableRow><TableCell colSpan={10} className="h-24 text-center text-muted-foreground">{ft("orders.empty")}</TableCell></TableRow>
             ) : (
               orders.map(order => {
                 const qty = parseFloat(String(order.qty)) || 0;
@@ -423,7 +424,7 @@ const WoodenOrders = forwardRef<WoodenOrdersHandle, object>(function WoodenOrder
                             }))
                           }
                           data-testid={`input-wooden-row-subproject-${rowKey}`}
-                          placeholder="المشروع الفرعي"
+                          placeholder={ft("orders.subProjectPlaceholder")}
                         />
                       ) : (
                         order.subProject || "—"

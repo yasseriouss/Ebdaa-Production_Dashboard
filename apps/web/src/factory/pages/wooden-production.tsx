@@ -6,6 +6,7 @@ import { Progress } from "@factory/components/ui/progress";
 import { Skeleton } from "@factory/components/ui/skeleton";
 import { Input } from "@factory/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@factory/components/ui/select";
+import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 
 const WOODEN_STAGE_NAMES = ["القطع", "التجميع", "التشطيب", "التغليف"];
 
@@ -164,11 +165,13 @@ export default function WoodenProduction() {
   const maxRem = Math.max(...(orders || []).map(o => parseFloat(String(o.rem ?? 0))), 1);
   const maxWip = Math.max(...stageSummary.map(s => s.wip), 1);
 
+  const { ft } = useFactoryTranslation();
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">الإنتاج اليومي الخشبي</h1>
-        <p className="text-muted-foreground mt-1">متابعة وتحديث إنتاج المصنع الخشبي عبر 4 مراحل تصنيع</p>
+        <h1 className="text-3xl font-bold tracking-tight">{ft("production.woodTitle")}</h1>
+        <p className="text-muted-foreground mt-1">{ft("production.woodSubtitle")}</p>
       </div>
 
       {/* KPI Row */}

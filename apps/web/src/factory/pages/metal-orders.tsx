@@ -1,4 +1,4 @@
-import { useState, forwardRef, useImperativeHandle, useEffect } from "react";
+import { useState, forwardRef, useImperativeHandle } from "react";
 import {
   useListMetalOrders,
   useCreateMetalOrder,
@@ -20,6 +20,7 @@ import { Link } from "wouter";
 import { Search, Pencil, Trash2, ExternalLink, FileSpreadsheet, FileText, Loader2 } from "lucide-react";
 import { useToast } from "@factory/hooks/use-toast";
 import { buildOrdersExportQuery, downloadPdfFromApiExport } from "../../lib/pdf";
+import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 
 const API_BASE = import.meta.env.BASE_URL?.replace(/\/$/, "") + "/api";
 
@@ -99,10 +100,16 @@ function OrderDialog({
   const qc = useQueryClient();
   const [form, setForm] = useState(() => (order ? metalOrderToForm(order) : { ...EMPTY_FORM }));
 
-  useEffect(() => {
-    if (!open) return;
-    setForm(order ? metalOrderToForm(order) : { ...EMPTY_FORM });
-  }, [open, order]);
+  const [prevOpen, setPrevOpen] = useState(open);
+  const [prevOrder, setPrevOrder] = useState(order);
+
+  if (open !== prevOpen || order !== prevOrder) {
+    setPrevOpen(open);
+    setPrevOrder(order);
+    if (open) {
+      setForm(order ? metalOrderToForm(order) : { ...EMPTY_FORM });
+    }
+  }
   const create = useCreateMetalOrder({
     mutation: {
       onSuccess: () => {
@@ -221,6 +228,7 @@ function OrderDialog({
 }
 
 const MetalOrders = forwardRef<MetalOrdersHandle, object>(function MetalOrders(_props, ref) {
+  const { ft } = useFactoryTranslation();
   const { toast } = useToast();
   const qc = useQueryClient();
   const [search, setSearch] = useState("");
@@ -252,7 +260,7 @@ const MetalOrders = forwardRef<MetalOrdersHandle, object>(function MetalOrders(_
       await downloadPdfFromApiExport({
         endpoint: "/export/metal-orders",
         query: buildOrdersExportQuery({ search, statusFilter, dateFrom, dateTo }),
-        title: "أوامر المصنع المعدني",
+        title: ft("orders.metalTitle"),
         filename: "metal-orders",
       });
       toast({ title: "تم تصدير PDF" });
@@ -278,7 +286,7 @@ const MetalOrders = forwardRef<MetalOrdersHandle, object>(function MetalOrders(_
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="space-y-1">
-          <h1 className="text-3xl font-bold tracking-tight">أوامر المصنع المعدني</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{ft("orders.metalTitle")}</h1>
           <p className="text-sm text-muted-foreground max-w-2xl leading-relaxed">
             كل أمر شغل يتبع مشروعاً (حقل المشروع). العميل قد يملك عدة مشاريع، وكل مشروع عدة أوامر شغل.
           </p>
@@ -287,7 +295,7 @@ const MetalOrders = forwardRef<MetalOrdersHandle, object>(function MetalOrders(_
           <Button variant="outline" asChild data-testid="btn-export-metal">
             <a href={excelExportUrl} download>
               <FileSpreadsheet className="ml-2 h-4 w-4" />
-              تصدير Excel
+              {ft("orders.exportExcel")}
             </a>
           </Button>
           <Button
@@ -297,7 +305,7 @@ const MetalOrders = forwardRef<MetalOrdersHandle, object>(function MetalOrders(_
             data-testid="btn-export-metal-pdf"
           >
             {pdfBusy ? <Loader2 className="ml-2 h-4 w-4 animate-spin" /> : <FileText className="ml-2 h-4 w-4" />}
-            تصدير PDF
+            {ft("orders.exportPdf")}
           </Button>
         </div>
       </div>

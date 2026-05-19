@@ -36,6 +36,17 @@ This document maps the **web panel JSON** (eight-stage `routing_progress`, numer
 | `FH_SYNC_WOODEN=true` | After each successful `PUT /api/factory-hub/wood-work-orders/:id`, mirror fields into `wooden_work_orders` (create or update by `order_no`). |
 | `FH_ALLOW_SEED=true` | Allow `POST /api/factory-hub/seed` in production (normally dev-only). |
 
-## Routing translator (follow-up, not blocking web delivery)
+## Routing translator
 
-A **full** bidirectional mapping between the web panel’s eight `routing_progress` stages and the four Arabic `wooden_production_stages` rows is **not** implemented in the optional bridge. That translator belongs in a dedicated module (or issue) once you pick a single source of truth for stage completion. The hub bridge today maps quantities and metadata only; stage-level sync stays legacy-side until this work lands.
+Module: [`artifacts/api-server/src/lib/woodRoutingTranslator.ts`](../artifacts/api-server/src/lib/woodRoutingTranslator.ts).
+
+| Legacy stage | Hub keys (bottleneck = min `qty_passed` in group) |
+|--------------|---------------------------------------------------|
+| القطع | `solid_wood`, `panel_saw`, `edge_banding`, `cnc_routing` |
+| التجميع | `upholstery`, `assembly` |
+| التشطيب | `painting` |
+| التغليف | `packaging` |
+
+When `FH_SYNC_WOODEN=true`, [`factoryHubWoodenBridge.ts`](../artifacts/api-server/src/services/factoryHubWoodenBridge.ts) mirrors order fields **and** updates existing `wooden_production_stages` rows from hub `routing_progress`. Reverse mapping (`legacyStagesToHubRouting`) is available for future hub writes from legacy UI.
+
+Run tests: `pnpm --filter @workspace/api-server run test`.

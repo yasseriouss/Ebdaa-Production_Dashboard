@@ -18,6 +18,7 @@ import {
   Cell,
 } from "recharts";
 import { DashboardOperationalAnalytics } from "../../components/DashboardOperationalAnalytics";
+import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 
 const PIE_TOOLTIP_STYLE = {
   background: "oklch(99% 0.008 70)",
@@ -40,6 +41,7 @@ function useMediaQuery(query: string): boolean {
 }
 
 export default function Analytics() {
+  const { ft } = useFactoryTranslation();
   const { data: trendData, isLoading: loadingTrend } = useGetCompletionTrend();
   const { data: clientsData, isLoading: loadingClients } = useGetDashboardClients();
   const { data: stats, isLoading: loadingStats } = useGetDashboardStats();
@@ -112,7 +114,7 @@ export default function Analytics() {
       dir="rtl"
       lang="ar"
     >
-      <h1 className="text-3xl font-bold tracking-tight text-start">الإحصائيات والتحليلات</h1>
+      <h1 className="text-3xl font-bold tracking-tight text-start">{ft("analytics.title")}</h1>
 
       <DashboardOperationalAnalytics />
 

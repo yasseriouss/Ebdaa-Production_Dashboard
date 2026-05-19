@@ -1,0 +1,15 @@
+node_modules
+**/node_modules
+.git
+.cursor
+Data/off
+apps/web/playwright-report
+apps/web/test-results
+apps/web/dist
+local.db
+**/*.db
+exports
+artifacts/api-server/local.db
+**/.turbo
+coverage
+**/*.log

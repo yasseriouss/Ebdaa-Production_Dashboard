@@ -35,7 +35,7 @@ isProject: false
 
 - الواجهة: [`apps/web`](apps/web) — [`PermissionProvider`](apps/web/src/context/PermissionContext.tsx)، [`effective-permissions`](artifacts/api-server/src/controllers/auth.controller.ts)، إخفاء عناصر [`Sidebar`](apps/web/src/components/layout/Sidebar.tsx) حسب [`routePermissions`](apps/web/src/lib/routePermissions.ts)، تسجيل دخول [`Login`](apps/web/src/pages/Login.tsx)، تمرير `Authorization: Bearer` في [`api/client.ts`](apps/web/src/lib/api/client.ts).
 - البيانات المنظمة: [`lib/db/src/schema`](lib/db/src/schema) — [`employeesTable`](lib/db/src/schema/employees.ts) مرتبطة بـ [`departmentsTable` / `factoriesTable`](lib/db/src/schema/factoryCapacity.ts).
-- الخلفية: [`artifacts/api-server`](artifacts/api-server) — `optionalAuthMiddleware` يحقن `req.auth`؛ [`requirePermission`](artifacts/api-server/src/middleware/requirePermission.ts) على مسارات REST؛ تصفية نطاق الصفوف على السعة والموظفين ([`dataScopeFilter.ts`](artifacts/api-server/src/lib/dataScopeFilter.ts)) وليس بعد على قائمة أوامر الخشب/المعدن أو hub.
+- الخلفية: [`artifacts/api-server`](artifacts/api-server) — `optionalAuthMiddleware` يحقن `req.auth`؛ [`requirePermission`](artifacts/api-server/src/middleware/requirePermission.ts) على مسارات REST؛ تصفية نطاق الصفوف عبر [`dataScopeFilter.ts`](artifacts/api-server/src/lib/dataScopeFilter.ts) على السعة والموظفين والأداء **وأوامر الخشب/المعدن وصفوف factory-hub** (`factoryDepartmentRowScopeWhere` في [`wooden.service.ts`](artifacts/api-server/src/services/wooden.service.ts)، [`metal.service.ts`](artifacts/api-server/src/services/metal.service.ts)، [`factoryHub.service.ts`](artifacts/api-server/src/services/factoryHub.service.ts)) عند تعبئة `factory_id` / `department_id`.
 
 ## 1) نموذج الهوية والصلاحيات
 

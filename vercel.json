@@ -1,9 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "vite",
-  "installCommand": "cd .. && pnpm install --frozen-lockfile",
-  "buildCommand": "cd .. && pnpm --filter web run build",
-  "outputDirectory": "dist",
+  "installCommand": "pnpm install --frozen-lockfile",
+  "buildCommand": "pnpm --filter web run build",
+  "outputDirectory": "apps/web/dist",
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- apps/web packages lib pnpm-lock.yaml package.json vercel.json",
   "headers": [
     {
       "source": "/assets/(.*)",
