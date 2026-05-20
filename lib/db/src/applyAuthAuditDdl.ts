@@ -8,7 +8,10 @@ import { getLibsqlUrl } from "./libsql-url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function main() {
-  const client = createClient({ url: getLibsqlUrl() });
+  const client = createClient({
+    url: getLibsqlUrl(),
+    authToken: process.env.LIBSQL_AUTH_TOKEN?.trim() || undefined,
+  });
   const sqlPath = path.join(__dirname, "../drizzle/0005_auth_audit_tables.sql");
   const sql = readFileSync(sqlPath, "utf8");
   for (const stmt of sql.split(";").map((s) => s.trim()).filter(Boolean)) {

@@ -4,7 +4,7 @@ import {
   hubRoutingToLegacyStages,
   legacyStageQtyFromHub,
   legacyStagesToHubRouting,
-} from "./woodRoutingTranslator.ts";
+} from "./woodRoutingTranslator";
 
 describe("woodRoutingTranslator", () => {
   it("maps hub keys to legacy القطع as bottleneck min", () => {

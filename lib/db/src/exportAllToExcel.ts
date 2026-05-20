@@ -25,7 +25,10 @@ function rowsToSheet(rows: Record<string, unknown>[]): import("xlsx").WorkSheet 
 }
 
 async function main(): Promise<void> {
-  const client = createClient({ url: getLibsqlUrl() });
+  const client = createClient({
+    url: getLibsqlUrl(),
+    authToken: process.env.LIBSQL_AUTH_TOKEN?.trim() || undefined,
+  });
 
   const tablesRs = await client.execute(
     `SELECT name FROM sqlite_master
