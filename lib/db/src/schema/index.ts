@@ -4,6 +4,7 @@ export * from "./metalStageLog";
 export * from "./factoryHub";
 export * from "./woodenWorkOrders";
 export * from "./woodenProductionStages";
+export * from "./woodenStageLog";
 export * from "./sharedProjects";
 export * from "./factoryCapacity";
 export * from "./employees";
