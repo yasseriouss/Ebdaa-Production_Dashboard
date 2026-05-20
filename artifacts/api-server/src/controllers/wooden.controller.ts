@@ -171,4 +171,38 @@ export class WoodenController {
       res.status(500).json({ error: "Failed to delete wooden stage" });
     }
   }
+
+  static async listLogs(req: Request, res: Response) {
+    try {
+      const orderId = req.query.orderId as string | undefined;
+      const logDate = req.query.logDate as string | undefined;
+      const logs = await WoodenService.listLogs({ orderId, logDate }, req.auth);
+      res.json(logs);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch wooden stage logs" });
+    }
+  }
+
+  static async createLog(req: Request, res: Response) {
+    try {
+      const log = await WoodenService.createLog(req.body, req.auth);
+      res.status(201).json(log);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to create/update wooden stage log" });
+    }
+  }
+
+  static async deleteLog(req: Request, res: Response) {
+    try {
+      const id = req.params.id as string;
+      const log = await WoodenService.deleteLog(id, req.auth);
+      if (!log) {
+        res.status(404).json({ error: "Not found" });
+        return;
+      }
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ error: "Failed to delete wooden stage log" });
+    }
+  }
 }

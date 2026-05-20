@@ -17,4 +17,8 @@ router.get("/stages/:id", requirePermission("orders:wood:view"), WoodenControlle
 router.put("/stages/:id", requirePermission("orders:wood:write"), WoodenController.updateStage);
 router.delete("/stages/:id", requirePermission("orders:wood:write"), WoodenController.deleteStage);
 
+router.get("/logs", requirePermission("orders:wood:view"), WoodenController.listLogs);
+router.post("/logs", requirePermission("orders:wood:write"), WoodenController.createLog);
+router.delete("/logs/:id", requirePermission("orders:wood:write"), WoodenController.deleteLog);
+
 export default router;

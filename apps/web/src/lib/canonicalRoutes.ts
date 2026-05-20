@@ -2,7 +2,7 @@
 export const PRODUCTION_HUB_PATH = "/production";
 
 export type ProductionHubFactory = "wood" | "metal" | "both";
-export type ProductionHubView = "orders" | "production";
+export type ProductionHubView = "orders" | "production" | "daily";
 
 export function productionHubHref(opts: {
   factory?: ProductionHubFactory;

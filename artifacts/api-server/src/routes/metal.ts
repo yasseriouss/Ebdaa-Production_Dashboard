@@ -17,4 +17,8 @@ router.get("/stages/:id", requirePermission("orders:metal:view"), MetalControlle
 router.put("/stages/:id", requirePermission("orders:metal:write"), MetalController.updateStage);
 router.delete("/stages/:id", requirePermission("orders:metal:write"), MetalController.deleteStage);
 
+router.get("/logs", requirePermission("orders:metal:view"), MetalController.listLogs);
+router.post("/logs", requirePermission("orders:metal:write"), MetalController.createLog);
+router.delete("/logs/:id", requirePermission("orders:metal:write"), MetalController.deleteLog);
+
 export default router;

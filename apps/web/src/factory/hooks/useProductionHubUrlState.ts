@@ -11,7 +11,7 @@ function readQuery(): { tab: Tab; subTab: SubTab } {
   const f = params.get("factory");
   const v = params.get("view");
   const tab: Tab = f === "metal" || f === "both" ? f : "wood";
-  const subTab: SubTab = v === "production" ? "production" : "orders";
+  const subTab: SubTab = v === "production" ? "production" : v === "daily" ? "daily" : "orders";
   return { tab, subTab };
 }
 

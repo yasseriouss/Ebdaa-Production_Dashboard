@@ -520,8 +520,9 @@ export const ar = {
       tabWood: "المصنع الخشبي",
       tabMetal: "المصنع المعدني",
       tabBoth: "المصنعين معاً",
-      subOrders: "الأوامر",
-      subProduction: "الإنتاج اليومي",
+      subOrders: "الطلبات والمتأخرات",
+      subProduction: "السجلات الأقسامية",
+      subDaily: "ورق ترحيل الوردية اليومي",
       newOrder: "أمر جديد",
     },
     importExport: {

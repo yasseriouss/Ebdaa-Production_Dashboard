@@ -11,6 +11,7 @@ import MetalProduction from "./metal-production";
 import WoodenOrders, { type WoodenOrdersHandle } from "./wooden-orders";
 import WoodenProduction from "./wooden-production";
 import SharedProjects from "./shared-projects";
+import DailyProductionLogs from "./daily-production-logs";
 
 const executiveTransition = { type: "spring" as const, damping: 30, stiffness: 200, mass: 1 };
 
@@ -66,7 +67,7 @@ export default function ProductionHub() {
             data-testid="btn-new-order-production-hub"
             className={cn(
               "mr-1 flex items-center gap-2 rounded-2xl px-6 py-3 text-sm font-bold border-0 shadow-lg transition-all duration-300",
-              "bg-gradient-to-l from-emerald-600 to-teal-600 text-white shadow-emerald-900/25",
+              "bg-linear-to-l from-emerald-600 to-teal-600 text-white shadow-emerald-900/25",
               "hover:from-emerald-500 hover:to-teal-500 hover:shadow-emerald-900/35",
               "focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2"
             )}
@@ -102,6 +103,15 @@ export default function ProductionHub() {
           >
             {ft("productionHub.subProduction")}
           </button>
+          <button
+            onClick={() => setSubTab("daily")}
+            className={cn(
+              "px-5 py-2 rounded-xl text-xs font-bold transition-all duration-300",
+              subTab === "daily" ? "bg-foreground/10 text-foreground" : "text-muted-foreground hover:bg-foreground/5"
+            )}
+          >
+            {ft("productionHub.subDaily")}
+          </button>
         </div>
       )}
 
@@ -114,8 +124,10 @@ export default function ProductionHub() {
       >
         {tab === "wood" && subTab === "orders" && <WoodenOrders ref={woodenOrdersRef} />}
         {tab === "wood" && subTab === "production" && <WoodenProduction />}
+        {tab === "wood" && subTab === "daily" && <DailyProductionLogs factory="wood" />}
         {tab === "metal" && subTab === "orders" && <MetalOrders ref={metalOrdersRef} />}
         {tab === "metal" && subTab === "production" && <MetalProduction />}
+        {tab === "metal" && subTab === "daily" && <DailyProductionLogs factory="metal" />}
         {tab === "both" && <SharedProjects />}
       </motion.div>
     </motion.div>

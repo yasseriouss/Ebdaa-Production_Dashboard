@@ -2,8 +2,9 @@ import { db } from "@workspace/db";
 import {
   metalWorkOrdersTable,
   metalProductionStagesTable,
+  metalStageLogTable,
 } from "@workspace/db";
-import { eq, isNull, and, or, ilike, inArray } from "@workspace/db";
+import { eq, isNull, and, or, ilike, inArray, desc } from "@workspace/db";
 import type { RequestAuth } from "../lib/requestAuth";
 import {
   assertScopedFactoryDepartment,
@@ -372,5 +373,74 @@ export class MetalService {
       .where(eq(metalProductionStagesTable.id, id))
       .returning();
     return stage;
+  }
+
+  static async listLogs(query: { orderId?: string; logDate?: string }, auth: RequestAuth) {
+    let whereClause: any = undefined;
+
+    if (query.orderId) {
+      whereClause = eq(metalStageLogTable.metalOrderId, query.orderId);
+    }
+
+    if (query.logDate) {
+      const dateCond = eq(metalStageLogTable.logDate, query.logDate);
+      whereClause = whereClause ? and(whereClause, dateCond) : dateCond;
+    }
+
+    const results = await db
+      .select()
+      .from(metalStageLogTable)
+      .where(whereClause)
+      .orderBy(desc(metalStageLogTable.logDate));
+
+    return results;
+  }
+
+  static async createLog(body: Record<string, unknown>, auth: RequestAuth) {
+    const orderId = String(body.metalOrderId);
+    const moNumber = String(body.moNumber);
+    const logDate = String(body.logDate);
+    const stageName = String(body.stageName);
+    const inputQty = String(body.inputQty || "0");
+    const outputQty = String(body.outputQty || "0");
+    const wasteQty = String(body.wasteQty || "0");
+    const operator = body.operator ? String(body.operator) : null;
+    const notes = body.notes ? String(body.notes) : null;
+
+    const [log] = await db
+      .insert(metalStageLogTable)
+      .values({
+        metalOrderId: orderId,
+        moNumber,
+        logDate,
+        stageName,
+        inputQty,
+        outputQty,
+        wasteQty,
+        operator,
+        notes,
+      })
+      .onConflictDoUpdate({
+        target: [metalStageLogTable.metalOrderId, metalStageLogTable.logDate, metalStageLogTable.stageName],
+        set: {
+          inputQty,
+          outputQty,
+          wasteQty,
+          operator,
+          notes,
+          updatedAt: new Date().toISOString(),
+        },
+      })
+      .returning();
+
+    return log;
+  }
+
+  static async deleteLog(id: string, auth: RequestAuth) {
+    const [log] = await db
+      .delete(metalStageLogTable)
+      .where(eq(metalStageLogTable.id, id))
+      .returning();
+    return log;
   }
 }

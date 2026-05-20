@@ -522,8 +522,9 @@ export const en = {
       tabWood: "Wood plant",
       tabMetal: "Metal plant",
       tabBoth: "Both plants",
-      subOrders: "Orders",
-      subProduction: "Production",
+      subOrders: "Orders & Backlogs",
+      subProduction: "Departmental Grid",
+      subDaily: "Daily Shift Logs",
       newOrder: "New order",
     },
     importExport: {
