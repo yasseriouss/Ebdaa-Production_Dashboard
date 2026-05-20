@@ -9,7 +9,9 @@ import { BrandLogo } from "../brand/BrandLogo";
 import { Sidebar } from "./Sidebar";
 import { SystemNewsTicker } from "./SystemNewsTicker";
 import { AuthHeaderLinks } from "./AuthHeaderLinks";
+import { OfflineIndicator } from "./OfflineIndicator";
 import { useDirection } from "../../lib/useDirection";
+
 import { cn } from "../../lib/cn";
 import { ThemeToggle } from "../ThemeToggle";
 import { useTranslation } from "../../context/I18nContext";
@@ -34,6 +36,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       >
         <Sidebar />
         <div className="flex min-h-screen min-w-0 flex-1 flex-col overflow-x-hidden">
+          <OfflineIndicator />
           <SystemNewsTicker />
           <motion.header
             data-testid="layout-header"
@@ -52,7 +55,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               >
                 <Link
                   href="/"
-                  className="block rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-wood"
+                  className="block rounded-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-wood"
                   aria-label={`${t("layout.brandName")} — ${t("layout.homeAria")}`}
                 >
                   <BrandLogo
@@ -79,7 +82,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 type="button"
                 onClick={toggle}
                 aria-label={t("layout.toggleDirAria")}
-                className="industrial-btn min-w-[3rem] justify-center px-3"
+                className="industrial-btn min-w-12 justify-center px-3"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.97 }}
                 transition={{ type: "spring", stiffness: 480, damping: 26 }}
@@ -126,7 +129,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 href="https://yasserious.com"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-brand-luxury font-semibold underline-offset-2 hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-brand-wood"
+                className="text-brand-luxury font-semibold underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-brand-wood"
               >
                 Yasserious.com
               </a>

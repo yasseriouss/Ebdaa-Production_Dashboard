@@ -20,6 +20,13 @@ const queryClient = new QueryClient({
   },
 });
 
+if (typeof window !== "undefined") {
+  window.addEventListener("fdh-offline-sync-complete", () => {
+    void queryClient.invalidateQueries();
+  });
+}
+
+
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
