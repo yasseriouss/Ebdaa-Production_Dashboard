@@ -1,8 +1,8 @@
-import { useListSharedProjects } from "@workspace/api-client-react";
+import { useListSharedProjects, useListWoodenOrders, useListMetalOrders } from "@workspace/api-client-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@factory/components/ui/card";
 import { Progress } from "@factory/components/ui/progress";
 import { Badge } from "@factory/components/ui/badge";
-import { Factory, Boxes, AlertTriangle, Link2 } from "lucide-react";
+import { Factory, Boxes, AlertTriangle, Link2, Cpu, ClipboardCheck } from "lucide-react";
 import { Link } from "wouter";
 import { useFactoryTranslation } from "../../lib/useFactoryTranslation";
 
@@ -76,8 +76,12 @@ function OrderTimeline({ pct, label, color }: { pct: number; label: string; colo
 }
 
 export default function SharedProjects() {
-  const { ft } = useFactoryTranslation();
-  const { data: projects, isLoading } = useListSharedProjects();
+  const { ft, locale } = useFactoryTranslation();
+  const { data: projects, isLoading: loadingProjects } = useListSharedProjects();
+  const { data: woodOrdersRaw, isLoading: loadingWood } = useListWoodenOrders();
+  const { data: metalOrdersRaw, isLoading: loadingMetal } = useListMetalOrders();
+
+  const isLoading = loadingProjects || loadingWood || loadingMetal;
 
   if (isLoading) {
     return (
@@ -90,11 +94,146 @@ export default function SharedProjects() {
 
   const typedProjects = (projects || []) as SharedProject[];
 
+  // Calculate advanced joint executive metrics
+  const woodCount = woodOrdersRaw?.length || 0;
+  const woodTotalQty = woodOrdersRaw?.reduce((sum, o: any) => sum + (parseFloat(String(o.qty || 0)) || 0), 0) || 0;
+  const woodDoneQty = woodOrdersRaw?.reduce((sum, o: any) => sum + (parseFloat(String(o.done || 0)) || 0), 0) || 0;
+  const woodPct = woodTotalQty > 0 ? Math.round((woodDoneQty / woodTotalQty) * 100) : 0;
+
+  const metalCount = metalOrdersRaw?.length || 0;
+  const metalTotalQty = metalOrdersRaw?.reduce((sum, o: any) => sum + (parseFloat(String(o.qty || 0)) || 0), 0) || 0;
+  const metalDoneQty = metalOrdersRaw?.reduce((sum, o: any) => {
+    const qty = parseFloat(String(o.qty || 0)) || 0;
+    const pct = parseFloat(String(o.completionPct || 0)) / 100;
+    return sum + (qty * pct);
+  }, 0) || 0;
+  const metalPct = metalTotalQty > 0 ? Math.round((metalDoneQty / metalTotalQty) * 100) : 0;
+
+  const totalJointProjects = typedProjects.length;
+  const combinedPct = Math.round((woodPct + metalPct) / 2);
+
+  // Bottlenecks & Critical alerts detection
+  const gapCritical = Math.abs(woodPct - metalPct) > 15;
+  const laggingPlant = woodPct < metalPct ? (locale === "ar" ? "مصنع الخشب" : "Wood Factory") : (locale === "ar" ? "مصنع المعادن" : "Metal Factory");
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Page Title & Subtitle */}
       <div>
         <h1 className="text-3xl font-bold tracking-tight">{ft("sharedProjects.title")}</h1>
         <p className="text-muted-foreground mt-1 max-w-3xl leading-relaxed">{ft("sharedProjects.subtitle")}</p>
+      </div>
+
+      {/* Majestic Executive Command Deck */}
+      <div className="grid gap-6 md:grid-cols-3">
+        {/* Wood Factory Command Card */}
+        <Card className="border border-sand/30 bg-white hover:shadow-md transition-shadow duration-300">
+          <CardContent className="pt-6 space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-500">
+                <Boxes className="h-6 w-6" />
+              </div>
+              <Badge variant="outline" className="bg-blue-50/50 text-blue-600 border-blue-100">
+                {locale === "ar" ? "نشط" : "Active"}
+              </Badge>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-foreground">{woodCount}</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
+                {locale === "ar" ? "أوامر مصنع الخشب" : "Wood Factory Orders"}
+              </div>
+            </div>
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between text-xs font-semibold">
+                <span className="text-muted-foreground">{locale === "ar" ? "الإنجاز الكلي للمصنع" : "Overall Plant Progress"}</span>
+                <span className="text-blue-600">{woodPct}%</span>
+              </div>
+              <Progress value={woodPct} className="h-1.5 bg-blue-100/50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Metal Factory Command Card */}
+        <Card className="border border-sand/30 bg-white hover:shadow-md transition-shadow duration-300">
+          <CardContent className="pt-6 space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-500">
+                <Factory className="h-6 w-6" />
+              </div>
+              <Badge variant="outline" className="bg-amber-50/50 text-amber-600 border-amber-100">
+                {locale === "ar" ? "نشط" : "Active"}
+              </Badge>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-foreground">{metalCount}</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
+                {locale === "ar" ? "أوامر مصنع المعادن" : "Metal Factory Orders"}
+              </div>
+            </div>
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between text-xs font-semibold">
+                <span className="text-muted-foreground">{locale === "ar" ? "الإنجاز الكلي للمصنع" : "Overall Plant Progress"}</span>
+                <span className="text-amber-600">{metalPct}%</span>
+              </div>
+              <Progress value={metalPct} className="h-1.5 bg-amber-100/50" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Joint Command Deck Combined Stats */}
+        <Card className="border border-sand/50 bg-foreground/[0.02] hover:shadow-md transition-shadow duration-300 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-24 h-24 bg-accent/5 rounded-full blur-2xl" />
+          <CardContent className="pt-6 space-y-4">
+            <div className="flex justify-between items-start">
+              <div className="p-2.5 rounded-xl bg-accent/10 text-accent">
+                <Cpu className="h-6 w-6" />
+              </div>
+              <Badge className="bg-accent text-white font-bold">
+                {locale === "ar" ? "تنسيق كامل" : "Fully Synced"}
+              </Badge>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-foreground">{totalJointProjects}</div>
+              <div className="text-xs font-bold uppercase tracking-wider text-muted-foreground mt-0.5">
+                {locale === "ar" ? "مشاريع العملاء المشتركة" : "Shared Client Projects"}
+              </div>
+            </div>
+            <div className="space-y-1.5 pt-2">
+              <div className="flex justify-between text-xs font-semibold">
+                <span className="text-muted-foreground">{locale === "ar" ? "معدل الإنجاز المشترك" : "Combined Progress Rate"}</span>
+                <span className="text-accent">{combinedPct}%</span>
+              </div>
+              <Progress value={combinedPct} className="h-1.5 bg-accent/15" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Critical bottleneck notification system */}
+      {gapCritical && (
+        <div className="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-800 text-sm">
+          <div className="p-2 rounded-xl bg-amber-500/20 text-amber-700 shrink-0">
+            <AlertTriangle className="h-5 w-5" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <h4 className="font-bold text-amber-900 leading-snug">
+              {locale === "ar" ? "فجوة إنتاجية حرجة مكتشفة!" : "Critical Production Gap Detected!"}
+            </h4>
+            <p className="text-xs text-amber-700/90 font-medium mt-0.5 leading-relaxed">
+              {locale === "ar"
+                ? `هناك فجوة أداء تتجاوز 15% بين المصنعين. يتأخر حالياً ${laggingPlant} بالمقارنة مع الآخر، مما قد يعطل تسليم المشاريع المشتركة. يُرجى مراجعة الموارد وتوجيه المهام.`
+                : `A performance gap of over 15% exists between plants. The ${laggingPlant} is currently lagging behind, which may delay shared client project handovers. Please review scheduling resources.`}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* Projects List Header */}
+      <div className="pt-2 border-t border-sand/30">
+        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+          <ClipboardCheck className="h-5 w-5 text-accent" />
+          {locale === "ar" ? "تفاصيل المشاريع المشتركة قيد التنفيذ" : "Active Shared Projects Breakdown"}
+        </h2>
       </div>
 
       {typedProjects.length === 0 && (
