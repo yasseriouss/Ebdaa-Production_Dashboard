@@ -88,7 +88,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
   const fetchLogs = async () => {
     setLoadingLogs(true);
     try {
-      const endpoint = `/api/${factory}/logs?logDate=${selectedDate}`;
+      const endpoint = `/api/${factory === "wood" ? "wooden" : "metal"}/logs?logDate=${selectedDate}`;
       const response = await fetch(endpoint);
       if (response.ok) {
         const data = await response.json();
@@ -151,7 +151,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
         notes: localGrid[orderNo]?.notes || null,
       };
 
-      const response = await fetch(`/api/${factory}/logs`, {
+      const response = await fetch(`/api/${factory === "wood" ? "wooden" : "metal"}/logs`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
