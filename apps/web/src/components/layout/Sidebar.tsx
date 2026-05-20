@@ -68,8 +68,8 @@ const NAV_DEF: NavEntry[] = [
     labelKey: "nav.groups.dailyProduction",
     icon: ClipboardCheck,
     children: [
-      { id: "dm", labelKey: "nav.metalFactory", href: "/daily/metal", icon: Cpu },
-      { id: "dw", labelKey: "nav.woodFactory", href: "/daily/wood", icon: Trees },
+      { id: "dm", labelKey: "nav.metalFactory", href: "/production?factory=metal&view=daily", icon: Cpu },
+      { id: "dw", labelKey: "nav.woodFactory", href: "/production?factory=wood&view=daily", icon: Trees },
     ],
   },
   {

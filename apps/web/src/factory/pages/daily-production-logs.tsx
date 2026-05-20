@@ -296,7 +296,9 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
 
       {/* Main Shift logs Interactive Grid */}
       <div className="rounded-2xl border border-sand/30 bg-white shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
+        
+        {/* Desktop Table View */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-sand/10 border-b border-sand/30 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
@@ -415,6 +417,133 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Mobile Cards View */}
+        <div className="block md:hidden divide-y divide-sand/20 bg-white">
+          {isLoading ? (
+            <div className="px-4 py-16 text-center">
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-bronze" />
+              <span className="text-xs text-muted-foreground mt-2 block">
+                {locale === "ar" ? "جاري تحميل سجلات الوردية..." : "Loading shift records..."}
+              </span>
+            </div>
+          ) : orders.length === 0 ? (
+            <div className="px-4 py-16 text-center text-muted-foreground text-xs">
+              {locale === "ar" ? "لا توجد أوامر تشغيل نشطة لعرضها" : "No active work orders found"}
+            </div>
+          ) : (
+            orders.map((order: FlatOrder, idx: number) => {
+              const localRow = localGrid[order.orderNo] || {};
+              return (
+                <div key={order.id} className="p-4 space-y-4 hover:bg-sand/5 transition-colors duration-150">
+                  {/* Card Header */}
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-xs text-muted-foreground font-mono">#{idx + 1}</span>
+                      <h4 className="font-bold text-foreground text-sm">{order.orderNo}</h4>
+                      <p className="text-[10px] text-muted-foreground font-medium">{order.client}</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
+                        {locale === "ar" ? "المطلوب" : "Target"}
+                      </span>
+                      <span className="font-bold text-sm text-bronze">{order.targetQty}</span>
+                    </div>
+                  </div>
+
+                  {/* Product */}
+                  <div className="text-xs text-muted-foreground font-medium bg-sand/10 p-2 rounded-lg">
+                    <span className="font-bold text-foreground block mb-0.5">{locale === "ar" ? "المنتج:" : "Product:"}</span>
+                    {order.product}
+                  </div>
+
+                  {/* Quantity Inputs */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground block">
+                        {locale === "ar" ? "الوارد" : "Input"}
+                      </label>
+                      <Input
+                        type="number"
+                        value={localRow.inputQty || ""}
+                        placeholder="0"
+                        min={0}
+                        onChange={(e) => handleInputChange(order.orderNo, "inputQty", e.target.value)}
+                        className="h-9 text-center text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground block">
+                        {locale === "ar" ? "المنفذ" : "Output"}
+                      </label>
+                      <Input
+                        type="number"
+                        value={localRow.outputQty || ""}
+                        placeholder="0"
+                        min={0}
+                        onChange={(e) => handleInputChange(order.orderNo, "outputQty", e.target.value)}
+                        className="h-9 text-center text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground block">
+                        {locale === "ar" ? "الهالك" : "Waste"}
+                      </label>
+                      <Input
+                        type="number"
+                        value={localRow.wasteQty || ""}
+                        placeholder="0"
+                        min={0}
+                        onChange={(e) => handleInputChange(order.orderNo, "wasteQty", e.target.value)}
+                        className="h-9 text-center text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Operator & Notes */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground block">
+                        {locale === "ar" ? "الفني" : "Technician"}
+                      </label>
+                      <Input
+                        type="text"
+                        value={localRow.operator || ""}
+                        placeholder={locale === "ar" ? "اسم الفني" : "Technician Name"}
+                        onChange={(e) => handleInputChange(order.orderNo, "operator", e.target.value)}
+                        className="h-9 text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground block">
+                        {locale === "ar" ? "ملاحظات" : "Notes"}
+                      </label>
+                      <Input
+                        type="text"
+                        value={localRow.notes || ""}
+                        placeholder={locale === "ar" ? "ملاحظات..." : "Notes..."}
+                        onChange={(e) => handleInputChange(order.orderNo, "notes", e.target.value)}
+                        className="h-9 text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Mobile Large Save Button */}
+                  <div>
+                    <Button
+                      type="button"
+                      onClick={() => saveLog(order.orderNo, order.id)}
+                      disabled={savingLogs}
+                      className="w-full h-11 bg-bronze hover:bg-bronze/90 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
+                    >
+                      {locale === "ar" ? "حفظ سجل الوردية" : "Save Shift Record"}
+                    </Button>
+                  </div>
+                </div>
+              );
+            })
+          )}
         </div>
       </div>
 
