@@ -46,7 +46,7 @@ interface FlatOrder {
 }
 
 export default function DailyProductionLogs({ factory }: DailyProductionLogsProps) {
-  const { locale } = useFactoryTranslation();
+  const { ft } = useFactoryTranslation();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
   
@@ -159,7 +159,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
 
       if (response.ok) {
         toast({
-          title: locale === "ar" ? "تم الحفظ بنجاح" : "Log Saved Successfully",
+          title: ft("dailyLogs.logSavedSuccessfully"),
           description: `${orderNo} · ${selectedStage}`,
         });
         void fetchLogs();
@@ -168,7 +168,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
       }
     } catch (error) {
       toast({
-        title: locale === "ar" ? "فشل الحفظ" : "Save Failed",
+        title: ft("dailyLogs.saveFailed"),
         variant: "destructive",
       });
     } finally {
@@ -202,7 +202,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
         await downloadDailySheetPdf(params);
       } catch (err) {
         toast({
-          title: locale === "ar" ? "فشل تصدير PDF" : "PDF Export Failed",
+          title: ft("dailyLogs.pdfExportFailed"),
           variant: "destructive",
         });
         return;
@@ -210,7 +210,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
     }
 
     toast({
-      title: locale === "ar" ? "تم التصدير بنجاح" : "Export Completed",
+      title: ft("dailyLogs.exportCompleted"),
       description: `${selectedStage} · ${activeTasks.length} tasks`,
     });
   };
@@ -221,34 +221,34 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
     <div className="space-y-8 animate-in fade-in duration-300">
       
       {/* Controls Card */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 rounded-2xl bg-white border border-sand/40 shadow-sm">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6 rounded-none bg-card border border-border/80 shadow-lg">
         
         {/* Date Selection */}
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            {locale === "ar" ? "تاريخ التقرير اليومي" : "Daily Report Date"}
+            {ft("dailyLogs.dailyReportDate")}
           </label>
           <Input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="bg-transparent border-sand/40 focus:border-accent text-sm"
+            className="bg-background/50 border-border focus:border-primary text-sm rounded-none"
           />
         </div>
 
         {/* Stage selection dropdown */}
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-            {locale === "ar" ? "المرحلة / القسم الإنتاجي" : "Production Stage / Dept"}
+            {ft("dailyLogs.productionStageDept")}
           </label>
           <div className="relative">
             <select
               value={selectedStage}
               onChange={(e) => setSelectedStage(e.target.value)}
-              className="w-full h-10 px-3 rounded-lg border border-sand/40 bg-white text-sm focus:border-accent focus:ring-1 focus:ring-accent outline-none appearance-none"
+              className="w-full h-10 px-3 rounded-none border border-border bg-background/50 text-sm text-foreground focus:border-primary focus:ring-1 focus:ring-primary outline-none appearance-none"
             >
               {stages.map((stage) => (
-                <option key={stage} value={stage}>
+                <option key={stage} value={stage} className="bg-card text-foreground">
                   {stage}
                 </option>
               ))}
@@ -259,14 +259,14 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
         {/* Prominent Export Buttons */}
         <div className="space-y-2">
           <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground block">
-            {locale === "ar" ? "تصدير وطباعة المسيرات الورقية" : "Print & Export Travelers"}
+            {ft("dailyLogs.printExportTravelers")}
           </label>
           <div className="flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleExport("xls")}
-              className="flex-1 text-emerald-600 border-emerald-500/20 hover:bg-emerald-50 text-xs font-bold rounded-xl"
+              className="flex-1 text-emerald-500 border-emerald-500/20 hover:bg-emerald-500/10 text-xs font-bold rounded-none"
             >
               <FileSpreadsheet className="w-3.5 h-3.5 mr-1" />
               Excel
@@ -275,16 +275,16 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
               variant="outline"
               size="sm"
               onClick={() => handleExport("print")}
-              className="flex-1 text-bronze border-bronze/20 hover:bg-bronze/5 text-xs font-bold rounded-xl"
+              className="flex-1 text-amber-500 border-amber-500/20 hover:bg-amber-500/10 text-xs font-bold rounded-none"
             >
               <Printer className="w-3.5 h-3.5 mr-1" />
-              {locale === "ar" ? "طباعة" : "Print"}
+              {ft("dailyLogs.print")}
             </Button>
             <Button
               variant="outline"
               size="sm"
               onClick={() => handleExport("pdf")}
-              className="flex-1 text-accent border-accent/20 hover:bg-accent/5 text-xs font-bold rounded-xl"
+              className="flex-1 text-primary border-primary/20 hover:bg-primary/10 text-xs font-bold rounded-none"
             >
               <Download className="w-3.5 h-3.5 mr-1" />
               PDF
@@ -295,47 +295,47 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
       </div>
 
       {/* Main Shift logs Interactive Grid */}
-      <div className="rounded-2xl border border-sand/30 bg-white shadow-sm overflow-hidden">
+      <div className="rounded-none border border-border bg-card shadow-xl overflow-hidden">
         
         {/* Desktop Table View */}
         <div className="hidden md:block overflow-x-auto">
-          <table className="w-full text-left border-collapse">
+          <table className="w-full text-start border-collapse">
             <thead>
-              <tr className="bg-sand/10 border-b border-sand/30 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <tr className="bg-muted/30 border-b border-border text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                 <th className="px-4 py-4 w-12 text-center">#</th>
-                <th className="px-4 py-4">{locale === "ar" ? "رقم الأمر / العميل" : "Order / Client"}</th>
-                <th className="px-4 py-4">{locale === "ar" ? "المنتج" : "Product"}</th>
-                <th className="px-4 py-4 text-center w-20">{locale === "ar" ? "المطلوب" : "Target"}</th>
-                <th className="px-4 py-4 text-center w-24">{locale === "ar" ? "الوارد" : "Input Qty"}</th>
-                <th className="px-4 py-4 text-center w-24">{locale === "ar" ? "المنفذ" : "Output Qty"}</th>
-                <th className="px-4 py-4 text-center w-24">{locale === "ar" ? "الهالك" : "Waste Qty"}</th>
-                <th className="px-4 py-4 w-32">{locale === "ar" ? "اسم الفني" : "Operator"}</th>
-                <th className="px-4 py-4">{locale === "ar" ? "الملاحظات" : "Notes"}</th>
-                <th className="px-4 py-4 w-20 text-center">{locale === "ar" ? "العمليات" : "Action"}</th>
+                <th className="px-4 py-4 text-start">{ft("dailyLogs.orderClient")}</th>
+                <th className="px-4 py-4 text-start">{ft("dailyLogs.product")}</th>
+                <th className="px-4 py-4 text-center w-20">{ft("dailyLogs.target")}</th>
+                <th className="px-4 py-4 text-center w-24">{ft("dailyLogs.inputQty")}</th>
+                <th className="px-4 py-4 text-center w-24">{ft("dailyLogs.outputQty")}</th>
+                <th className="px-4 py-4 text-center w-24">{ft("dailyLogs.wasteQty")}</th>
+                <th className="px-4 py-4 text-start w-32">{ft("dailyLogs.operator")}</th>
+                <th className="px-4 py-4 text-start">{ft("dailyLogs.notes")}</th>
+                <th className="px-4 py-4 w-20 text-center">{ft("dailyLogs.action")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-sand/20 text-sm">
+            <tbody className="divide-y divide-border/60 text-sm">
               {isLoading ? (
                 <tr>
                   <td colSpan={10} className="px-4 py-16 text-center">
-                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-bronze" />
+                    <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                     <span className="text-xs text-muted-foreground mt-2 block">
-                      {locale === "ar" ? "جاري تحميل سجلات الوردية..." : "Loading shift records..."}
+                      {ft("dailyLogs.loadingShiftRecords")}
                     </span>
                   </td>
                 </tr>
               ) : orders.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="px-4 py-16 text-center text-muted-foreground text-xs">
-                    {locale === "ar" ? "لا توجد أوامر تشغيل نشطة لعرضها" : "No active work orders found"}
+                    {ft("dailyLogs.noActiveWorkOrders")}
                   </td>
                 </tr>
               ) : (
                 orders.map((order: FlatOrder, idx: number) => {
                   const localRow = localGrid[order.orderNo] || {};
                   return (
-                    <tr key={order.id} className="hover:bg-sand/5 transition-colors duration-150">
-                      <td className="px-4 py-3 text-center text-xs text-muted-foreground">{idx + 1}</td>
+                    <tr key={order.id} className="hover:bg-muted/10 transition-colors duration-150">
+                      <td className="px-4 py-3 text-center text-xs text-muted-foreground font-mono">{idx + 1}</td>
                       <td className="px-4 py-3">
                         <div className="font-bold text-foreground text-xs sm:text-sm">{order.orderNo}</div>
                         <div className="text-[10px] text-muted-foreground font-medium">{order.client}</div>
@@ -343,7 +343,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                       <td className="px-4 py-3 text-xs max-w-xs truncate font-medium text-muted-foreground">
                         {order.product}
                       </td>
-                      <td className="px-4 py-3 text-center font-bold text-xs text-bronze">
+                      <td className="px-4 py-3 text-center font-bold text-xs text-primary font-mono">
                         {order.targetQty}
                       </td>
                       {/* Input Qty */}
@@ -354,7 +354,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                           placeholder="0"
                           min={0}
                           onChange={(e) => handleInputChange(order.orderNo, "inputQty", e.target.value)}
-                          className="h-8 text-center text-xs rounded-lg border-sand/40 focus:border-bronze"
+                          className="h-8 text-center text-xs rounded-none border-border bg-background focus:border-primary font-mono"
                         />
                       </td>
                       {/* Output Qty */}
@@ -365,7 +365,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                           placeholder="0"
                           min={0}
                           onChange={(e) => handleInputChange(order.orderNo, "outputQty", e.target.value)}
-                          className="h-8 text-center text-xs rounded-lg border-sand/40 focus:border-bronze"
+                          className="h-8 text-center text-xs rounded-none border-border bg-background focus:border-primary font-mono"
                         />
                       </td>
                       {/* Waste Qty */}
@@ -376,7 +376,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                           placeholder="0"
                           min={0}
                           onChange={(e) => handleInputChange(order.orderNo, "wasteQty", e.target.value)}
-                          className="h-8 text-center text-xs rounded-lg border-sand/40 focus:border-bronze"
+                          className="h-8 text-center text-xs rounded-none border-border bg-background focus:border-primary font-mono"
                         />
                       </td>
                       {/* Operator Name */}
@@ -384,9 +384,9 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                         <Input
                           type="text"
                           value={localRow.operator || ""}
-                          placeholder={locale === "ar" ? "اسم الفني" : "Technician"}
+                          placeholder={ft("dailyLogs.operator")}
                           onChange={(e) => handleInputChange(order.orderNo, "operator", e.target.value)}
-                          className="h-8 text-xs rounded-lg border-sand/40 focus:border-bronze"
+                          className="h-8 text-xs rounded-none border-border bg-background focus:border-primary"
                         />
                       </td>
                       {/* Notes */}
@@ -394,9 +394,9 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                         <Input
                           type="text"
                           value={localRow.notes || ""}
-                          placeholder={locale === "ar" ? "ملاحظات..." : "Notes..."}
+                          placeholder={ft("dailyLogs.notes")}
                           onChange={(e) => handleInputChange(order.orderNo, "notes", e.target.value)}
-                          className="h-8 text-xs rounded-lg border-sand/40 focus:border-bronze"
+                          className="h-8 text-xs rounded-none border-border bg-background focus:border-primary"
                         />
                       </td>
                       {/* Save Button */}
@@ -406,9 +406,9 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                           type="button"
                           onClick={() => saveLog(order.orderNo, order.id)}
                           disabled={savingLogs}
-                          className="h-7 px-3 bg-bronze hover:bg-bronze/90 text-white rounded-lg text-xs font-bold transition-all"
+                          className="h-7 px-3 bg-primary hover:bg-primary/95 text-primary-foreground rounded-none text-xs font-bold transition-all"
                         >
-                          {locale === "ar" ? "حفظ" : "Save"}
+                          {ft("dailyLogs.save")}
                         </Button>
                       </td>
                     </tr>
@@ -420,23 +420,23 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
         </div>
 
         {/* Mobile Cards View */}
-        <div className="block md:hidden divide-y divide-sand/20 bg-white">
+        <div className="block md:hidden divide-y divide-border bg-card">
           {isLoading ? (
             <div className="px-4 py-16 text-center">
-              <Loader2 className="w-6 h-6 animate-spin mx-auto text-bronze" />
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
               <span className="text-xs text-muted-foreground mt-2 block">
-                {locale === "ar" ? "جاري تحميل سجلات الوردية..." : "Loading shift records..."}
+                {ft("dailyLogs.loadingShiftRecords")}
               </span>
             </div>
           ) : orders.length === 0 ? (
             <div className="px-4 py-16 text-center text-muted-foreground text-xs">
-              {locale === "ar" ? "لا توجد أوامر تشغيل نشطة لعرضها" : "No active work orders found"}
+              {ft("dailyLogs.noActiveWorkOrders")}
             </div>
           ) : (
             orders.map((order: FlatOrder, idx: number) => {
               const localRow = localGrid[order.orderNo] || {};
               return (
-                <div key={order.id} className="p-4 space-y-4 hover:bg-sand/5 transition-colors duration-150">
+                <div key={order.id} className="p-4 space-y-4 hover:bg-muted/5 transition-colors duration-150">
                   {/* Card Header */}
                   <div className="flex justify-between items-start">
                     <div>
@@ -446,15 +446,15 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                     </div>
                     <div className="text-right">
                       <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                        {locale === "ar" ? "المطلوب" : "Target"}
+                        {ft("dailyLogs.target")}
                       </span>
-                      <span className="font-bold text-sm text-bronze">{order.targetQty}</span>
+                      <span className="font-bold text-sm text-primary font-mono">{order.targetQty}</span>
                     </div>
                   </div>
 
                   {/* Product */}
-                  <div className="text-xs text-muted-foreground font-medium bg-sand/10 p-2 rounded-lg">
-                    <span className="font-bold text-foreground block mb-0.5">{locale === "ar" ? "المنتج:" : "Product:"}</span>
+                  <div className="text-xs text-muted-foreground font-medium bg-muted/20 p-2 rounded-none border border-border">
+                    <span className="font-bold text-foreground block mb-0.5">{ft("dailyLogs.product")}:</span>
                     {order.product}
                   </div>
 
@@ -462,7 +462,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                   <div className="grid grid-cols-3 gap-2">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-muted-foreground block">
-                        {locale === "ar" ? "الوارد" : "Input"}
+                        {ft("dailyLogs.inputQty")}
                       </label>
                       <Input
                         type="number"
@@ -470,12 +470,12 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                         placeholder="0"
                         min={0}
                         onChange={(e) => handleInputChange(order.orderNo, "inputQty", e.target.value)}
-                        className="h-9 text-center text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                        className="h-9 text-center text-xs rounded-none border-border bg-background focus:border-primary font-mono"
                       />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-muted-foreground block">
-                        {locale === "ar" ? "المنفذ" : "Output"}
+                        {ft("dailyLogs.outputQty")}
                       </label>
                       <Input
                         type="number"
@@ -483,12 +483,12 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                         placeholder="0"
                         min={0}
                         onChange={(e) => handleInputChange(order.orderNo, "outputQty", e.target.value)}
-                        className="h-9 text-center text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                        className="h-9 text-center text-xs rounded-none border-border bg-background focus:border-primary font-mono"
                       />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-muted-foreground block">
-                        {locale === "ar" ? "الهالك" : "Waste"}
+                        {ft("dailyLogs.wasteQty")}
                       </label>
                       <Input
                         type="number"
@@ -496,7 +496,7 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                         placeholder="0"
                         min={0}
                         onChange={(e) => handleInputChange(order.orderNo, "wasteQty", e.target.value)}
-                        className="h-9 text-center text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                        className="h-9 text-center text-xs rounded-none border-border bg-background focus:border-primary font-mono"
                       />
                     </div>
                   </div>
@@ -505,26 +505,26 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-muted-foreground block">
-                        {locale === "ar" ? "الفني" : "Technician"}
+                        {ft("dailyLogs.operator")}
                       </label>
                       <Input
                         type="text"
                         value={localRow.operator || ""}
-                        placeholder={locale === "ar" ? "اسم الفني" : "Technician Name"}
+                        placeholder={ft("dailyLogs.operator")}
                         onChange={(e) => handleInputChange(order.orderNo, "operator", e.target.value)}
-                        className="h-9 text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                        className="h-9 text-xs rounded-none border-border bg-background focus:border-primary"
                       />
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-bold text-muted-foreground block">
-                        {locale === "ar" ? "ملاحظات" : "Notes"}
+                        {ft("dailyLogs.notes")}
                       </label>
                       <Input
                         type="text"
                         value={localRow.notes || ""}
-                        placeholder={locale === "ar" ? "ملاحظات..." : "Notes..."}
+                        placeholder={ft("dailyLogs.notes")}
                         onChange={(e) => handleInputChange(order.orderNo, "notes", e.target.value)}
-                        className="h-9 text-xs rounded-lg border-sand/40 focus:border-bronze bg-transparent"
+                        className="h-9 text-xs rounded-none border-border bg-background focus:border-primary"
                       />
                     </div>
                   </div>
@@ -535,9 +535,9 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
                       type="button"
                       onClick={() => saveLog(order.orderNo, order.id)}
                       disabled={savingLogs}
-                      className="w-full h-11 bg-bronze hover:bg-bronze/90 text-white rounded-xl text-xs font-bold transition-all shadow-sm flex items-center justify-center gap-1.5"
+                      className="w-full h-11 bg-primary hover:bg-primary/95 text-primary-foreground rounded-none text-xs font-bold transition-all shadow-md flex items-center justify-center gap-1.5"
                     >
-                      {locale === "ar" ? "حفظ سجل الوردية" : "Save Shift Record"}
+                      {ft("dailyLogs.saveShiftRecord")}
                     </Button>
                   </div>
                 </div>
@@ -548,25 +548,25 @@ export default function DailyProductionLogs({ factory }: DailyProductionLogsProp
       </div>
 
       {/* Info banner / explanation */}
-      <div className="p-6 rounded-2xl border border-dashed border-sand/40 bg-sand/5">
+      <div className="p-6 rounded-none border border-dashed border-border bg-muted/10">
         <div className="flex items-center gap-3 mb-4">
-          <ClipboardCheck className="w-5 h-5 text-bronze" />
+          <ClipboardCheck className="w-5 h-5 text-primary" />
           <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
-            {locale === "ar" ? "دليل تسجيل الوردية وإدارة ترحيل الإنتاج" : "Shift Logging & Production Handoff Playbook"}
+            {ft("dailyLogs.guideTitle")}
           </h3>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-xs leading-relaxed text-muted-foreground font-medium">
           <div className="space-y-1">
-            <h4 className="font-bold text-foreground">{locale === "ar" ? "١. الترحيل الفوري للمخزون" : "1. Real-time Count Tracking"}</h4>
-            <p>{locale === "ar" ? "يقوم مشرف الوردية بإدخال الكمية المستلمة، السليمة، والهالك لكل أمر تشغيل مباشرة بعد انقضاء الوردية لتجنب تراكم الفوارق." : "Record exact input, completed outputs, and scrap units at shift completion to ensure full sequence transparency."}</p>
+            <h4 className="font-bold text-foreground">{ft("dailyLogs.guide1Title")}</h4>
+            <p>{ft("dailyLogs.guide1Desc")}</p>
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-foreground">{locale === "ar" ? "٢. ربط المشغلين والكفاءة" : "2. Technician Assignments"}</h4>
-            <p>{locale === "ar" ? "تحديد اسم الفني يتيح للنظام قياس معدلات الإنتاجية الفردية ورصد مكامن الخلل والأداء وتكلفة تشغيل كل خط انتاجي." : "Associate shop floor operators to unlock fine-grained capacity & scrap analytics."}</p>
+            <h4 className="font-bold text-foreground">{ft("dailyLogs.guide2Title")}</h4>
+            <p>{ft("dailyLogs.guide2Desc")}</p>
           </div>
           <div className="space-y-1">
-            <h4 className="font-bold text-foreground">{locale === "ar" ? "٣. المزامنة السحابية وقاعدة Turso" : "3. Cloud Syncing"}</h4>
-            <p>{locale === "ar" ? "تُحفظ كافة السجلات بنظام الحماية ضد التعارض مباشرة في قاعدة بيانات Turso السحابية وتبقى متوفرة محلياً عند انقطاع الاتصال." : "Transactions instantly sync to the cloud database and reconcile automatically when returning online, preserving floor continuity."}</p>
+            <h4 className="font-bold text-foreground">{ft("dailyLogs.guide3Title")}</h4>
+            <p>{ft("dailyLogs.guide3Desc")}</p>
           </div>
         </div>
       </div>
